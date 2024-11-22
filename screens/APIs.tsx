@@ -1,3 +1,5 @@
+// https://recoiljs.org/docs/guides/asynchronous-data-queries
+
 import React from 'react';
 import {SafeAreaView, Text, TextInput, View} from 'react-native';
 import {
