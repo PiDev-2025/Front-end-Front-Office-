@@ -13,6 +13,8 @@ import {
 import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import {Colors, LearnMoreLinks} from 'react-native/Libraries/NewAppScreen';
+
+import Section from './components/Section';
 // import {Button as PaperButton} from 'react-native-paper';
 
 // import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -42,6 +44,7 @@ function QCTScreen(): React.JSX.Element {
             SympathyWorld - 0.0.1
           </Text>
           <Section title="Environment" />
+          <Section title="APIs" />
           <LearnMoreLinks />
         </View>
       </ScrollView>

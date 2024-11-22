@@ -1,30 +1,23 @@
 import React from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-  Button,
-} from 'react-native';
+import {SafeAreaView, Text, Button} from 'react-native';
 
-import {NavigationContainer, useNavigation} from '@react-navigation/native';
-import {createStackNavigator} from '@react-navigation/stack';
-import {Colors, LearnMoreLinks} from 'react-native/Libraries/NewAppScreen';
-// import {Button as PaperButton} from 'react-native-paper';
-
-// import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import {useNavigation} from '@react-navigation/native';
+import {List, MD3Colors} from 'react-native-paper';
 import {GIT_TAG, API_URL} from '@env';
-
 function EnvironmentScreen(): React.JSX.Element {
   const navigation = useNavigation();
   return (
-    <SafeAreaView
-      style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-      <Text style={{fontSize: 20}}>Environment Screen</Text>
+    <SafeAreaView style={{flex: 1}}>
+      <List.Section style={{marginLeft: 20}}>
+        <List.Item
+          title={`GIT_TAG=${GIT_TAG}`}
+          left={() => <List.Icon icon="folder" />}
+        />
+        <List.Item
+          title={`API_URL=${API_URL}`}
+          left={() => <List.Icon color={MD3Colors.tertiary70} icon="folder" />}
+        />
+      </List.Section>
       <Button title="Go Back" onPress={() => navigation.goBack()} />
     </SafeAreaView>
   );

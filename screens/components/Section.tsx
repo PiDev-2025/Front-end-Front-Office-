@@ -1,23 +1,9 @@
 import React from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-  Button,
-} from 'react-native';
+import {StyleSheet, useColorScheme, View, Button} from 'react-native';
 
-import {NavigationContainer, useNavigation} from '@react-navigation/native';
-import {createStackNavigator} from '@react-navigation/stack';
-import {Colors, LearnMoreLinks} from 'react-native/Libraries/NewAppScreen';
-// import {Button as PaperButton} from 'react-native-paper';
-
-// import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
-import {GIT_TAG, API_URL} from '@env';
+import {useNavigation} from '@react-navigation/native';
+// import {Colors} from 'react-native/Libraries/NewAppScreen';
+// import {GIT_TAG, API_URL} from '@env';
 
 function Section({title}: {title: string}): React.JSX.Element {
   const navigation = useNavigation();
@@ -28,7 +14,7 @@ function Section({title}: {title: string}): React.JSX.Element {
       <Button
         title={title}
         onPress={() => navigation.navigate(title)}
-        color={isDarkMode ? Colors.white : Colors.black}
+        // color={isDarkMode ? Colors.white : Colors.black}
       />
     </View>
   );
@@ -44,3 +30,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+export default Section;
