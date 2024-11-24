@@ -69,7 +69,7 @@ function APIsScreen(): React.JSX.Element {
   return (
     <RecoilRoot>
       <SafeAreaView style={{flex: 1, padding: 20}}>
-        <CharacterCounter />
+        {/* <CharacterCounter /> */}
       </SafeAreaView>
     </RecoilRoot>
   );
