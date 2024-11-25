@@ -45,6 +45,7 @@ function QCTScreen(): React.JSX.Element {
           </Text>
           <Section title="Environment" />
           <Section title="APIs" />
+          <Section title="States" />
           <LearnMoreLinks />
         </View>
       </ScrollView>

@@ -1,77 +1,63 @@
 // https://recoiljs.org/docs/guides/asynchronous-data-queries
 
-import React from 'react';
-import {SafeAreaView, Text, TextInput, View} from 'react-native';
-import {
-  RecoilRoot,
-  atom,
-  selector,
-  useRecoilState,
-  useRecoilValue,
-} from 'recoil';
+import React, { useEffect, useState } from 'react';
+import {SafeAreaView, Text, View, Button} from 'react-native';
+import axios from 'axios';
 
-// Define the text state atom
-const textState = atom({
-  key: 'textState', // unique ID
-  default: '', // default value
-});
+function ApiElysia(): React.JSX.Element {
 
-// Define the character count selector
-const charCountState = selector({
-  key: 'charCountState', // unique ID
-  get: ({get}) => {
-    const text = get(textState);
-    return text.length;
-  },
-});
+  const API_URL = process.env.API_URL;
+  const [data, setData] = useState<{ s?: string; v?: string; err?: string } | null>(null);
 
-// Component for displaying the character counter
-function CharacterCounter() {
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/status`);
+        console.log(response.data);
+        setData(response.data);
+      } catch (error) {
+        console.error('Error fetching status:', error);
+        setData({err:'Error fetching status'});
+      }
+    };
+
+    fetchStatus();
+  }, []);
+
   return (
-    <View>
-      <TextInputField />
-      <CharacterCount />
-    </View>
+    <SafeAreaView>
+      <View>
+        <Text>
+        {data && data.s === 'running' ? '🟢' : ''} API : {data ? data.s : 'Loading...'} :: {data ? data.v : 'Loading...'}
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 }
 
-// Input component
-function TextInputField() {
-  const [text, setText] = useRecoilState(textState);
+function APIMessaging(): React.JSX.Element {
 
-  return (
-    <View style={{marginVertical: 10}}>
-      <TextInput
-        style={{
-          borderWidth: 1,
-          borderColor: '#ccc',
-          padding: 10,
-          borderRadius: 5,
-        }}
-        placeholder="Type something..."
-        value={text}
-        onChangeText={setText} // React Native uses `onChangeText`
-      />
-      <Text style={{marginTop: 5}}>Echo: {text}</Text>
+
+return (
+    <SafeAreaView>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Messaging</Text>
     </View>
+    </SafeAreaView>
   );
 }
-
-// Character count display component
-function CharacterCount() {
-  const count = useRecoilValue(charCountState);
-
-  return <Text>Character Count: {count}</Text>;
-}
-
 // Main screen
 function APIsScreen(): React.JSX.Element {
   return (
-    <RecoilRoot>
       <SafeAreaView style={{flex: 1, padding: 20}}>
-        {/* <CharacterCounter /> */}
+        <View>
+          <Text style={{fontSize: 20, fontWeight: 'bold'}}>Connection Status</Text>
+          <View style={{marginVertical: 10}}>
+            <ApiElysia />
+            <APIMessaging />
+          </View>
+        </View>
       </SafeAreaView>
-    </RecoilRoot>
   );
 }
 
