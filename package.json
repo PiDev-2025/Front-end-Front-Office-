@@ -22,7 +22,8 @@
     "react-native-safe-area-context": "^4.14.0",
     "react-native-screens": "^4.3.0",
     "react-native-svg": "^15.9.0",
-    "react-native-vector-icons": "^10.2.0"
+    "react-native-vector-icons": "^10.2.0",
+    "recoil": "^0.7.7"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -49,5 +50,9 @@
   },
   "volta": {
     "node": "22.11.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.8",
+    "utf-8-validate": "^5.0.10"
   }
 }

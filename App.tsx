@@ -1,12 +1,12 @@
-import React from 'react';
+import React from "react";
 
-import {NavigationContainer} from '@react-navigation/native';
-import {createStackNavigator} from '@react-navigation/stack';
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
 
-import EnvironmentScreen from './screens/Environment';
-import QCTScreen from './screens/QCTScreen';
-import APIsScreen from './screens/APIs';
-import StatesScreen from './screens/States';
+import EnvironmentScreen from "./screens/Environment";
+import QCTScreen from "./screens/QCTScreen";
+import APIsScreen from "./screens/APIs";
+import StatesScreen from "./screens/States";
 
 const Stack = createStackNavigator();
 

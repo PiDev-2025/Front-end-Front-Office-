@@ -1,25 +1,25 @@
 // https://recoiljs.org/docs/guides/asynchronous-data-queries
 
-import React from 'react';
-import {SafeAreaView, Text, TextInput, View} from 'react-native';
+import React from "react";
+import { SafeAreaView, Text, TextInput, View } from "react-native";
 import {
   RecoilRoot,
   atom,
   selector,
   useRecoilState,
   useRecoilValue,
-} from 'recoil';
+} from "recoil";
 
 // Define the text state atom
 const textState = atom({
-  key: 'textState', // unique ID
-  default: '', // default value
+  key: "textState", // unique ID
+  default: "", // default value
 });
 
 // Define the character count selector
 const charCountState = selector({
-  key: 'charCountState', // unique ID
-  get: ({get}) => {
+  key: "charCountState", // unique ID
+  get: ({ get }) => {
     const text = get(textState);
     return text.length;
   },
@@ -40,11 +40,11 @@ function TextInputField() {
   const [text, setText] = useRecoilState(textState);
 
   return (
-    <View style={{marginVertical: 10}}>
+    <View style={{ marginVertical: 10 }}>
       <TextInput
         style={{
           borderWidth: 1,
-          borderColor: '#ccc',
+          borderColor: "#ccc",
           padding: 10,
           borderRadius: 5,
         }}
@@ -52,7 +52,7 @@ function TextInputField() {
         value={text}
         onChangeText={setText} // React Native uses `onChangeText`
       />
-      <Text style={{marginTop: 5}}>Echo: {text}</Text>
+      <Text style={{ marginTop: 5 }}>Echo: {text}</Text>
     </View>
   );
 }
@@ -68,7 +68,7 @@ function CharacterCount() {
 function StatesScreen(): React.JSX.Element {
   return (
     <RecoilRoot>
-      <SafeAreaView style={{flex: 1, padding: 20}}>
+      <SafeAreaView style={{ flex: 1, padding: 20 }}>
         <CharacterCounter />
       </SafeAreaView>
     </RecoilRoot>

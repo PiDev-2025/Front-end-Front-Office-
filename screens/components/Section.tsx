@@ -1,13 +1,13 @@
-import React from 'react';
-import {StyleSheet, useColorScheme, View, Button} from 'react-native';
+import React from "react";
+import { StyleSheet, useColorScheme, View, Button } from "react-native";
 
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from "@react-navigation/native";
 // import {Colors} from 'react-native/Libraries/NewAppScreen';
 // import {GIT_TAG, API_URL} from '@env';
 
-function Section({title}: {title: string}): React.JSX.Element {
+function Section({ title }: { title: string }): React.JSX.Element {
   const navigation = useNavigation();
-  const isDarkMode = useColorScheme() === 'dark';
+  const isDarkMode = useColorScheme() === "dark";
 
   return (
     <View style={styles.sectionContainer}>
@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 

@@ -1,14 +1,14 @@
-import React from 'react';
-import {SafeAreaView, Text, Button} from 'react-native';
+import React from "react";
+import { SafeAreaView, Text, Button } from "react-native";
 
-import {useNavigation} from '@react-navigation/native';
-import {List, MD3Colors} from 'react-native-paper';
-import {GIT_TAG, API_URL} from '@env';
+import { useNavigation } from "@react-navigation/native";
+import { List, MD3Colors } from "react-native-paper";
+import { GIT_TAG, API_URL } from "@env";
 function EnvironmentScreen(): React.JSX.Element {
   const navigation = useNavigation();
   return (
-    <SafeAreaView style={{flex: 1}}>
-      <List.Section style={{marginLeft: 20}}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <List.Section style={{ marginLeft: 20 }}>
         <List.Item
           title={`GIT_TAG=${GIT_TAG}`}
           left={() => <List.Icon icon="folder" />}
