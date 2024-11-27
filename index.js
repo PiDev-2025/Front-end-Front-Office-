@@ -10,6 +10,7 @@ import {
   MD3LightTheme as DefaultTheme,
 } from "react-native-paper";
 import { useColorScheme } from "react-native";
+import { RecoilRoot } from "recoil";
 
 const lightTheme = {
   colors: {
@@ -109,8 +110,8 @@ const theme = {
   // Specify custom property in nested object
   colors: lightTheme.colors,
 };
-
-export default function Main() {
+import { SafeAreaProvider } from "react-native-safe-area-context";
+function Main() {
   const colorScheme = useColorScheme();
 
   const paperTheme =
@@ -119,9 +120,14 @@ export default function Main() {
       : { ...theme, colors: lightTheme };
 
   return (
-    <PaperProvider theme={paperTheme}>
-      <App />
-    </PaperProvider>
+    <SafeAreaProvider>
+      <RecoilRoot>
+        <PaperProvider theme={paperTheme}>
+          <App />
+        </PaperProvider>
+      </RecoilRoot>
+    </SafeAreaProvider>
   );
 }
+
 AppRegistry.registerComponent(appName, () => Main);

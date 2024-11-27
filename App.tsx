@@ -7,7 +7,7 @@ import EnvironmentScreen from "./screens/Environment";
 import QCTScreen from "./screens/QCTScreen";
 import APIsScreen from "./screens/APIs";
 import StatesScreen from "./screens/States";
-
+import ChatScreen from "./screens/Chat";
 const Stack = createStackNavigator();
 
 export default function App(): React.JSX.Element {
@@ -18,6 +18,7 @@ export default function App(): React.JSX.Element {
         <Stack.Screen name="Environment" component={EnvironmentScreen} />
         <Stack.Screen name="APIs" component={APIsScreen} />
         <Stack.Screen name="States" component={StatesScreen} />
+        <Stack.Screen name="Chat" component={ChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
