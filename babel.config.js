@@ -11,7 +11,6 @@ module.exports = {
         safe: false, // set to true for error if variables are missing
         allowUndefined: true, // allow undefined variables
       },
-      "react-native-reanimated/plugin",
     ],
   ],
   // env: {

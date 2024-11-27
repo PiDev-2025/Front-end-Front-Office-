@@ -1,18 +1,3 @@
-/**
- * @format
- */
-
-import { AppRegistry } from "react-native";
-import App from "./App";
-import { name as appName } from "./app.json";
-import {
-  PaperProvider,
-  MD3LightTheme as DefaultTheme,
-} from "react-native-paper";
-import { useColorScheme } from "react-native";
-import { RecoilRoot } from "recoil";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-
 const lightTheme = {
   colors: {
     primary: "rgb(0, 95, 175)",
@@ -103,32 +88,4 @@ const darkTheme = {
   },
 };
 
-const theme = {
-  ...DefaultTheme,
-  // Specify custom property
-  roundness: 2,
-  myOwnProperty: true,
-  // Specify custom property in nested object
-  colors: lightTheme.colors,
-};
-
-function Main() {
-  const colorScheme = useColorScheme();
-
-  const paperTheme =
-    colorScheme === "dark"
-      ? { ...theme, colors: darkTheme }
-      : { ...theme, colors: lightTheme };
-
-  return (
-    <SafeAreaProvider>
-      <RecoilRoot>
-        <PaperProvider theme={paperTheme}>
-          <App />
-        </PaperProvider>
-      </RecoilRoot>
-    </SafeAreaProvider>
-  );
-}
-
-AppRegistry.registerComponent(appName, () => Main);
+export default { lightTheme, darkTheme };
