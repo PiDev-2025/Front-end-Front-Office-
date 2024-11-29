@@ -84,4 +84,29 @@ async function get1V1MessagesAmount(chatId: string) {
   }
 }
 
-export { create1V1Chat, send1V1Message, get1V1Messages, get1V1MessagesAmount };
+async function getUserChats(userId: string) {
+  const origin = "qct-sw.react-native.screens.apis.Chat.getUserChats";
+  console.log(origin);
+  const options = {
+    method: "GET",
+    url: `${process.env.API_URL}/chat/getUserChats/${userId}/`,
+    Headers: {
+      origin: origin,
+    },
+  };
+  try {
+    const { data } = await axios.request(options);
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export {
+  create1V1Chat,
+  send1V1Message,
+  get1V1Messages,
+  get1V1MessagesAmount,
+  getUserChats,
+};

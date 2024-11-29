@@ -7,7 +7,9 @@ import {
   send1V1Message,
   get1V1Messages,
   get1V1MessagesAmount,
+  getUserChats,
 } from "./apis/Chat";
+
 import { atom, useRecoilState } from "recoil";
 const chatIdState = atom<string | null>({
   key: "chatIdState",
@@ -18,6 +20,12 @@ const messageAmountState = atom<string | null>({
   key: "messageAmountState",
   default: null,
 });
+
+const userIdState = atom<string | null>({
+  key: "userIdState",
+  default: null,
+});
+
 function Creator1V1Chat(): React.JSX.Element {
   const API_URL = process.env.API_URL;
   const [chatId, setChatId] = useRecoilState(chatIdState);
@@ -54,7 +62,7 @@ function Creator1V1Chat(): React.JSX.Element {
           }}
         />
         <TextInput
-          placeholder="User ID 2"
+          placeholder="User ID"
           value={users.userId2 || ""}
           onChangeText={(text) => setUsers({ ...users, userId2: text })}
           style={{
@@ -118,14 +126,14 @@ function Chat1V1(): React.JSX.Element {
   };
 
   useEffect(() => {
-    fetchMessages();
     fetchStatus();
+    fetchMessages();
   }, [chatId]);
-
+  // fetchStatus();
   return (
     <SafeAreaView>
       <Text>Messages Amount: {messagesAmount}</Text>
-      <Text>messages {JSON.stringify(messages)}</Text>
+      {/* <Text>messages {JSON.stringify(messages)}</Text> */}
       <ScrollView
         onScroll={({ nativeEvent }) => {
           if (
@@ -138,11 +146,65 @@ function Chat1V1(): React.JSX.Element {
         }}
         scrollEventThrottle={400}
       >
-        {/* {messages?.map((item, index) => (
-          <Text key={index}>{item}</Text>
-        ))} */}
+        {messages?.map((item, index) => (
+          <Text key={index}>{item.message}</Text>
+        ))}
       </ScrollView>
+      <Button title="fetchStatus" onPress={fetchStatus} />r
       <Button title="fetchMessages" onPress={fetchMessages} />r
+    </SafeAreaView>
+  );
+}
+
+function ListUserChats(): React.JSX.Element {
+  const [userId, setUserId] = useRecoilState(userIdState);
+  const [chats, setChats] = useState<
+    | {
+        room?: string;
+        usersInRoom?: { userId1: string; userId2: string }[];
+      }[]
+    | null
+  >(null);
+
+  const fetchMessages = async () => {
+    try {
+      if (userId) {
+        const data = await getUserChats(userId);
+        console.log(data);
+        setChats(data);
+      } else {
+        console.error("userID cannot be null");
+      }
+    } catch (error) {
+      console.error("Error fetching more items:", error);
+    }
+  };
+
+  return (
+    <SafeAreaView>
+      var response = [];
+      <TextInput
+        placeholder="User ID 2"
+        value={userId || ""}
+        onChangeText={(text) => setUserId(text)}
+        style={{
+          height: 40,
+          borderColor: "gray",
+          borderWidth: 1,
+          marginBottom: 10,
+        }}
+      />
+      <Button title="fetchUserChats" onPress={fetchMessages} />
+      {chats?.map((chat, index) => (
+        <View key={index} style={{ marginBottom: 10 }}>
+          <Text>Room: {chat.room}</Text>
+          {chat.usersInRoom?.map((user, userIndex) => (
+            <Text key={userIndex}>
+              User 1: {user.userId1}, User 2: {user.userId2}
+            </Text>
+          ))}
+        </View>
+      ))}
     </SafeAreaView>
   );
 }
@@ -153,6 +215,7 @@ function ChatScreen(): React.JSX.Element {
     <SafeAreaView style={{ flex: 1, padding: 20 }}>
       <Creator1V1Chat />
       <Chat1V1 />
+      <ListUserChats />
     </SafeAreaView>
   );
 }
