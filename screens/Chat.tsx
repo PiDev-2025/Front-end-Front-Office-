@@ -9,7 +9,7 @@ import {
   get1V1MessagesAmount,
   getUserChats,
 } from "./apis/Chat";
-
+import { ChatScreen as FigmaChatScreen } from "./components/Chat/ChatScreen";
 import { atom, useRecoilState } from "recoil";
 const chatIdState = atom<string | null>({
   key: "chatIdState",
@@ -213,9 +213,10 @@ function ListUserChats(): React.JSX.Element {
 function ChatScreen(): React.JSX.Element {
   return (
     <SafeAreaView style={{ flex: 1, padding: 20 }}>
-      <Creator1V1Chat />
+      {/* <Creator1V1Chat />
       <Chat1V1 />
-      <ListUserChats />
+      <ListUserChats /> */}
+      <FigmaChatScreen />
     </SafeAreaView>
   );
 }
