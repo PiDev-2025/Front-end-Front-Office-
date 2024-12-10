@@ -12,7 +12,8 @@ import {
 import { useColorScheme } from "react-native";
 import { RecoilRoot } from "recoil";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
+import { registerGlobals } from "@livekit/react-native";
+registerGlobals();
 const lightTheme = {
   colors: {
     primary: "rgb(0, 95, 175)",

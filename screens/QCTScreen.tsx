@@ -50,7 +50,8 @@ function QCTScreen(): React.JSX.Element {
           <Section title="States" />
           <Section title="Chat" />
           <Section title="User" />
-          <LearnMoreLinks />
+          <Section title="VideoChat" />
+          {/* <LearnMoreLinks /> */}
         </View>
       </ScrollView>
     </SafeAreaView>
