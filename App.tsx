@@ -10,6 +10,7 @@ import StatesScreen from "./screens/States";
 import ChatScreen from "./screens/Chat";
 import UserScreen from "./screens/User";
 import VideoChatScreen from "./screens/VideoChat";
+import ThemeChatScreen from "./screens/ThemeChatScreen";
 const Stack = createStackNavigator();
 
 export default function App(): React.JSX.Element {
@@ -23,6 +24,7 @@ export default function App(): React.JSX.Element {
         <Stack.Screen name="Chat" component={ChatScreen} />
         <Stack.Screen name="User" component={UserScreen} />
         <Stack.Screen name="VideoChat" component={VideoChatScreen} />
+        <Stack.Screen name="ThemeChatScreen" component={ThemeChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

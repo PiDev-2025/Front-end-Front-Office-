@@ -3,6 +3,7 @@
  */
 
 import { AppRegistry } from "react-native";
+import "./global.css";
 import App from "./App";
 import { name as appName } from "./app.json";
 import {
@@ -13,6 +14,7 @@ import { useColorScheme } from "react-native";
 import { RecoilRoot } from "recoil";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { registerGlobals } from "@livekit/react-native";
+import { verifyInstallation } from "nativewind";
 registerGlobals();
 const lightTheme = {
   colors: {
@@ -120,7 +122,7 @@ function Main() {
     colorScheme === "dark"
       ? { ...theme, colors: darkTheme }
       : { ...theme, colors: lightTheme };
-
+  verifyInstallation();
   return (
     <SafeAreaProvider>
       <RecoilRoot>

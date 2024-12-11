@@ -51,6 +51,7 @@ function QCTScreen(): React.JSX.Element {
           <Section title="Chat" />
           <Section title="User" />
           <Section title="VideoChat" />
+          <Section title="ThemeChatScreen" />
           {/* <LearnMoreLinks /> */}
         </View>
       </ScrollView>

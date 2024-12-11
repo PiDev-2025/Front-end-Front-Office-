@@ -20,9 +20,10 @@ import { Track } from "livekit-client";
 
 // !! Note !!
 // This sample hardcodes a token which expires in 2 hours.
-const wsURL = "wss://qazarcloudtech-hjjt1r5s.livekit.cloud";
+const wsURL = "wss://sympathyworldv2-h27bhi08.livekit.cloud";
+
 const token =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzM3NDc4NTUsImlzcyI6IkFQSTRtUzlOZGFMN3dRUiIsIm5iZiI6MTczMzc0MDY1NSwic3ViIjoicXVpY2tzdGFydCB1c2VyIG93aXI0bSIsInZpZGVvIjp7ImNhblB1Ymxpc2giOnRydWUsImNhblB1Ymxpc2hEYXRhIjp0cnVlLCJjYW5TdWJzY3JpYmUiOnRydWUsInJvb20iOiJxdWlja3N0YXJ0IHJvb20iLCJyb29tSm9pbiI6dHJ1ZX19.dwd0DfKu_1In4fV9jvYK8QMpRVGen3e8wedTyG0dM3E";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzM4NDA0MTQsImlzcyI6IkFQSXI0YjlWNmF5OFlmViIsIm5iZiI6MTczMzgzMzIxNCwic3ViIjoicXVpY2tzdGFydCB1c2VyIHNid21obCIsInZpZGVvIjp7ImNhblB1Ymxpc2giOnRydWUsImNhblB1Ymxpc2hEYXRhIjp0cnVlLCJjYW5TdWJzY3JpYmUiOnRydWUsInJvb20iOiJxdWlja3N0YXJ0IHJvb20iLCJyb29tSm9pbiI6dHJ1ZX19.yKFtEs9IqYfQvhNSe_dN6x778VTT_c6cwhvU7lGXYQo";
 export function VideoChatScreen() {
   // Start the audio session first.
   useEffect(() => {
