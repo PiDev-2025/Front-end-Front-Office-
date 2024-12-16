@@ -27,6 +27,8 @@ export const ChatScreen: React.FC = () => {
   const [messages, setMessages] =
     React.useState<MessageProps[]>(initialMessages);
 
+  const scrollViewRef = React.useRef<ScrollView>(null);
+
   const handleSend = (message: string) => {
     setMessages([
       ...messages,
@@ -49,13 +51,20 @@ export const ChatScreen: React.FC = () => {
         onMenuPress={() => {}}
       />
 
-      <ScrollView style={styles.content}>
-        <Feedback
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={{ flexGrow: 1 }}
+        ref={scrollViewRef}
+        onContentSizeChange={() =>
+          scrollViewRef.current?.scrollToEnd({ animated: true })
+        }
+      >
+        q
+        {/* <Feedback
           question="Cette conversation vous est-elle utile ?"
           onYes={() => {}}
           onNo={() => {}}
-        />
-
+        /> */}
         {messages.map((msg, index) => (
           <Message key={index} {...msg} />
         ))}
@@ -69,7 +78,8 @@ export const ChatScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    maxWidth: 480,
+    // maxWidth: 480,
+    width: "100%",
     marginHorizontal: "auto",
     backgroundColor: "#FFFFFF",
   },

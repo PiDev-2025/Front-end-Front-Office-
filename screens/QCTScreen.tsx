@@ -42,16 +42,16 @@ function QCTScreen(): React.JSX.Element {
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}
         >
-          <Text style={{ fontSize: 20, textAlign: "center", marginTop: 25 }}>
+          {/* <Text style={{ fontSize: 20, textAlign: "center", marginTop: 25 }}>
             SympathyWorld - 0.0.1
-          </Text>
-          <Section title="Environment" />
-          <Section title="APIs" />
-          <Section title="States" />
-          <Section title="Chat" />
+          </Text> */}
+          {/* <Section title="Environment" /> */}
+          {/* <Section title="APIs" /> */}
+          {/* <Section title="States" /> */}
           <Section title="User" />
-          <Section title="VideoChat" />
-          <Section title="ThemeChatScreen" />
+          <Section title="Chat" />
+          {/* <Section title="VideoChat" /> */}
+          {/* <Section title="Chats" /> */}
           {/* <LearnMoreLinks /> */}
         </View>
       </ScrollView>
