@@ -16,4 +16,8 @@ const jwtState = atom<string | null>({
   key: "jwtState",
   default: {},
 });
-export { usernameState, emailState, passwordState, jwtState };
+const jwtDecodedState = atom<string | null>({
+  key: "jwtDecoded",
+  default: {},
+});
+export { usernameState, emailState, passwordState, jwtState, jwtDecodedState };

@@ -1,11 +1,11 @@
 import * as React from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, Text } from "react-native";
 import { ChatHeader } from "./ChatHeader";
 import { Feedback } from "./FeedBack";
 import { Message } from "./Message";
 import { ChatInput } from "./ChatInput";
 import { MessageProps } from "./types";
-
+import ChatList from "./ChatList";
 const initialMessages: MessageProps[] = [
   {
     avatar:
@@ -28,7 +28,7 @@ export const ChatScreen: React.FC = () => {
     React.useState<MessageProps[]>(initialMessages);
 
   const scrollViewRef = React.useRef<ScrollView>(null);
-
+  const chatList = React.useState<boolean>(null);
   const handleSend = (message: string) => {
     setMessages([
       ...messages,
@@ -40,7 +40,10 @@ export const ChatScreen: React.FC = () => {
       },
     ]);
   };
-
+  // return <ChatList />;
+  if (chatList) {
+    return <ChatList />;
+  }
   return (
     <View style={styles.container}>
       <ChatHeader
@@ -59,7 +62,6 @@ export const ChatScreen: React.FC = () => {
           scrollViewRef.current?.scrollToEnd({ animated: true })
         }
       >
-        q
         {/* <Feedback
           question="Cette conversation vous est-elle utile ?"
           onYes={() => {}}
@@ -69,7 +71,6 @@ export const ChatScreen: React.FC = () => {
           <Message key={index} {...msg} />
         ))}
       </ScrollView>
-
       <ChatInput onSend={handleSend} />
     </View>
   );

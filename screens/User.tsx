@@ -6,14 +6,17 @@ import {
   emailState,
   passwordState,
   jwtState,
+  jwtDecodedState,
 } from "./states/user";
 import { userSignUp, userSignIn } from "./apis/User";
 import { useRecoilState } from "recoil";
+import { jwtDecode } from "jwt-decode";
 function ListUserChats(): React.JSX.Element {
   const [username, setUsername] = useRecoilState(usernameState);
   const [email, setEmail] = useRecoilState(emailState);
   const [password, setPassword] = useRecoilState(passwordState);
   const [jwt, setJwt] = useRecoilState(jwtState);
+  const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
 
   const signupUser = async () => {
     try {
@@ -21,6 +24,8 @@ function ListUserChats(): React.JSX.Element {
         const data = await userSignUp(username, email, password);
         console.log(data);
         setJwt(data);
+        setJwtDecoded(jwtDecode(data));
+        // console.log("decode", jwtDecoded);
       } else {
         console.error("userID cannot be null");
       }
@@ -35,6 +40,9 @@ function ListUserChats(): React.JSX.Element {
         const data = await userSignIn(email, password);
         console.log(data);
         setJwt(data);
+        console.log("signin", jwt);
+        console.log(data);
+        setJwtDecoded(jwtDecode(data.jwt));
       } else {
         console.error("userID cannot be null");
       }
@@ -42,7 +50,7 @@ function ListUserChats(): React.JSX.Element {
       console.error("Error fetching more items:", error);
     }
   };
-
+  // console.log("decode", jwtDecoded);
   return (
     <SafeAreaView>
       <TextInput

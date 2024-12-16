@@ -101,7 +101,7 @@ export default function App(): React.JSX.Element {
               <Stack.Screen
                 name="Chat"
                 component={ChatScreen}
-                options={{ headerShown: true }}
+                options={{ headerShown: false }}
               />
               <Stack.Screen name="VideoChat" component={VideoChatScreen} />
               <Stack.Screen name="Chats" component={ChatsScreen} />

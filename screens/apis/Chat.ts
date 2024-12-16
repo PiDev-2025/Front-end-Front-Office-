@@ -1,15 +1,26 @@
 import axios from "axios";
+import { jwtState } from "../states/user";
+import { useRecoilState } from "recoil";
 
-async function create1V1Chat(userId1: string, userId2: string) {
+async function qcreate1V1Chat() {
+  console.log("create1V1Chat");
+}
+
+async function create1V1Chat(userId1: string, userId2: string, jwt: string) {
+  // const [jwt, setJwt] = useRecoilState(jwtState);
+  console.log("jwt", jwt);
   const origin = "qct-sw.react-native.screens.apis.Chat.create1V1Chat";
   console.log(origin);
+  const headers = {
+    "content-type": "application/json",
+    origin: origin,
+    authorization: jwt,
+  };
+  console.log(headers);
   const options = {
     method: "POST",
     url: `${process.env.API_URL}/chat/create1V1`,
-    headers: {
-      "content-type": "application/json",
-      origin: origin,
-    },
+    headers: headers,
     data: { userId1, userId2 },
   };
 
@@ -27,6 +38,7 @@ async function send1V1Message(
   senderId: string,
   message: string
 ) {
+  const [jwt] = useRecoilState(jwtState);
   const origin = "qct-sw.react-native.screens.apis.Chat.send1V1Message";
   console.log(origin);
   const options = {
@@ -35,6 +47,7 @@ async function send1V1Message(
     headers: {
       "content-type": "application/json",
       origin: origin,
+      authorization: jwt.jwt,
     },
     data: { chatId, senderId, message },
   };
@@ -49,12 +62,13 @@ async function send1V1Message(
 }
 
 async function get1V1Messages(chatId: string, range: number, cursor: number) {
+  const [jwt] = useRecoilState(jwtState);
   const origin = "qct-sw.react-native.screens.apis.Chat.get1V1Messages";
   console.log(origin);
   const options = {
     method: "GET",
     url: `${process.env.API_URL}/chat/get1V1Messages/${chatId}/${range}/${cursor}`,
-    Headers: { origin: origin },
+    Headers: { origin: origin, authorization: jwt },
   };
   try {
     const { data } = await axios.request(options);
@@ -66,6 +80,7 @@ async function get1V1Messages(chatId: string, range: number, cursor: number) {
 }
 
 async function get1V1MessagesAmount(chatId: string) {
+  const [jwt] = useRecoilState(jwtState);
   const origin = "qct-sw.react-native.screens.apis.Chat.get1V1MessagesAmount";
   console.log(origin);
   const options = {
@@ -73,6 +88,7 @@ async function get1V1MessagesAmount(chatId: string) {
     url: `${process.env.API_URL}/chat/get1V1MessagesAmount/${chatId}/`,
     Headers: {
       origin: origin,
+      authorization: jwt,
     },
   };
   try {
@@ -85,6 +101,7 @@ async function get1V1MessagesAmount(chatId: string) {
 }
 
 async function getUserChats(userId: string) {
+  const [jwt] = useRecoilState(jwtState);
   const origin = "qct-sw.react-native.screens.apis.Chat.getUserChats";
   console.log(origin);
   const options = {
@@ -92,6 +109,7 @@ async function getUserChats(userId: string) {
     url: `${process.env.API_URL}/chat/getUserChats/${userId}/`,
     Headers: {
       origin: origin,
+      authorization: jwt,
     },
   };
   try {
