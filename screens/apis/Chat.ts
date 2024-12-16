@@ -100,17 +100,19 @@ async function get1V1MessagesAmount(chatId: string) {
   }
 }
 
-async function getUserChats(userId: string) {
-  const [jwt] = useRecoilState(jwtState);
+async function getUserChats(userId: string, jwt: string) {
   const origin = "qct-sw.react-native.screens.apis.Chat.getUserChats";
-  console.log(origin);
+  console.log(`${process.env.API_URL}/chat/getUserChats/${userId}`);
+  const headers = {
+    origin: origin,
+    authorization: jwt,
+    // "content-type": "application/json",
+  };
+  // console.log(headers);
   const options = {
     method: "GET",
-    url: `${process.env.API_URL}/chat/getUserChats/${userId}/`,
-    Headers: {
-      origin: origin,
-      authorization: jwt,
-    },
+    url: `${process.env.API_URL}/chat/getUserChats/${userId}`,
+    headers: headers,
   };
   try {
     const { data } = await axios.request(options);

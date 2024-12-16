@@ -6,11 +6,11 @@ const usernameState = atom<string | null>({
 });
 const emailState = atom<string | null>({
   key: "emailState",
-  default: null,
+  default: "damien@qazar.cloud",
 });
 const passwordState = atom<string | null>({
   key: "passwordState",
-  default: null,
+  default: "Test1234",
 });
 const jwtState = atom<string | null>({
   key: "jwtState",
