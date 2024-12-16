@@ -40,16 +40,21 @@ const MessageItem: React.FC<MessageItemProps> = ({
   // isThematic,
   // thematicType,
 }) => (
-  <View style={styles2.messageContainer}>
+  <View
+    style={styles2.messageContainer}
+    onTouchEnd={() => console.log(`Room: ${room}`)}
+  >
     <View style={styles2.messageContent}>
-      {/* <Image
+      <Image
         resizeMode="contain"
-        source={{ uri: avatar }}
+        source={{
+          uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/d9e5323e3e31cdede93efcaa8bc9c2188f50e166bcf77987bf0ce0ce300bea47?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
+        }}
         style={[
           styles2.avatar,
-          isThematic ? styles2.thematicAvatar : styles2.userAvatar,
+          // isThematic ? styles2.thematicAvatar : styles2.userAvatar,
         ]}
-      /> */}
+      />
       <View style={styles2.textContainer}>
         {/* <Text style={styles2.nameText}>
           {isThematic
@@ -180,7 +185,7 @@ const ChatList: React.FC = () => {
 
       <ScrollView style={styles2.messagesList}>
         {messages1V1 ? (
-          filteredMessages1V1.map((item, index) => (
+          messages1V1.map((item, index) => (
             <MessageItem key={index} room={item.room} />
           ))
         ) : (
