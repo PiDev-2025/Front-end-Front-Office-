@@ -39,7 +39,7 @@ async function userSignIn(email: string, password: string) {
 
   try {
     const { data } = await axios.request(options);
-    console.log(data);
+    console.log("axios.userSignIn", data);
     return data;
   } catch (error) {
     console.error(error);

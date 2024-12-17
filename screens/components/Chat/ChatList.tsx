@@ -1,62 +1,45 @@
-import React, { useEffect } from "react";
+import { useNavigation } from "@react-navigation/native";
+import React from "react";
 import {
-  View,
-  StyleSheet,
   Image,
-  Text,
   ScrollView,
+  StyleSheet,
+  Text,
   TextInput,
+  View,
 } from "react-native";
 import { Button } from "react-native-paper";
+import { useRecoilState, useRecoilValue } from "recoil";
+import { sChats1V1Rooms } from "../../states/chat";
 import { jwtDecodedState, jwtState } from "../../states/user";
-import { chats1V1Messages } from "../../states/chat";
-import { useGotoRecoilSnapshot, useRecoilState, useRecoilValue } from "recoil";
 interface MessageItemProps {
-  // avatar: string;
-  // name?: string;
-  // message?: string;
-  // time: string;
-  // isGroup?: boolean;
-  // memberCount?: number;
-  // isThematic?: boolean;
-  // thematicType?: string;
   room: string;
 }
-import {
-  create1V1Chat,
-  send1V1Message,
-  get1V1Messages,
-  get1V1MessagesAmount,
-  getUserChats,
-} from "../../apis/Chat";
-const MessageItem: React.FC<MessageItemProps> = ({
-  room,
-  // avatar,
-  // name,
-  // message,
-  // time,
-  // isGroup,
-  // memberCount,
-  // isThematic,
-  // thematicType,
-}) => (
-  <View
-    style={styles2.messageContainer}
-    onTouchEnd={() => console.log(`Room: ${room}`)}
-  >
-    <View style={styles2.messageContent}>
-      <Image
-        resizeMode="contain"
-        source={{
-          uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/d9e5323e3e31cdede93efcaa8bc9c2188f50e166bcf77987bf0ce0ce300bea47?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-        }}
-        style={[
-          styles2.avatar,
-          // isThematic ? styles2.thematicAvatar : styles2.userAvatar,
-        ]}
-      />
-      <View style={styles2.textContainer}>
-        {/* <Text style={styles2.nameText}>
+
+import { create1V1Chat } from "../../apis/Chat";
+
+const RoomItem: React.FC<MessageItemProps> = ({ item }) => {
+  const navigation = useNavigation();
+  const { room, usersInRoom } = item;
+  console.log(room, usersInRoom);
+  const goToChat = () => {
+    navigation.navigate("ChatScreen", { room, usersInRoom });
+  };
+  return (
+    <View style={styles2.messageContainer} onTouchEnd={goToChat}>
+      <View style={styles2.messageContent}>
+        <Image
+          resizeMode="contain"
+          source={{
+            uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/d9e5323e3e31cdede93efcaa8bc9c2188f50e166bcf77987bf0ce0ce300bea47?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
+          }}
+          style={[
+            styles2.avatar,
+            // isThematic ? styles2.thematicAvatar : styles2.userAvatar,
+          ]}
+        />
+        <View style={styles2.textContainer}>
+          {/* <Text style={styles2.nameText}>
           {isThematic
             ? `Thematique : ${thematicType}`
             : isGroup
@@ -66,84 +49,23 @@ const MessageItem: React.FC<MessageItemProps> = ({
         <Text style={styles2.messageText}>
           {isThematic ? `${memberCount} membres` : message}
         </Text> */}
-        <Text>{room}</Text>
+          <Text>{room}</Text>
+        </View>
       </View>
+      {/* <Text style={styles2.timeText}>{time}</Text> */}
     </View>
-    {/* <Text style={styles2.timeText}>{time}</Text> */}
-  </View>
-);
+  );
+};
 
 const ChatList: React.FC = () => {
-  const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
-  // const [messages1V1, setMessages1V1] = useRecoilState(chats1V1Messages);
-  const messages = [
-    {
-      avatar:
-        "https://cdn.builder.io/api/v1/image/assets/TEMP/2b36c155d0ebdfbf55a048df75a822847ea865213513a357dfedf94cce7835b4?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-      name: "Baptiste Mallet",
-      message: "Salut c'est cool de pouvoir echanger",
-      time: "Hier",
-      chatId: "1",
-    },
-    // {
-    //   avatar:
-    //     "https://cdn.builder.io/api/v1/image/assets/TEMP/25dc4628ffcc6716804f6e4b7af7a397e929de8848169610fb83686d0cb418d2?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-    //   name: "Baptiste, Mathilde et 2 autres",
-    //   message: "Salut c'est cool de pouvoir echanger",
-    //   time: "Hier",
-    //   isGroup: true,
-    // },
-    // {
-    //   avatar:
-    //     "https://cdn.builder.io/api/v1/image/assets/TEMP/25dc4628ffcc6716804f6e4b7af7a397e929de8848169610fb83686d0cb418d2?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-    //   name: "Baptiste, Mathilde et 2 autres",
-    //   message: "Salut c'est cool de pouvoir echanger",
-    //   time: "Hier",
-    //   isGroup: true,
-    // },
-    // {
-    //   avatar:
-    //     "https://cdn.builder.io/api/v1/image/assets/TEMP/7949539254f43c9e57fd6c3131b3fcccb6596f0d9adbc61b0c91439ee01689d4?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-    //   thematicType: "Anxiété",
-    //   memberCount: 308,
-    //   time: "Hier",
-    //   isThematic: true,
-    // },
-    // {
-    //   avatar:
-    //     "https://cdn.builder.io/api/v1/image/assets/TEMP/d9e5323e3e31cdede93efcaa8bc9c2188f50e166bcf77987bf0ce0ce300bea47?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-    //   thematicType: "Maladie",
-    //   memberCount: 308,
-    //   time: "Hier",
-    //   isThematic: true,
-    // },
-  ];
-  // useEffect(() => {
-  //   messagesApi();
-  // });
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const data = await getUserChats(jwtDecoded.ID.split(":")[1], jwt.jwt);
-  //       console.log(data);
-  //       setMessages1V1(data);
-  //     } catch (error) {
-  //       console.error("Error fetching more items:", error);
-  //     }
-  //   };
-  //   fetchData();
-  // }, [jwtDecoded, jwt, setMessages1V1]);
-  const messages1V1 = useRecoilValue(chats1V1Messages);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  console.log("messages1V1", messages1V1);
-  const filteredMessages1V1 = messages1V1.filter(
-    (msg) => msg.room?.toLowerCase().includes(searchQuery.toLowerCase())
-    // msg.message?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    // msg.message?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    // msg.thematicType?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
   const [jwt, setJwt] = useRecoilState(jwtState);
-  // console.log("messages.length", messages1V1.length);
+  const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const rooms1V1 = useRecoilValue(sChats1V1Rooms);
+  const filteredRooms1V1 = rooms1V1.filter((msg) =>
+    msg.room?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const newChat = async () => {
     console.log("go to matchmaking");
     console.log(jwtDecoded.ID);
@@ -184,13 +106,9 @@ const ChatList: React.FC = () => {
       />
 
       <ScrollView style={styles2.messagesList}>
-        {messages1V1 ? (
-          messages1V1.map((item, index) => (
-            <MessageItem key={index} room={item.room} />
-          ))
-        ) : (
-          <Text>Loading...</Text>
-        )}
+        {filteredRooms1V1.map((item, index) => (
+          <RoomItem key={index} item={item} />
+        ))}
       </ScrollView>
       <Button onPress={newChat}>+ Nouvelle Conversation</Button>
     </View>

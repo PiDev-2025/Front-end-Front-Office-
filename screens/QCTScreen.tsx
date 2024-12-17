@@ -3,23 +3,16 @@ import {
   SafeAreaView,
   ScrollView,
   StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
   View,
-  Button,
+  useColorScheme,
 } from "react-native";
 
-import { NavigationContainer, useNavigation } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
-import { Colors, LearnMoreLinks } from "react-native/Libraries/NewAppScreen";
+import { Colors } from "react-native/Libraries/NewAppScreen";
 
 import Section from "./components/Section";
 // import {Button as PaperButton} from 'react-native-paper';
 
 // import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
-import { GIT_TAG, API_URL } from "@env";
 
 function QCTScreen(): React.JSX.Element {
   const isDarkMode = useColorScheme() === "dark";
@@ -49,7 +42,7 @@ function QCTScreen(): React.JSX.Element {
           {/* <Section title="APIs" /> */}
           {/* <Section title="States" /> */}
           <Section title="User" />
-          <Section title="Chat" />
+          <Section title="ChatList" />
           {/* <Section title="VideoChat" /> */}
           {/* <Section title="Chats" /> */}
           {/* <LearnMoreLinks /> */}

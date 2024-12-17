@@ -1,53 +1,46 @@
+import { useRoute } from "@react-navigation/native";
 import * as React from "react";
-import { View, StyleSheet, ScrollView, Text } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { useRecoilState } from "recoil";
+import { sfRoomMessages } from "../../states/chat";
+import { jwtDecodedState } from "../../states/user";
 import { ChatHeader } from "./ChatHeader";
-import { Feedback } from "./FeedBack";
-import { Message } from "./Message";
 import { ChatInput } from "./ChatInput";
-import { MessageProps } from "./types";
-import ChatList from "./ChatList";
-const initialMessages: MessageProps[] = [
-  {
-    avatar:
-      "https://cdn.builder.io/api/v1/image/assets/TEMP/09534b4d2a9ac3383cb3858912714a3bdea0d5a6dba0627671943b17493dfabc?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-    username: "Sandra",
-    message: "Hello comment vas-tu ?",
-    timestamp: "10min ago",
-  },
-  {
-    message: "Salut ça va super et toi ?",
-    timestamp: "10min ago",
-    username: "User",
-    isOutgoing: true,
-  },
-  // Add all other messages here
-];
+import { Message } from "./Message";
 
 export const ChatScreen: React.FC = () => {
-  const [messages, setMessages] =
-    React.useState<MessageProps[]>(initialMessages);
+  const route = useRoute();
+  const { room } = route.params;
+  console.log(`roomId:${room}`);
+  const [roomState, setRoomState] = useRecoilState(sfRoomMessages(room));
+  const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
+  // const addMessage = (newMessage) => {
+  //   setRoomState((prevState) => ({
+  //     ...prevState,
+  //     messages: [...prevState.messages, newMessage],
+  //     lastMessage: newMessage,
+  //   }));
+  // };
 
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const chatList = React.useState<boolean>(null);
   const handleSend = (message: string) => {
-    setMessages([
-      ...messages,
-      {
-        message,
-        timestamp: "Just now",
-        username: "User",
-        isOutgoing: true,
-      },
-    ]);
+    setRoomState((prevState) => ({
+      ...prevState,
+      messages: [
+        ...prevState.messages,
+        {
+          message,
+          timestamp: new Date().toISOString(),
+          username: jwtDecoded.ID.split(":")[1],
+        },
+      ],
+    }));
   };
-  // return <ChatList />;
-  if (chatList) {
-    return <ChatList />;
-  }
+
   return (
     <View style={styles.container}>
       <ChatHeader
-        themeTitle="Anxiété"
+        themeTitle={room}
         memberCount={308}
         onSettingsPress={() => {}}
         onNotificationsPress={() => {}}
@@ -62,12 +55,7 @@ export const ChatScreen: React.FC = () => {
           scrollViewRef.current?.scrollToEnd({ animated: true })
         }
       >
-        {/* <Feedback
-          question="Cette conversation vous est-elle utile ?"
-          onYes={() => {}}
-          onNo={() => {}}
-        /> */}
-        {messages.map((msg, index) => (
+        {roomState.messages.map((msg, index) => (
           <Message key={index} {...msg} />
         ))}
       </ScrollView>

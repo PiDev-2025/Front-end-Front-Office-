@@ -1,17 +1,20 @@
 import React from "react";
 
-import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Theme, ThemeProvider } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  Theme,
+  ThemeProvider,
+} from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import APIsScreen from "./screens/APIs";
+import ChatScreen from "./screens/Chat";
 import EnvironmentScreen from "./screens/Environment";
 import QCTScreen from "./screens/QCTScreen";
-import APIsScreen from "./screens/APIs";
 import StatesScreen from "./screens/States";
-import ChatScreen from "./screens/Chat";
 import UserScreen from "./screens/User";
 import VideoChatScreen from "./screens/VideoChat";
-import ChatsScreen from "./screens/Chats";
+import ChatList from "./screens/components/Chat/ChatList";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
@@ -104,7 +107,12 @@ export default function App(): React.JSX.Element {
                 options={{ headerShown: false }}
               />
               <Stack.Screen name="VideoChat" component={VideoChatScreen} />
-              <Stack.Screen name="Chats" component={ChatsScreen} />
+              <Stack.Screen name="ChatList" component={ChatList} />
+              <Stack.Screen
+                name="ChatScreen"
+                component={ChatScreen}
+                initialParams={{ roomId: "1337" }}
+              />
               <Stack.Screen name="User" component={UserTabs} />
             </>
           ) : (

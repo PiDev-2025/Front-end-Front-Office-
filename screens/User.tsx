@@ -22,10 +22,8 @@ function ListUserChats(): React.JSX.Element {
     try {
       if (username && email && password) {
         const data = await userSignUp(username, email, password);
-        console.log(data);
         setJwt(data);
         setJwtDecoded(jwtDecode(data));
-        // console.log("decode", jwtDecoded);
       } else {
         console.error("userID cannot be null");
       }
@@ -38,10 +36,7 @@ function ListUserChats(): React.JSX.Element {
     try {
       if (email && password) {
         const data = await userSignIn(email, password);
-        console.log(data);
         setJwt(data);
-        console.log("signin", jwt);
-        console.log(data);
         setJwtDecoded(jwtDecode(data.jwt));
       } else {
         console.error("userID cannot be null");

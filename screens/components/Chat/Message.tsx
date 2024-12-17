@@ -1,14 +1,16 @@
 import * as React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
+import { useRecoilState } from "recoil";
+import { jwtDecodedState } from "../../states/user";
 import { MessageProps } from "./types";
-
 export const Message: React.FC<MessageProps> = ({
   avatar,
   username,
   message,
   timestamp,
-  isOutgoing = false,
 }) => {
+  const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
+  const isOutgoing = username === jwtDecoded.ID.split(":")[1] ? true : false;
   const containerStyle = isOutgoing
     ? styles.outgoingContainer
     : styles.incomingContainer;
