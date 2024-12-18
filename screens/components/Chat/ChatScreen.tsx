@@ -1,9 +1,9 @@
 import { useRoute } from "@react-navigation/native";
 import * as React from "react";
-import { Button, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useRecoilState } from "recoil";
 import { get1V1Messages, send1V1Message } from "../../apis/Chat";
-import { afRoomMessages } from "../../states/chat";
+import { afRoomMessages, afRoomMessagesAmount } from "../../states/chat";
 import { jwtDecodedState, jwtState } from "../../states/user";
 import { ChatHeader } from "./ChatHeader";
 import { ChatInput } from "./ChatInput";
@@ -48,19 +48,44 @@ export const ChatScreen: React.FC = () => {
   // const resetRoomState = useResetRecoilState(afRoomMessages(room));
   React.useEffect(() => {
     const intervalId = setInterval(async () => {
-      setRoomState({ messages: await get1V1Messages(room, jwt.jwt) });
-    }, 2000);
-    return () => clearInterval(intervalId);
-  }, [room, jwt]);
+      await handleRefresh();
+    }, 4000);
+  }, []);
   // return () => clearInterval(intervalId);
-  // const resetRoomState = useResetRecoilState(sfRoomMessages(room));
+  // const resetRoomState = useResetRecoilState(afRoomMessages(room));
   // });
-  // const handleRefresh = async () => {
-  //   console.log("yo2");
-  //   // setRoomState({ messages: await get1V1Messages(room, jwt.jwt) });
-  //   // resetRoomState();
-  //   console.log("yo3");
-  // };
+  const [roomMessagesAmount, setRoomMessagesAmount] = useRecoilState(
+    afRoomMessagesAmount(room)
+  );
+  const handleRefresh = async () => {
+    // console.log("yo2");
+    // const amount = await get1V1MessagesAmount(room, jwt.jwt);
+    // console.log(
+    //   // roomMessagesAmount.amount.messagesAmount,
+    //   // "<",
+    //   roomMessagesAmount.amount.messagesAmount,
+    //   amount.messagesAmount
+    //   // roomMessagesAmount.amount.messagesAmount < amount.messagesAmount
+    // );
+    // if (roomMessagesAmount.amount.messagesAmount < amount.messagesAmount) {
+    //   console.log("UPDATE");
+    // }
+    // console.log(
+    //   roomState.messages.length,
+    //   roomState.messages[roomState.messages.length - 1000].timestamp
+    // );
+    setRoomState({
+      messages: await get1V1Messages(
+        room,
+        jwt.jwt,
+        // roomState.messages[100].timestamp
+        0
+      ),
+    });
+    // setRoomMessagesAmount(await get1V1MessagesAmount(room, jwt.jwt));
+    // // resetRoomState();
+    // console.log("yo3");
+  };
   return (
     <View style={styles.container}>
       <ChatHeader
@@ -83,7 +108,7 @@ export const ChatScreen: React.FC = () => {
           <Message key={index} {...msg} />
         ))}
       </ScrollView>
-      <Button onPress={() => handleRefresh()} title="refresh" />
+      {/* <Button onPress={() => handleRefresh()} title="refresh" /> */}
       <ChatInput onSend={handleSend} />
     </View>
   );

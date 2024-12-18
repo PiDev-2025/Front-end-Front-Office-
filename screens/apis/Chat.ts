@@ -65,18 +65,19 @@ async function send1V1Message(
 async function get1V1Messages(
   chatId: string,
   jwt: string,
+  score: number = 0,
   range: number = 10,
   cursor: number = -1
 ) {
   const origin = "qct-sw.react-native.screens.apis.Chat.get1V1Messages";
   console.log(origin);
   console.log(
-    `${process.env.API_URL}/chat/get1V1Messages/${chatId}/${range}/${cursor}`
+    `${process.env.API_URL}/chat/get1V1Messages/${chatId}/${range}/${cursor}/${score}`
   );
   console.log(jwt);
   const options = {
     method: "GET",
-    url: `${process.env.API_URL}/chat/get1V1Messages/${chatId}/${range}/${cursor}`,
+    url: `${process.env.API_URL}/chat/get1V1Messages/${chatId}/${range}/${cursor}/${score}`,
     headers: { origin: origin, authorization: jwt },
   };
   try {
@@ -88,17 +89,17 @@ async function get1V1Messages(
   }
 }
 
-async function get1V1MessagesAmount(chatId: string) {
+async function get1V1MessagesAmount(chatId: string, jwt) {
   const origin = "qct-sw.react-native.screens.apis.Chat.get1V1MessagesAmount";
   console.log(origin);
   const options = {
     method: "GET",
     url: `${process.env.API_URL}/chat/get1V1MessagesAmount/${chatId}/`,
-    headers: { origin: origin, authorization: jwt.jwt },
+    headers: { origin: origin, authorization: jwt },
   };
   try {
     const { data } = await axios.request(options);
-    console.log(data);
+    // console.log(data);
     return data;
   } catch (error) {
     console.error(error);

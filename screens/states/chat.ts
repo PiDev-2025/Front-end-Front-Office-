@@ -1,10 +1,4 @@
-import {
-  DefaultValue,
-  atom,
-  atomFamily,
-  selector,
-  selectorFamily,
-} from "recoil";
+import { atom, atomFamily, selector, selectorFamily } from "recoil";
 import { get1V1Messages, getUserChats } from "../apis/Chat";
 import { jwtDecodedState, jwtState } from "./user";
 // ---
@@ -74,43 +68,82 @@ export const sChats1V1MessagesInRoom = selector<object | null>({
   // },
 });
 
-export const messagesRefreshTrigger = atom({
-  key: "messagesRefreshTrigger",
-  default: 0,
-});
-
 export const sfRoomMessages = selectorFamily({
   key: "RoomMessagesSelector",
   get:
     (room: string) =>
     async ({ get }) => {
       try {
-        get(messagesRefreshTrigger);
+        // get(messagesRefreshTrigger);
         const jwt = get(jwtState)?.jwt;
         if (!jwt) {
           throw new Error("JWT is null or undefined");
         }
         console.log("roomMessagesSelector", room, jwt);
         return {
-          messages: await get1V1Messages(room, jwt),
+          messages: await get1V1Messages(room, jwt, 0, 10, 20),
         };
       } catch (error) {
         console.error("Error fetching status:", error);
         return null;
       }
     },
-  set:
-    (param: string) =>
-    ({ set }, value: any) => {
-      if (value instanceof DefaultValue) {
-        console.log("------ SET------", value);
-        set(messagesRefreshTrigger, Math.random());
-        messages.push(value);
-      }
-    },
+  // set:
+  //   (param: string) =>
+  //   async ({ set }, value: any) => {
+  //     if (value instanceof DefaultValue) {
+  //       console.log("------ SET------", value);
+  //       const rsp = await get1V1MessagesAmount(param, get(jwtState).jwt);
+  //       console.log("rsp", rsp);
+  //       // set(messagesRefreshTrigger);
+  //       // messages.push(value);
+  //     }
+  //   },
 });
 
 export const afRoomMessages = atomFamily({
   key: "RoomMessagesState",
   default: (room: string) => sfRoomMessages(room),
+});
+
+export const roomMessagesAmount = atomFamily({
+  key: "roomMessagesAmountState",
+  default: null,
+});
+
+export const sfRoomMessagesAmount = selectorFamily({
+  key: "RoomMessagesAmountSelector",
+  get:
+    (room: string) =>
+    async ({ get }) => {
+      try {
+        // get(messagesRefreshTrigger);
+        const jwt = get(jwtState)?.jwt;
+        if (!jwt) {
+          throw new Error("JWT is null or undefined");
+        }
+        // get(roomMessagesAmount(room)) = await get1V1MessagesAmount(room, jwt);
+        // console.log("roomMessagesSelector", room, jwt);
+        return get(roomMessagesAmount(room));
+      } catch (error) {
+        console.error("Error fetching status:", error);
+        return null;
+      }
+    },
+  // set:
+  //   (param: string) =>
+  //   async ({ set }, value: any) => {
+  //     if (value instanceof DefaultValue) {
+  //       console.log("------ SET------", value);
+  //       const rsp = await get1V1MessagesAmount(param, get(jwtState).jwt);
+  //       console.log("rsp", rsp);
+  //       // set(messagesRefreshTrigger);
+  //       // messages.push(value);
+  //     }
+  //   },
+});
+
+export const afRoomMessagesAmount = atomFamily({
+  key: "RoomMessagesAmountState",
+  default: (room: string) => sfRoomMessagesAmount(room),
 });
