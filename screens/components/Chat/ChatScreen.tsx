@@ -1,46 +1,70 @@
 import { useRoute } from "@react-navigation/native";
 import * as React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Button, ScrollView, StyleSheet, View } from "react-native";
 import { useRecoilState } from "recoil";
-import { sfRoomMessages } from "../../states/chat";
-import { jwtDecodedState } from "../../states/user";
+import { get1V1Messages, send1V1Message } from "../../apis/Chat";
+import { afRoomMessages } from "../../states/chat";
+import { jwtDecodedState, jwtState } from "../../states/user";
 import { ChatHeader } from "./ChatHeader";
 import { ChatInput } from "./ChatInput";
 import { Message } from "./Message";
-
 export const ChatScreen: React.FC = () => {
   const route = useRoute();
-  const { room } = route.params;
+  const { room, usersInRoom } = route.params;
   console.log(`roomId:${room}`);
-  const [roomState, setRoomState] = useRecoilState(sfRoomMessages(room));
+  const [jwt] = useRecoilState(jwtState);
+  console.log(`jwt:${jwt.jwt}`);
+  const [roomState, setRoomState] = useRecoilState(afRoomMessages(room));
   const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
-  // const addMessage = (newMessage) => {
-  //   setRoomState((prevState) => ({
-  //     ...prevState,
-  //     messages: [...prevState.messages, newMessage],
-  //     lastMessage: newMessage,
-  //   }));
-  // };
-
+  const myUserId = jwtDecoded.ID.split(":")[1];
+  const otherUserId = usersInRoom[0].userId2;
+  console.log(`myUserId:${myUserId}`, `otherUserId:${otherUserId}`);
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const handleSend = (message: string) => {
+
+  const handleSend = async (message: string) => {
+    const now = new Date();
+    console.log(now, now.toISOString());
+    const msg = {
+      message,
+      isoTimeStamp: now.toISOString(),
+      senderId: myUserId,
+      timestamp: now.getTime(),
+    };
+    const response = await send1V1Message(
+      room,
+      myUserId,
+      msg.message,
+      msg.isoTimeStamp,
+      msg.timestamp,
+      jwt.jwt
+    );
+    console.log(response);
     setRoomState((prevState) => ({
       ...prevState,
-      messages: [
-        ...prevState.messages,
-        {
-          message,
-          timestamp: new Date().toISOString(),
-          username: jwtDecoded.ID.split(":")[1],
-        },
-      ],
+      messages: [...prevState.messages, response],
     }));
+    console.log(message.length);
   };
-
+  // const resetRoomState = useResetRecoilState(afRoomMessages(room));
+  React.useEffect(() => {
+    const intervalId = setInterval(async () => {
+      setRoomState({ messages: await get1V1Messages(room, jwt.jwt) });
+    }, 2000);
+    return () => clearInterval(intervalId);
+  }, [room, jwt]);
+  // return () => clearInterval(intervalId);
+  // const resetRoomState = useResetRecoilState(sfRoomMessages(room));
+  // });
+  // const handleRefresh = async () => {
+  //   console.log("yo2");
+  //   // setRoomState({ messages: await get1V1Messages(room, jwt.jwt) });
+  //   // resetRoomState();
+  //   console.log("yo3");
+  // };
   return (
     <View style={styles.container}>
       <ChatHeader
-        themeTitle={room}
+        themeTitle={otherUserId}
         memberCount={308}
         onSettingsPress={() => {}}
         onNotificationsPress={() => {}}
@@ -59,6 +83,7 @@ export const ChatScreen: React.FC = () => {
           <Message key={index} {...msg} />
         ))}
       </ScrollView>
+      <Button onPress={() => handleRefresh()} title="refresh" />
       <ChatInput onSend={handleSend} />
     </View>
   );

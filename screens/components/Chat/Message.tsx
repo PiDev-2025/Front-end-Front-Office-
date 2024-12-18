@@ -5,12 +5,13 @@ import { jwtDecodedState } from "../../states/user";
 import { MessageProps } from "./types";
 export const Message: React.FC<MessageProps> = ({
   avatar,
-  username,
   message,
+  senderId,
+  isoTimeStamp,
   timestamp,
 }) => {
   const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
-  const isOutgoing = username === jwtDecoded.ID.split(":")[1] ? true : false;
+  const isOutgoing = senderId === jwtDecoded.ID.split(":")[1] ? true : false;
   const containerStyle = isOutgoing
     ? styles.outgoingContainer
     : styles.incomingContainer;
@@ -31,13 +32,13 @@ export const Message: React.FC<MessageProps> = ({
                 resizeMode="contain"
               />
             )}
-            <Text style={styles.username}>{username}</Text>
+            <Text style={styles.username}>{senderId}</Text>
           </View>
         )}
         <View style={messageStyle}>
           <Text style={textStyle}>{message}</Text>
         </View>
-        <Text style={styles.timestamp}>{timestamp}</Text>
+        <Text style={styles.timestamp}>{isoTimeStamp}</Text>
       </View>
     </View>
   );

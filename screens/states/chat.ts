@@ -1,7 +1,12 @@
-import { atom, atomFamily, selector } from "recoil";
-import { getUserChats } from "../apis/Chat";
+import {
+  DefaultValue,
+  atom,
+  atomFamily,
+  selector,
+  selectorFamily,
+} from "recoil";
+import { get1V1Messages, getUserChats } from "../apis/Chat";
 import { jwtDecodedState, jwtState } from "./user";
-
 // ---
 
 export const aChatsOpened = atom<object | null>({
@@ -69,32 +74,43 @@ export const sChats1V1MessagesInRoom = selector<object | null>({
   // },
 });
 
-export const sfRoomMessages = atomFamily({
+export const messagesRefreshTrigger = atom({
+  key: "messagesRefreshTrigger",
+  default: 0,
+});
+
+export const sfRoomMessages = selectorFamily({
+  key: "RoomMessagesSelector",
+  get:
+    (room: string) =>
+    async ({ get }) => {
+      try {
+        get(messagesRefreshTrigger);
+        const jwt = get(jwtState)?.jwt;
+        if (!jwt) {
+          throw new Error("JWT is null or undefined");
+        }
+        console.log("roomMessagesSelector", room, jwt);
+        return {
+          messages: await get1V1Messages(room, jwt),
+        };
+      } catch (error) {
+        console.error("Error fetching status:", error);
+        return null;
+      }
+    },
+  set:
+    (param: string) =>
+    ({ set }, value: any) => {
+      if (value instanceof DefaultValue) {
+        console.log("------ SET------", value);
+        set(messagesRefreshTrigger, Math.random());
+        messages.push(value);
+      }
+    },
+});
+
+export const afRoomMessages = atomFamily({
   key: "RoomMessagesState",
-  default: (room) => ({
-    messages: [
-      {
-        avatar:
-          "https://cdn.builder.io/api/v1/image/assets/TEMP/09534b4d2a9ac3383cb3858912714a3bdea0d5a6dba0627671943b17493dfabc?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-        username: "Sandra",
-        message: "Hello comment vas-tu ?",
-        timestamp: "10min ago",
-      },
-      {
-        message: "Salut ça va super et toi ?",
-        timestamp: "10min ago",
-        username: "thzr0wwtsspvdm3jtdz4",
-      },
-      {
-        avatar:
-          "https://cdn.builder.io/api/v1/image/assets/TEMP/09534b4d2a9ac3383cb3858912714a3bdea0d5a6dba0627671943b17493dfabc?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-        username: "Sandra",
-        message: "Chillax",
-        timestamp: "2min ago",
-      },
-    ],
-    // lastMessage: null,
-    // input: null,
-    // Add other room-specific states here
-  }),
+  default: (room: string) => sfRoomMessages(room),
 });

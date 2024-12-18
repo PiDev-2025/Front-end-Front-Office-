@@ -1,6 +1,4 @@
 import axios from "axios";
-import { jwtState } from "../states/user";
-import { useRecoilState } from "recoil";
 
 async function qcreate1V1Chat() {
   console.log("create1V1Chat");
@@ -36,9 +34,12 @@ async function create1V1Chat(userId1: string, userId2: string, jwt: string) {
 async function send1V1Message(
   chatId: string,
   senderId: string,
-  message: string
+  message: string,
+  isoTimeStamp: string,
+  timestamp: number,
+  jwt: string
 ) {
-  const [jwt] = useRecoilState(jwtState);
+  // const [jwt] = useRecoilState(jwtState);
   const origin = "qct-sw.react-native.screens.apis.Chat.send1V1Message";
   console.log(origin);
   const options = {
@@ -47,7 +48,7 @@ async function send1V1Message(
     headers: {
       "content-type": "application/json",
       origin: origin,
-      authorization: jwt.jwt,
+      authorization: jwt,
     },
     data: { chatId, senderId, message },
   };
@@ -61,14 +62,22 @@ async function send1V1Message(
   }
 }
 
-async function get1V1Messages(chatId: string, range: number, cursor: number) {
-  const [jwt] = useRecoilState(jwtState);
+async function get1V1Messages(
+  chatId: string,
+  jwt: string,
+  range: number = 10,
+  cursor: number = -1
+) {
   const origin = "qct-sw.react-native.screens.apis.Chat.get1V1Messages";
   console.log(origin);
+  console.log(
+    `${process.env.API_URL}/chat/get1V1Messages/${chatId}/${range}/${cursor}`
+  );
+  console.log(jwt);
   const options = {
     method: "GET",
     url: `${process.env.API_URL}/chat/get1V1Messages/${chatId}/${range}/${cursor}`,
-    Headers: { origin: origin, authorization: jwt },
+    headers: { origin: origin, authorization: jwt },
   };
   try {
     const { data } = await axios.request(options);
@@ -80,16 +89,12 @@ async function get1V1Messages(chatId: string, range: number, cursor: number) {
 }
 
 async function get1V1MessagesAmount(chatId: string) {
-  const [jwt] = useRecoilState(jwtState);
   const origin = "qct-sw.react-native.screens.apis.Chat.get1V1MessagesAmount";
   console.log(origin);
   const options = {
     method: "GET",
     url: `${process.env.API_URL}/chat/get1V1MessagesAmount/${chatId}/`,
-    Headers: {
-      origin: origin,
-      authorization: jwt,
-    },
+    headers: { origin: origin, authorization: jwt.jwt },
   };
   try {
     const { data } = await axios.request(options);

@@ -49,7 +49,8 @@ const RoomItem: React.FC<MessageItemProps> = ({ item }) => {
         <Text style={styles2.messageText}>
           {isThematic ? `${memberCount} membres` : message}
         </Text> */}
-          <Text>{room}</Text>
+          <Text>{usersInRoom[0].userId2}</Text>
+          <Text style={styles2.roomId}>room : {room}</Text>
         </View>
       </View>
       {/* <Text style={styles2.timeText}>{time}</Text> */}
@@ -187,6 +188,10 @@ const styles2 = StyleSheet.create({
   timeText: {
     fontSize: 12,
     color: "#919191",
+  },
+  roomId: {
+    fontSize: 10,
+    color: "#3660da",
   },
 });
 
