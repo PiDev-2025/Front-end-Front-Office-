@@ -1,4 +1,4 @@
-import { useRoute } from "@react-navigation/native";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
 import * as React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useRecoilState } from "recoil";
@@ -46,11 +46,26 @@ export const ChatScreen: React.FC = () => {
     console.log(message.length);
   };
   // const resetRoomState = useResetRecoilState(afRoomMessages(room));
-  React.useEffect(() => {
-    const intervalId = setInterval(async () => {
-      await handleRefresh();
-    }, 4000);
-  }, []);
+  // React.useEffect(() => {
+  //   const intervalId = setInterval(async () => {
+  //     await handleRefresh();
+  //   }, 4000);
+  // }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      // Your effect code here
+      console.log("Component is focused");
+      const intervalId = setInterval(async () => {
+        await handleRefresh();
+      }, 4000);
+      // This return function will run when the component is unfocused
+      return () => {
+        console.log("Component is unfocused");
+        clearInterval(intervalId);
+        // Clean up or stop whatever was started in useEffect
+      };
+    }, [])
+  );
   // return () => clearInterval(intervalId);
   // const resetRoomState = useResetRecoilState(afRoomMessages(room));
   // });
@@ -78,8 +93,11 @@ export const ChatScreen: React.FC = () => {
       messages: await get1V1Messages(
         room,
         jwt.jwt,
+        0,
+        -8,
+        -1
         // roomState.messages[100].timestamp
-        0
+        // 0
       ),
     });
     // setRoomMessagesAmount(await get1V1MessagesAmount(room, jwt.jwt));

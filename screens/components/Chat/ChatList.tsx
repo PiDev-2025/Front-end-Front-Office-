@@ -20,7 +20,8 @@ import { create1V1Chat } from "../../apis/Chat";
 
 const RoomItem: React.FC<MessageItemProps> = ({ item }) => {
   const navigation = useNavigation();
-  const { room, usersInRoom } = item;
+  const { room, usersInRoom, myUserId } = item;
+  console.log(myUserId);
   console.log(room, usersInRoom);
   const goToChat = () => {
     navigation.navigate("ChatScreen", { room, usersInRoom });
@@ -50,7 +51,7 @@ const RoomItem: React.FC<MessageItemProps> = ({ item }) => {
           {isThematic ? `${memberCount} membres` : message}
         </Text> */}
           <Text>{usersInRoom[0].userId2}</Text>
-          <Text style={styles2.roomId}>room : {room}</Text>
+          <Text style={styles2.roomId}>room : {myUserId}</Text>
         </View>
       </View>
       {/* <Text style={styles2.timeText}>{time}</Text> */}
@@ -108,7 +109,10 @@ const ChatList: React.FC = () => {
 
       <ScrollView style={styles2.messagesList}>
         {filteredRooms1V1.map((item, index) => (
-          <RoomItem key={index} item={item} />
+          <RoomItem
+            key={index}
+            item={{ ...item, myUserId: jwtDecoded.ID.split(":")[1] }}
+          />
         ))}
       </ScrollView>
       <Button onPress={newChat}>+ Nouvelle Conversation</Button>

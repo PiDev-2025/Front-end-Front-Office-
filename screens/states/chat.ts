@@ -81,7 +81,7 @@ export const sfRoomMessages = selectorFamily({
         }
         console.log("roomMessagesSelector", room, jwt);
         return {
-          messages: await get1V1Messages(room, jwt, 0, 10, 20),
+          messages: await get1V1Messages(room, jwt, 0, -8, -1),
         };
       } catch (error) {
         console.error("Error fetching status:", error);
