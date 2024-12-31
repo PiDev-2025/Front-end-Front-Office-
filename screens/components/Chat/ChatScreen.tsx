@@ -1,13 +1,24 @@
 import { useFocusEffect, useRoute } from "@react-navigation/native";
-import * as React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import React from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useRecoilState } from "recoil";
 import { get1V1Messages, send1V1Message } from "../../apis/Chat";
-import { afRoomMessages, afRoomMessagesAmount } from "../../states/chat";
+import {
+  aKeyboardVisible,
+  afRoomMessages,
+  afRoomMessagesAmount,
+} from "../../states/chat";
 import { jwtDecodedState, jwtState } from "../../states/user";
 import { ChatHeader } from "./ChatHeader";
 import { ChatInput } from "./ChatInput";
 import { Message } from "./Message";
+
 export const ChatScreen: React.FC = () => {
   const route = useRoute();
   const { room, usersInRoom } = route.params;
@@ -51,6 +62,28 @@ export const ChatScreen: React.FC = () => {
   //     await handleRefresh();
   //   }, 4000);
   // }, []);
+
+  // const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] =
+    useRecoilState(aKeyboardVisible);
+
+  // useEffect(() => {
+  //   const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+  //     setIsKeyboardVisible(true);
+  //     console.log("keyboard visible");
+  //   });
+  //   const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+  //     setIsKeyboardVisible(false);
+  //     console.log("keyboard invisible");
+  //   });
+
+  //   return () => {
+  //     // Clean up listeners when component unmounts
+  //     // showSubscription.remove();
+  //     // hideSubscription.remove();
+  //   };
+  // }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       // Your effect code here
@@ -58,10 +91,20 @@ export const ChatScreen: React.FC = () => {
       const intervalId = setInterval(async () => {
         await handleRefresh();
       }, 4000);
+      // const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      //   setIsKeyboardVisible(true);
+      //   console.log("keyboard visible");
+      // });
+      // const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      //   setIsKeyboardVisible(false);
+      //   console.log("keyboard invisible");
+      // });
       // This return function will run when the component is unfocused
       return () => {
         console.log("Component is unfocused");
         clearInterval(intervalId);
+        // showSubscription.remove();
+        // hideSubscription.remove();
         // Clean up or stop whatever was started in useEffect
       };
     }, [])
@@ -113,8 +156,9 @@ export const ChatScreen: React.FC = () => {
         onNotificationsPress={() => {}}
         onMenuPress={() => {}}
       />
-
+      {/* <Text>is keyboard visible : {keyboardVisible}</Text> */}
       <ScrollView
+        onScroll={() => setKeyboardVisible(false)}
         style={styles.content}
         contentContainerStyle={{ flexGrow: 1 }}
         ref={scrollViewRef}
@@ -126,8 +170,13 @@ export const ChatScreen: React.FC = () => {
           <Message key={index} {...msg} />
         ))}
       </ScrollView>
-      {/* <Button onPress={() => handleRefresh()} title="refresh" /> */}
-      <ChatInput onSend={handleSend} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0} // This can be adjusted based on your header size or other UI elements
+      >
+        <ChatInput onSend={handleSend} />
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -141,6 +190,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   content: {
+    flex: 1,
+  },
+  container_keyboard: {
+    flex: 1,
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+  },
+  keyboardAvoidingView: {
     flex: 1,
   },
 });

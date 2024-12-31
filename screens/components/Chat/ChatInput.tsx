@@ -1,17 +1,19 @@
 import * as React from "react";
 import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  Text,
   Image,
   StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { useRecoilState } from "recoil";
+import { aKeyboardVisible } from "../../states/chat";
 import { ChatInputProps } from "./types";
-
 export const ChatInput: React.FC<ChatInputProps> = ({ onSend }) => {
   const [message, setMessage] = React.useState("");
-
+  const [keyboardVisible, setKeyboardVisible] =
+    useRecoilState(aKeyboardVisible);
   const handleSend = () => {
     if (message.trim()) {
       onSend(message);
@@ -29,6 +31,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend }) => {
           onChangeText={setMessage}
           multiline
           accessibilityLabel="Message input field"
+          // onPressIn={() => setKeyrboardVisible(true)}
         />
       </View>
       <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
@@ -49,11 +52,11 @@ const styles = StyleSheet.create({
   inputContainer: {
     borderTopWidth: 1,
     borderTopColor: "#D9D9D9",
-    padding: 24,
+    padding: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    maxHeight: 150,
+    maxHeight: 100,
   },
   inputWrapper: {
     flex: 1,

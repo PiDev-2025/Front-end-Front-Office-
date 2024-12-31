@@ -15,6 +15,7 @@ import StatesScreen from "./screens/States";
 import UserScreen from "./screens/User";
 import VideoChatScreen from "./screens/VideoChat";
 import ChatList from "./screens/components/Chat/ChatList";
+import NewChat from "./screens/components/Chat/NewChat";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
@@ -108,6 +109,7 @@ export default function App(): React.JSX.Element {
               />
               <Stack.Screen name="VideoChat" component={VideoChatScreen} />
               <Stack.Screen name="ChatList" component={ChatList} />
+              <Stack.Screen name="NewChat" component={NewChat} />
               <Stack.Screen
                 name="ChatScreen"
                 component={ChatScreen}

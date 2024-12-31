@@ -1,22 +1,16 @@
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
-import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { Button } from "react-native-paper";
+import { Image, StyleSheet, Text, View } from "react-native";
+import { FlatGrid } from "react-native-super-grid";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { sChats1V1Rooms } from "../../states/chat";
 import { jwtDecodedState, jwtState } from "../../states/user";
+
 interface MessageItemProps {
   room: string;
 }
 
-const RoomItem: React.FC<MessageItemProps> = ({ item }) => {
+const NewChat_Item: React.FC<MessageItemProps> = ({ item }) => {
   const navigation = useNavigation();
   const { room, usersInRoom, myUserId } = item;
   console.log(myUserId);
@@ -57,7 +51,7 @@ const RoomItem: React.FC<MessageItemProps> = ({ item }) => {
   );
 };
 
-const ChatList: React.FC = () => {
+const NewChat: React.FC = () => {
   const [jwt, setJwt] = useRecoilState(jwtState);
   const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -65,10 +59,9 @@ const ChatList: React.FC = () => {
   const filteredRooms1V1 = rooms1V1.filter((msg) =>
     msg.room?.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const navigation = useNavigation();
+
   const newChat = async () => {
     console.log("go to matchmaking", searchQuery, jwtDecoded.ID.split(":")[1]);
-    navigation.navigate("NewChat");
     // console.log();
     // if (jwtDecoded && jwtDecoded.ID) {
     //   try {
@@ -96,24 +89,37 @@ const ChatList: React.FC = () => {
       <Text style={styles2.titleText}>{jwtDecoded.ID}</Text>
       {/* <View style={styles2.header}></View>
       {/* <View style={styles2.searchContainer}></View> */}
-      <TextInput
+      {/* <TextInput
         style={styles2.searchInput}
         placeholder="Rechercher un contact"
         placeholderTextColor="rgba(145, 145, 145, 1)"
         accessibilityLabel="Search contacts input field"
         value={searchQuery}
         onChangeText={setSearchQuery}
-      />
-
+      /> */}
+      {/* 
       <ScrollView style={styles2.messagesList}>
         {filteredRooms1V1.map((item, index) => (
-          <RoomItem
+          <NewChat_Item
             key={index}
             item={{ ...item, myUserId: jwtDecoded.ID.split(":")[1] }}
           />
         ))}
-      </ScrollView>
-      <Button onPress={newChat}>+ Nouvelle Conversation</Button>
+      </ScrollView> */}
+      {/* <Button onPress={newChat}>+ Nouvelle Conversation</Button> */}
+      {/* <FlatGrid
+        itemDimension={210}
+        data={[1, 2, 3]}
+        renderItem={({ item }) => (
+          <>
+            {item === 1 && (
+                <>
+                    {console.log("item", item)}
+                </>
+            )}
+          </>
+        )}
+      /> */}
     </View>
   );
 };
@@ -197,4 +203,4 @@ const styles2 = StyleSheet.create({
   },
 });
 
-export default ChatList;
+export default NewChat;

@@ -8,6 +8,11 @@ export const aChatsOpened = atom<object | null>({
   default: null,
 });
 
+export const aKeyboardVisible = atom({
+  key: "aKeyboardVisibleState",
+  default: false,
+});
+
 // ---
 
 // export const aChats1V1Rooms = atom<object | null>({
