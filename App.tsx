@@ -56,6 +56,8 @@ function UserTabs() {
   );
 }
 
+// App.(js|ts)
+
 export default function App(): React.JSX.Element {
   const { colorScheme, setColorScheme, isDarkColorScheme } = useColorScheme();
   const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
@@ -90,6 +92,12 @@ export default function App(): React.JSX.Element {
 
   return (
     <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+      {/* <PostHogProvider
+        apiKey="phc_DehZjG9DpbcKUWsd29cmJFfYFp18l8SRE5Cof5Mt2wR"
+        options={{
+          host: "https://us.i.posthog.com",
+        }}
+      > */}
       <NavigationContainer>
         <Stack.Navigator initialRouteName="SympathyWorld">
           {jwtState ? (
@@ -125,6 +133,7 @@ export default function App(): React.JSX.Element {
             />
           )}
         </Stack.Navigator>
+        {/* </PostHogProvider> */}
       </NavigationContainer>
     </ThemeProvider>
   );
