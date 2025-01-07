@@ -1,7 +1,18 @@
+import { Input, InputField } from "@/components/ui/input";
+import {
+  Select,
+  SelectBackdrop,
+  SelectContent,
+  SelectDragIndicator,
+  SelectDragIndicatorWrapper,
+  SelectInput,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
+} from "@/components/ui/select";
 import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
-import { FlatGrid } from "react-native-super-grid";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { sChats1V1Rooms } from "../../states/chat";
 import { jwtDecodedState, jwtState } from "../../states/user";
@@ -50,7 +61,6 @@ const NewChat_Item: React.FC<MessageItemProps> = ({ item }) => {
     </View>
   );
 };
-
 const NewChat: React.FC = () => {
   const [jwt, setJwt] = useRecoilState(jwtState);
   const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
@@ -87,6 +97,85 @@ const NewChat: React.FC = () => {
   return (
     <View style={styles2.container}>
       <Text style={styles2.titleText}>{jwtDecoded.ID}</Text>
+
+      <Select>
+        <SelectTrigger variant="underlined" size="lg">
+          <SelectInput placeholder="Thème #1" />
+          {/* <SelectIcon className="mr-3" as={ChevronDownIcon} /> */}
+        </SelectTrigger>
+        <SelectPortal>
+          <SelectBackdrop />
+          <SelectContent>
+            <SelectDragIndicatorWrapper>
+              <SelectDragIndicator />
+            </SelectDragIndicatorWrapper>
+            <SelectItem label="UX Research" value="ux" />
+            <SelectItem label="Web Development" value="web" />
+            <SelectItem
+              label="Cross Platform Development Process"
+              value="Cross Platform Development Process"
+            />
+            <SelectItem label="UI Designing" value="ui" isDisabled={true} />
+            <SelectItem label="Backend Development" value="backend" />
+          </SelectContent>
+        </SelectPortal>
+      </Select>
+
+      <Select>
+        <SelectTrigger variant="underlined" size="lg">
+          <SelectInput placeholder="Thème #2" />
+          {/* <SelectIcon className="mr-3" as={ChevronDownIcon} /> */}
+        </SelectTrigger>
+        <SelectPortal>
+          <SelectBackdrop />
+          <SelectContent>
+            <SelectDragIndicatorWrapper>
+              <SelectDragIndicator />
+            </SelectDragIndicatorWrapper>
+            <SelectItem label="UX Research" value="ux" />
+            <SelectItem label="Web Development" value="web" />
+            <SelectItem
+              label="Cross Platform Development Process"
+              value="Cross Platform Development Process"
+            />
+            <SelectItem label="UI Designing" value="ui" isDisabled={true} />
+            <SelectItem label="Backend Development" value="backend" />
+          </SelectContent>
+        </SelectPortal>
+      </Select>
+
+      <Select>
+        <SelectTrigger variant="underlined" size="lg">
+          <SelectInput placeholder="Thème #3" />
+          {/* <SelectIcon className="mr-3" as={ChevronDownIcon} /> */}
+        </SelectTrigger>
+        <SelectPortal>
+          <SelectBackdrop />
+          <SelectContent>
+            <SelectDragIndicatorWrapper>
+              <SelectDragIndicator />
+            </SelectDragIndicatorWrapper>
+            <SelectItem label="UX Research" value="ux" />
+            <SelectItem label="Web Development" value="web" />
+            <SelectItem
+              label="Cross Platform Development Process"
+              value="Cross Platform Development Process"
+            />
+            <SelectItem label="UI Designing" value="ui" isDisabled={true} />
+            <SelectItem label="Backend Development" value="backend" />
+          </SelectContent>
+        </SelectPortal>
+      </Select>
+
+      <Input
+        variant="outline"
+        size="md"
+        isDisabled={false}
+        isInvalid={false}
+        isReadOnly={false}
+      >
+        <InputField placeholder="Enter Text here..." />
+      </Input>
       {/* <View style={styles2.header}></View>
       {/* <View style={styles2.searchContainer}></View> */}
       {/* <TextInput

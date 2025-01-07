@@ -42,6 +42,7 @@ function QCTScreen(): React.JSX.Element {
           {/* <Section title="APIs" /> */}
           {/* <Section title="States" /> */}
           <Section title="User" />
+          <Section title="UserProfile" />
           <Section title="ChatList" />
           {/* <Section title="VideoChat" /> */}
           {/* <Section title="Chats" /> */}

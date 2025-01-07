@@ -2,11 +2,11 @@ import { atom } from "recoil";
 
 const usernameState = atom<string | null>({
   key: "usernameState",
-  default: null,
+  default: "damien_sw.co",
 });
 const emailState = atom<string | null>({
   key: "emailState",
-  default: "damien@qazar.cloud",
+  default: "damien@sympathyworld.co",
 });
 const passwordState = atom<string | null>({
   key: "passwordState",
