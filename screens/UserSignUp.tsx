@@ -1,4 +1,5 @@
 // https://recoiljs.org/docs/guides/asynchronous-data-queries
+import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { FormControl } from "@/components/ui/form-control";
 import { Input, InputField, InputIcon, InputSlot } from "@/components/ui/input";
@@ -36,7 +37,8 @@ function UserSignUp(): React.JSX.Element {
       if (username && email && password) {
         const data = await userSignUp(username, email, password);
         setJwt(data);
-        setJwtDecoded(jwtDecode(data));
+        setJwtDecoded(jwtDecode(jwt.jwt));
+        navigation.navigate("SympathyWorld", {});
       } else {
         console.error("userID cannot be null");
       }
@@ -47,90 +49,50 @@ function UserSignUp(): React.JSX.Element {
 
   return (
     <SafeAreaView>
-      <FormControl className="p-4 border rounded-lg border-outline-300">
-        <VStack space="xl">
-          {/* <Heading className="text-typography-900">Login</Heading> */}
-          <VStack space="xs">
-            <Text className="text-typography-500">Username</Text>
-            <Input className="min-w-[250px]">
-              <InputField
-                type="text"
-                value={username || ""}
-                onChangeText={(text) => setUsername(text)}
-              />
-            </Input>
+      <Box className="justify-center h-full">
+        <FormControl className="p-4 border border-outline-300">
+          <VStack space="xl">
+            {/* <Heading className="text-typography-900">Login</Heading> */}
+            <VStack space="xs">
+              <Text className="text-typography-500">Username</Text>
+              <Input className="min-w-[250px]">
+                <InputField
+                  type="text"
+                  value={username || ""}
+                  onChangeText={(text) => setUsername(text)}
+                />
+              </Input>
+            </VStack>
+            <VStack space="xs">
+              <Text className="text-typography-500">Email</Text>
+              <Input className="min-w-[250px]">
+                <InputField
+                  type="text"
+                  value={email || ""}
+                  onChangeText={(text) => setEmail(text)}
+                />
+              </Input>
+            </VStack>
+            <VStack space="xs">
+              <Text className="text-typography-500">Password</Text>
+              <Input className="text-center">
+                <InputField
+                  type={showPassword ? "text" : "password"}
+                  value={password || ""}
+                  onChangeText={(text) => setPassword(text)}
+                />
+                <InputSlot className="pr-3" onPress={handleState}>
+                  <InputIcon as={showPassword ? EyeIcon : EyeOffIcon} />
+                </InputSlot>
+              </Input>
+            </VStack>
+            <Button variant="solid" className="mt-2" onPress={signupUser}>
+              <ButtonText>SignUp</ButtonText>
+            </Button>
           </VStack>
-          <VStack space="xs">
-            <Text className="text-typography-500">Email</Text>
-            <Input className="min-w-[250px]">
-              <InputField
-                type="text"
-                value={email || ""}
-                onChangeText={(text) => setEmail(text)}
-              />
-            </Input>
-          </VStack>
-          <VStack space="xs">
-            <Text className="text-typography-500">Password</Text>
-            <Input className="text-center">
-              <InputField
-                type={showPassword ? "text" : "password"}
-                value={password || ""}
-                onChangeText={(text) => setPassword(text)}
-              />
-              <InputSlot className="pr-3" onPress={handleState}>
-                <InputIcon as={showPassword ? EyeIcon : EyeOffIcon} />
-              </InputSlot>
-            </Input>
-          </VStack>
-          <Button variant="solid" className="mt-2" onPress={signupUser}>
-            {/* <ButtonIcon as={InfoIcon} className="mr-2" /> */}
-            <ButtonText>SignUp</ButtonText>
-          </Button>
-          {/* <Button
-            className="ml-auto"
-            onPress={() => {
-              setShowModal(false);
-            }}
-          >
-            <ButtonText className="text-typography-0">Save</ButtonText>
-          </Button> */}
-        </VStack>
-      </FormControl>
-      {/* <TextInput
-        placeholder="Username"
-        value={username || ""}
-        onChangeText={(text) => setUsername(text)}
-        style={{
-          height: 40,
-          borderColor: "gray",
-          borderWidth: 1,
-          marginBottom: 10,
-        }}
-      />
-      <TextInput
-        placeholder="Email"
-        value={email || ""}
-        onChangeText={(text) => setEmail(text)}
-        style={{
-          height: 40,
-          borderColor: "gray",
-          borderWidth: 1,
-          marginBottom: 10,
-        }}
-      />
-      <TextInput
-        placeholder="Password"
-        value={password || ""}
-        onChangeText={(text) => setPassword(text)}
-        style={{
-          height: 40,
-          borderColor: "gray",
-          borderWidth: 1,
-          marginBottom: 10,
-        }}
-      />     */}
-      <Text> {jwt.jwt}</Text>
+        </FormControl>
+        <Text> {jwt.ID}</Text>
+      </Box>
     </SafeAreaView>
   );
 }

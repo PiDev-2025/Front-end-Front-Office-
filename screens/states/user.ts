@@ -12,12 +12,38 @@ const passwordState = atom<string | null>({
   key: "passwordState",
   default: "Test1234",
 });
-const jwtState = atom<string | null>({
+const sexState = atom<string | undefined>({
+  key: "sexState",
+  default: "Homme",
+});
+const localizationState = atom<string | null>({
+  key: "localizationState",
+  default: "34070",
+});
+const ageState = atom<string | null>({
+  key: "ageState",
+  default: "35",
+});
+const jwtState = atom<object | null>({
   key: "jwtState",
   default: {},
 });
-const jwtDecodedState = atom<string | null>({
+const jwtDecodedState = atom<object | null>({
   key: "jwtDecoded",
   default: {},
 });
-export { usernameState, emailState, passwordState, jwtState, jwtDecodedState };
+const picturesState = atom<object | null>({
+  key: "picturesState",
+  default: {},
+});
+export {
+  usernameState,
+  emailState,
+  passwordState,
+  jwtState,
+  jwtDecodedState,
+  sexState,
+  localizationState,
+  ageState,
+  picturesState,
+};

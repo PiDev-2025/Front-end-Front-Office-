@@ -135,7 +135,7 @@ export default function App(): React.JSX.Element {
                 <Stack.Screen
                   name="User"
                   component={UserTabs}
-                  options={{ headerShown: false }}
+                  options={{ headerShown: true }}
                 />
                 <Stack.Screen name="UserProfile" component={UserProfile} />
               </>
