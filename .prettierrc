@@ -1,5 +1,5 @@
 {
-  "tabWidth": 2,
-  "useTabs": false,
-  "plugins": ["prettier-plugin-organize-imports"]
+	"tabWidth": 6,
+	"useTabs": true,
+	"plugins": ["prettier-plugin-organize-imports"]
 }

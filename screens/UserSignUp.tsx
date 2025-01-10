@@ -37,7 +37,7 @@ function UserSignUp(): React.JSX.Element {
       if (username && email && password) {
         const data = await userSignUp(username, email, password);
         setJwt(data);
-        setJwtDecoded(jwtDecode(jwt.jwt));
+        setJwtDecoded(jwtDecode(data.jwt));
         navigation.navigate("SympathyWorld", {});
       } else {
         console.error("userID cannot be null");

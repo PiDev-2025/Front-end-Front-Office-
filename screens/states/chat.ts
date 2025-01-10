@@ -23,6 +23,7 @@ export const aKeyboardVisible = atom({
 export const sChats1V1Rooms = selector<object | null>({
   key: "sChats1V1MessagesSelector",
   get: async ({ get }) => {
+    console.log("get(jwtDecodedState)", get(jwtDecodedState));
     try {
       const data = await getUserChats(
         get(jwtDecodedState).ID.split(":")[1],
