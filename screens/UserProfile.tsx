@@ -1,10 +1,11 @@
 import { Box } from "@/components/ui/box";
-import { Button } from "@/components/ui/button";
 import { Center } from "@/components/ui/center";
 import { FormControl } from "@/components/ui/form-control";
+import { Grid, GridItem } from "@/components/ui/grid";
 import { HStack } from "@/components/ui/hstack";
 import { Image } from "@/components/ui/image";
 import { Input, InputField } from "@/components/ui/input";
+import { Pressable } from "@/components/ui/pressable";
 import {
 	Radio,
 	RadioGroup,
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { VStack } from "@/components/ui/vstack";
 import React from "react";
-import { Text } from "react-native";
+import { ScrollView, Text } from "react-native";
 import { launchImageLibrary } from "react-native-image-picker";
 import { useRecoilState } from "recoil";
 import { getThemes } from "./apis/Theme";
@@ -68,65 +69,209 @@ const UserProfileThemes: React.FC = () => {
 				<VStack space="xl">
 					{themesSelected?.map((theme, index) => (
 						<VStack space="md" key={index}>
-							<Select
-								onValueChange={(value) =>
-									setThemesSelected(
-										(prev) =>
-											prev.map(
-												(
-													t,
-													i
-												) =>
-													i ===
-													index
-														? value
-														: t
-											)
-									)
-								}
+							<Grid
+								className="gap-3"
+								_extra={{
+									className:
+										"grid-cols-5 grid-rows-2",
+								}}
 							>
-								<SelectTrigger
-									variant="underlined"
-									size="lg"
+								{/* <GridItem
+									className="bg-background-50 p-3 rounded-md text-center"
+									_extra={{
+										className:
+											"col-span-1 row-span-2",
+									}}
 								>
-									<SelectInput
-										placeholder={`Thème #${
-											index + 1
-										}`}
-										value={theme}
-									/>
-									{/* <SelectIcon className="mr-3" as={ChevronDownIcon} /> */}
-								</SelectTrigger>
-								<SelectPortal>
-									<SelectBackdrop />
-									<SelectScrollView>
-										<SelectContent>
-											<SelectDragIndicatorWrapper>
-												<SelectDragIndicator />
-											</SelectDragIndicatorWrapper>
-											{themes.length >
-												0 &&
-												themes.map(
-													(
-														theme: any
-													) => (
-														<SelectItem
-															key={
-																theme.id
-															}
-															label={
-																theme.name
-															}
-															value={
-																theme.name
-															}
-														/>
+									<Center className="bg-primary-500 h-[200px] w-[300px]">
+										<Text className="text-typography-0 font-bold">
+											#{index + 1}
+										</Text>
+									</Center>
+								</GridItem> */}
+								<GridItem
+									className="bg-background-50 p-3 rounded-md text-center"
+									_extra={{
+										className:
+											"col-span-1",
+									}}
+								>
+									<Center className="">
+										<Text className="text-typography-500">
+											Gen
+										</Text>
+									</Center>
+								</GridItem>
+								<GridItem
+									className="bg-background-50 rounded-md text-center"
+									_extra={{
+										className:
+											"col-span-4",
+									}}
+								>
+									<Select
+										onValueChange={(
+											value
+										) =>
+											setThemesSelected(
+												(
+													prev
+												) =>
+													prev.map(
+														(
+															t,
+															i
+														) =>
+															i ===
+															index
+																? value
+																: t
 													)
-												)}
-										</SelectContent>
-									</SelectScrollView>
-								</SelectPortal>
-							</Select>
+											)
+										}
+									>
+										<SelectTrigger
+											variant="underlined"
+											size="lg"
+										>
+											<SelectInput
+												placeholder={`Thème Générique #${
+													index +
+													1
+												}`}
+												value={
+													theme
+												}
+											/>
+											{/* <SelectIcon className="mr-3" as={ChevronDownIcon} /> */}
+										</SelectTrigger>
+										<SelectPortal>
+											<SelectBackdrop />
+											<SelectScrollView>
+												<SelectContent>
+													<SelectDragIndicatorWrapper>
+														<SelectDragIndicator />
+													</SelectDragIndicatorWrapper>
+													{themes.length >
+														0 &&
+														themes.map(
+															(
+																theme: any
+															) => (
+																<SelectItem
+																	key={
+																		theme.id
+																	}
+																	label={
+																		theme.name
+																	}
+																	value={
+																		theme.name
+																	}
+																/>
+															)
+														)}
+												</SelectContent>
+											</SelectScrollView>
+										</SelectPortal>
+									</Select>
+								</GridItem>
+							</Grid>
+							<Grid
+								className="gap-3"
+								_extra={{
+									className:
+										"grid-cols-5 grid-rows-2",
+								}}
+							>
+								<GridItem
+									className="bg-background-50 p-3 rounded-md text-center"
+									_extra={{
+										className:
+											"col-span-1",
+									}}
+								>
+									<Center className="">
+										<Text className="text-typography-500">
+											Spé
+										</Text>
+									</Center>
+								</GridItem>
+								<GridItem
+									className="bg-background-50 rounded-md text-center"
+									_extra={{
+										className:
+											"col-span-4",
+									}}
+								>
+									<Select
+										onValueChange={(
+											value
+										) =>
+											setThemesSelected(
+												(
+													prev
+												) =>
+													prev.map(
+														(
+															t,
+															i
+														) =>
+															i ===
+															index
+																? value
+																: t
+													)
+											)
+										}
+									>
+										<SelectTrigger
+											variant="underlined"
+											size="lg"
+										>
+											<SelectInput
+												placeholder={`Thème Spécialisé #${
+													index +
+													1
+												}`}
+												value={
+													theme
+												}
+											/>
+											{/* <SelectIcon className="mr-3" as={ChevronDownIcon} /> */}
+										</SelectTrigger>
+										<SelectPortal>
+											<SelectBackdrop />
+											<SelectScrollView>
+												<SelectContent>
+													<SelectDragIndicatorWrapper>
+														<SelectDragIndicator />
+													</SelectDragIndicatorWrapper>
+													{themes.length >
+														0 &&
+														themes.map(
+															(
+																theme: any
+															) => (
+																<SelectItem
+																	key={
+																		theme.id
+																	}
+																	label={
+																		theme.name
+																	}
+																	value={
+																		theme.name
+																	}
+																/>
+															)
+														)}
+												</SelectContent>
+											</SelectScrollView>
+										</SelectPortal>
+									</Select>
+								</GridItem>
+							</Grid>
 						</VStack>
 					))}
 				</VStack>
@@ -252,7 +397,7 @@ const UserProfileInformations: React.FC = () => {
 
 const UserProfilePictures: React.FC = () => {
 	const [pictures, setPictures] = useRecoilState(picturesState);
-	const chooseImage = async () => {
+	const chooseImage = async (privacyType: string) => {
 		console.log("chooseImage");
 		const result = await launchImageLibrary({
 			mediaType: "photo",
@@ -262,7 +407,17 @@ const UserProfilePictures: React.FC = () => {
 		});
 
 		if (!result.didCancel && !result.errorCode) {
-			setPictures({ private: result.assets[0].uri });
+			if (privacyType === "public") {
+				setPictures((prev) => ({
+					...prev,
+					public: [result.assets[0].uri],
+				}));
+			} else if (privacyType === "private") {
+				setPictures((prev) => ({
+					...prev,
+					private: [result.assets[0].uri],
+				}));
+			}
 		}
 	};
 	return (
@@ -275,25 +430,32 @@ const UserProfilePictures: React.FC = () => {
 			<FormControl className="p-4 border border-outline-300">
 				<HStack space="md" className="justify-center">
 					<Center className="flex-1">
-						<Image
-							size="xl"
-							source={{
-								uri: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-							}}
-							alt="image"
-						/>
+						<Pressable
+							onPress={() => chooseImage("public")}
+						>
+							<Image
+								size="xl"
+								source={{
+									uri: pictures.public,
+								}}
+								alt="image"
+							/>
+						</Pressable>
 					</Center>
 					<Center className="flex-1">
-						<Image
-							size="xl"
-							source={{
-								uri: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-							}}
-							alt="image"
-						/>
+						<Pressable
+							onPress={() => chooseImage("private")}
+						>
+							<Image
+								size="xl"
+								source={{
+									uri: pictures.private,
+								}}
+								alt="image"
+							/>
+						</Pressable>
 					</Center>
 				</HStack>
-				<Button onPress={chooseImage}>Choose Image</Button>
 			</FormControl>
 		</>
 	);
@@ -304,18 +466,20 @@ const UserProfileScreen: React.FC = () => {
 	const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
 
 	return (
-		<Box className="justify-center h-full">
-			<VStack space="lg" className="p-4">
-				<Center className="bg-primary-500">
-					<Text className="text-typography-0 font-bold">
-						{jwtDecoded.ID}
-					</Text>
-				</Center>
-				<UserProfilePictures />
-				<UserProfileThemes />
-				<UserProfileInformations />
-			</VStack>
-		</Box>
+		<ScrollView>
+			<Box className="justify-center h-full">
+				<VStack space="lg" className="p-4">
+					<Center className="bg-primary-500">
+						<Text className="text-typography-0 font-bold">
+							{jwtDecoded.ID}
+						</Text>
+					</Center>
+					<UserProfilePictures />
+					<UserProfileThemes />
+					<UserProfileInformations />
+				</VStack>
+			</Box>
+		</ScrollView>
 	);
 };
 

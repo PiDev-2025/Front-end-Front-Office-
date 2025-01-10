@@ -37,15 +37,22 @@ const jwtDecodedState = atom<object | null>({
 });
 const picturesState = atom<object | null>({
 	key: "picturesState",
-	default: {public: [], private: []d},
+	default: {
+		public: "https://cms-sw.s3.fr-par.scw.cloud/mandala-001.jpg",
+		private: "https://cms-sw.s3.fr-par.scw.cloud/public-picture-001.jpg",
+	},
 });
 const themesStates = atom<object | null>({
 	key: "themeState",
 	default: {},
 });
-const themesSelectedStates = atom<{ theme: null }[] | null>({
+const themesSelectedStates = atom<{ theme: null; subTheme: null }[] | null>({
 	key: "themesSelectedState",
-	default: [{ theme: null }, { theme: null }, { theme: null }],
+	default: [
+		{ theme: null, subTheme: null },
+		{ theme: null, subTheme: null },
+		{ theme: null, subTheme: null },
+	],
 });
 
 export {
