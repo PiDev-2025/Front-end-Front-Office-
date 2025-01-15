@@ -5,7 +5,9 @@ import { Grid, GridItem } from "@/components/ui/grid";
 import { HStack } from "@/components/ui/hstack";
 import { Image } from "@/components/ui/image";
 import { Input, InputField } from "@/components/ui/input";
+import { LinearGradient } from "@/components/ui/linear-gradient";
 import { Pressable } from "@/components/ui/pressable";
+
 import {
 	Radio,
 	RadioGroup,
@@ -28,8 +30,10 @@ import { VStack } from "@/components/ui/vstack";
 import React from "react";
 import { ScrollView, Text } from "react-native";
 import { launchImageLibrary } from "react-native-image-picker";
+import { Button } from "react-native-paper";
 import { useRecoilState } from "recoil";
 import { getThemes } from "./apis/Theme";
+import { userSaveProfile } from "./apis/User";
 import {
 	ageState,
 	jwtDecodedState,
@@ -40,6 +44,183 @@ import {
 	themesSelectedStates,
 	themesStates,
 } from "./states/user";
+
+interface UserProfileThemeParentProps {
+	theme: any;
+	index: number;
+}
+
+const UserProfileThemeChild: React.FC<UserProfileThemeParentProps> = ({
+	theme,
+	index,
+}) => {
+	const [themes, setThemes] = useRecoilState(themesStates);
+	const [themesSelected, setThemesSelected] =
+		useRecoilState(themesSelectedStates);
+	const getSubThemes = (parent: any) => {
+		console.log("getSubThemes:parent", parent);
+		const _parent = themes.parents.filter((p: any) => p.name === parent);
+		const parentId = _parent[0].id;
+		console.log("getSubThemes", parent, _parent, parentId);
+		return themes.childs.filter((child: any) => child.parent === parentId);
+		// return [];
+	};
+	return (
+		<Grid
+			className="gap-3"
+			_extra={{
+				className: "grid-cols-5 grid-rows-2",
+			}}
+		>
+			<GridItem
+				className=" p-3 rounded-md text-center"
+				_extra={{
+					className: "col-span-1",
+				}}
+			>
+				<Center className="">
+					<Text className="text-typography-500">Spé</Text>
+				</Center>
+			</GridItem>
+			<GridItem
+				className="bg-background-50 rounded-md text-center"
+				_extra={{
+					className: "col-span-4",
+				}}
+			>
+				<Select
+					onValueChange={(value) =>
+						setThemesSelected((prev) =>
+							prev.map((item, i) =>
+								i === index
+									? {
+											...item,
+											subTheme: {
+												name: value,
+												id: themes.childs.filter(
+													(c) => c.name === value
+												)[0].id,
+											},
+									  }
+									: item
+							)
+						)
+					}
+				>
+					<SelectTrigger variant="underlined" size="lg">
+						<SelectInput
+							placeholder={`Sous-Thème #${index + 1}`}
+							value={theme.subTheme.name}
+						/>
+						{/* <SelectIcon className="mr-3" as={ChevronDownIcon} /> */}
+					</SelectTrigger>
+					<SelectPortal className="z-50">
+						<SelectBackdrop />
+						<SelectScrollView style={{ zIndex: 999 }}>
+							<SelectContent style={{ zIndex: 1000 }}>
+								<SelectDragIndicatorWrapper>
+									<SelectDragIndicator />
+								</SelectDragIndicatorWrapper>
+								{theme.theme.name &&
+									getSubThemes(theme.theme.name).map(
+										(theme: any) => (
+											<SelectItem
+												key={theme.id}
+												label={theme.name}
+												value={theme.name}
+											/>
+										)
+									)}
+							</SelectContent>
+						</SelectScrollView>
+					</SelectPortal>
+				</Select>
+			</GridItem>
+		</Grid>
+	);
+};
+
+const UserProfileThemeParent: React.FC<UserProfileThemeParentProps> = ({
+	theme,
+	index,
+}) => {
+	const [themes, setThemes] = useRecoilState(themesStates);
+	const [themesSelected, setThemesSelected] =
+		useRecoilState(themesSelectedStates);
+	return (
+		<Grid
+			className="gap-3"
+			_extra={{
+				className: "grid-cols-5 grid-rows-2",
+			}}
+		>
+			<GridItem
+				className=" p-3 rounded-md text-center"
+				_extra={{
+					className: "col-span-1",
+				}}
+			>
+				<Center className="">
+					<Text className="text-typography-500">Gen</Text>
+				</Center>
+			</GridItem>
+			<GridItem
+				className="bg-background-50 rounded-md text-center"
+				_extra={{
+					className: "col-span-4",
+				}}
+			>
+				<Select
+					// className="absolute bottom-0"
+					onValueChange={(value) =>
+						setThemesSelected((prev) =>
+							prev.map((item, i) =>
+								i === index
+									? {
+											...item,
+											theme: {
+												name: value,
+												id: themes.parents.filter(
+													(p) => p.name === value
+												)[0].id,
+											},
+									  }
+									: item
+							)
+						)
+					}
+				>
+					<SelectTrigger variant="underlined" size="lg">
+						<SelectInput
+							placeholder={`Thème Générique #${index + 1}`}
+							value={theme.theme.name}
+							className="flex-1"
+						/>
+						{/* <SelectIcon className="mr-3" as={ChevronDownIcon} /> */}
+					</SelectTrigger>
+					<SelectPortal>
+						<SelectBackdrop />
+						<SelectScrollView style={{ zIndex: 999 }}>
+							<SelectContent style={{ zIndex: 1000 }}>
+								<SelectDragIndicatorWrapper>
+									<SelectDragIndicator />
+								</SelectDragIndicatorWrapper>
+								{themes.parents.map((theme: any) => (
+									<SelectItem
+										key={theme.id}
+										label={theme.name}
+										value={theme.name}
+									/>
+								))}
+							</SelectContent>
+						</SelectScrollView>
+					</SelectPortal>
+				</Select>
+			</GridItem>
+		</Grid>
+	);
+};
+
 const UserProfileThemes: React.FC = () => {
 	const [jwt, setJwt] = useRecoilState(jwtState);
 	const [themes, setThemes] = useRecoilState(themesStates);
@@ -48,230 +229,41 @@ const UserProfileThemes: React.FC = () => {
 	console.log("themesSelected", themesSelected);
 	const getThemesFromApi = async () => {
 		const themesFromApi = await getThemes(jwt.jwt);
-		themesFromApi.sort((a: any, b: any) =>
-			a.name.localeCompare(b.name)
-		);
-		setThemes(themesFromApi.filter((theme: any) => !theme.parent));
-		console.log(themes);
+		setThemes({
+			parents: themesFromApi.parents,
+			childs: themesFromApi.childs,
+		});
 	};
 
 	React.useEffect(() => {
 		getThemesFromApi();
-	}, []);
+	}, [jwt]);
 	return (
 		<>
 			<Center className="bg-primary-500 h-[200px] w-[300px]">
-				<Text className="text-typography-0 font-bold">
-					Thématiques Selectionnées
-				</Text>
+				<LinearGradient
+					className="w-full items-center py-2"
+					colors={["#FFFFFF", "#CFF1EB"]}
+					start={{ x: 0, y: 1 }}
+					end={{ x: 1, y: 0 }}
+				>
+					<Text className="text-typography-sw font-bold">
+						Thématiques Selectionnées
+					</Text>
+				</LinearGradient>
 			</Center>
 			<FormControl className="p-4 border border-outline-300">
 				<VStack space="xl">
 					{themesSelected?.map((theme, index) => (
-						<VStack space="md" key={index}>
-							<Grid
-								className="gap-3"
-								_extra={{
-									className:
-										"grid-cols-5 grid-rows-2",
-								}}
-							>
-								{/* <GridItem
-									className="bg-background-50 p-3 rounded-md text-center"
-									_extra={{
-										className:
-											"col-span-1 row-span-2",
-									}}
-								>
-									<Center className="bg-primary-500 h-[200px] w-[300px]">
-										<Text className="text-typography-0 font-bold">
-											#{index + 1}
-										</Text>
-									</Center>
-								</GridItem> */}
-								<GridItem
-									className="bg-background-50 p-3 rounded-md text-center"
-									_extra={{
-										className:
-											"col-span-1",
-									}}
-								>
-									<Center className="">
-										<Text className="text-typography-500">
-											Gen
-										</Text>
-									</Center>
-								</GridItem>
-								<GridItem
-									className="bg-background-50 rounded-md text-center"
-									_extra={{
-										className:
-											"col-span-4",
-									}}
-								>
-									<Select
-										onValueChange={(
-											value
-										) =>
-											setThemesSelected(
-												(
-													prev
-												) =>
-													prev.map(
-														(
-															t,
-															i
-														) =>
-															i ===
-															index
-																? value
-																: t
-													)
-											)
-										}
-									>
-										<SelectTrigger
-											variant="underlined"
-											size="lg"
-										>
-											<SelectInput
-												placeholder={`Thème Générique #${
-													index +
-													1
-												}`}
-												value={
-													theme
-												}
-											/>
-											{/* <SelectIcon className="mr-3" as={ChevronDownIcon} /> */}
-										</SelectTrigger>
-										<SelectPortal>
-											<SelectBackdrop />
-											<SelectScrollView>
-												<SelectContent>
-													<SelectDragIndicatorWrapper>
-														<SelectDragIndicator />
-													</SelectDragIndicatorWrapper>
-													{themes.length >
-														0 &&
-														themes.map(
-															(
-																theme: any
-															) => (
-																<SelectItem
-																	key={
-																		theme.id
-																	}
-																	label={
-																		theme.name
-																	}
-																	value={
-																		theme.name
-																	}
-																/>
-															)
-														)}
-												</SelectContent>
-											</SelectScrollView>
-										</SelectPortal>
-									</Select>
-								</GridItem>
-							</Grid>
-							<Grid
-								className="gap-3"
-								_extra={{
-									className:
-										"grid-cols-5 grid-rows-2",
-								}}
-							>
-								<GridItem
-									className="bg-background-50 p-3 rounded-md text-center"
-									_extra={{
-										className:
-											"col-span-1",
-									}}
-								>
-									<Center className="">
-										<Text className="text-typography-500">
-											Spé
-										</Text>
-									</Center>
-								</GridItem>
-								<GridItem
-									className="bg-background-50 rounded-md text-center"
-									_extra={{
-										className:
-											"col-span-4",
-									}}
-								>
-									<Select
-										onValueChange={(
-											value
-										) =>
-											setThemesSelected(
-												(
-													prev
-												) =>
-													prev.map(
-														(
-															t,
-															i
-														) =>
-															i ===
-															index
-																? value
-																: t
-													)
-											)
-										}
-									>
-										<SelectTrigger
-											variant="underlined"
-											size="lg"
-										>
-											<SelectInput
-												placeholder={`Thème Spécialisé #${
-													index +
-													1
-												}`}
-												value={
-													theme
-												}
-											/>
-											{/* <SelectIcon className="mr-3" as={ChevronDownIcon} /> */}
-										</SelectTrigger>
-										<SelectPortal>
-											<SelectBackdrop />
-											<SelectScrollView>
-												<SelectContent>
-													<SelectDragIndicatorWrapper>
-														<SelectDragIndicator />
-													</SelectDragIndicatorWrapper>
-													{themes.length >
-														0 &&
-														themes.map(
-															(
-																theme: any
-															) => (
-																<SelectItem
-																	key={
-																		theme.id
-																	}
-																	label={
-																		theme.name
-																	}
-																	value={
-																		theme.name
-																	}
-																/>
-															)
-														)}
-												</SelectContent>
-											</SelectScrollView>
-										</SelectPortal>
-									</Select>
-								</GridItem>
-							</Grid>
+						<VStack space="xl" key={index}>
+							<UserProfileThemeParent
+								theme={theme}
+								index={index}
+							/>
+							<UserProfileThemeChild
+								theme={theme}
+								index={index}
+							/>
 						</VStack>
 					))}
 				</VStack>
@@ -287,9 +279,16 @@ const UserProfileInformations: React.FC = () => {
 	return (
 		<>
 			<Center className="bg-primary-500 h-[200px] w-[300px]">
-				<Text className="text-typography-0 font-bold">
-					Informations Personelle
-				</Text>
+				<LinearGradient
+					className="w-full items-center py-2"
+					colors={["#FFFFFF", "#CFF1EB"]}
+					start={{ x: 0, y: 1 }}
+					end={{ x: 1, y: 0 }}
+				>
+					<Text className="text-typography-sw font-bold">
+						Informations Personelle
+					</Text>
+				</LinearGradient>
 			</Center>
 			<FormControl className="p-2 border border-outline-300">
 				<VStack space="xl">
@@ -301,27 +300,21 @@ const UserProfileInformations: React.FC = () => {
 										{/* <XCircle /> */}
 										{/* <RadioIcon as={CircleIcon} /> */}
 									</RadioIndicator>
-									<RadioLabel>
-										Homme
-									</RadioLabel>
+									<RadioLabel>Homme</RadioLabel>
 								</Radio>
 								<Radio value="Femme">
 									<RadioIndicator>
 										{/* <XCircle /> */}
 										{/* <RadioIcon as={CircleIcon} /> */}
 									</RadioIndicator>
-									<RadioLabel>
-										Femme
-									</RadioLabel>
+									<RadioLabel>Femme</RadioLabel>
 								</Radio>
 								<Radio value="Autre">
 									<RadioIndicator>
 										{/* <XCircle /> */}
 										{/* <RadioIcon as={CircleIcon} /> */}
 									</RadioIndicator>
-									<RadioLabel>
-										Autre
-									</RadioLabel>
+									<RadioLabel>Autre</RadioLabel>
 								</Radio>
 							</HStack>
 						</RadioGroup>
@@ -334,19 +327,12 @@ const UserProfileInformations: React.FC = () => {
 								</Text>
 								<Input className="text-center">
 									<InputField
-										value={
-											localization.code ||
-											""
-										}
-										onChangeText={(
-											text
-										) =>
-											setLocalization(
-												{
-													...localization,
-													code: text,
-												}
-											)
+										value={localization.code || ""}
+										onChangeText={(text) =>
+											setLocalization({
+												...localization,
+												code: text,
+											})
 										}
 									/>
 								</Input>
@@ -355,21 +341,14 @@ const UserProfileInformations: React.FC = () => {
 								<Text className="text-typography-500">
 									Pays
 								</Text>
-								<Input className="text-center">
+								<Input classNameqsd="text-center">
 									<InputField
-										value={
-											localization.country ||
-											""
-										}
-										onChangeText={(
-											text
-										) =>
-											setLocalization(
-												{
-													...localization,
-													country: text,
-												}
-											)
+										value={localization.country || ""}
+										onChangeText={(text) =>
+											setLocalization({
+												...localization,
+												country: text,
+											})
 										}
 									/>
 								</Input>
@@ -377,15 +356,11 @@ const UserProfileInformations: React.FC = () => {
 						</HStack>
 					</VStack>
 					<VStack space="xs">
-						<Text className="text-typography-500">
-							Age
-						</Text>
+						<Text className="text-typography-500">Age</Text>
 						<Input className="text-center">
 							<InputField
 								value={age || ""}
-								onChangeText={(text) =>
-									setAge(text)
-								}
+								onChangeText={(text) => setAge(text)}
 							/>
 						</Input>
 					</VStack>
@@ -407,32 +382,39 @@ const UserProfilePictures: React.FC = () => {
 		});
 
 		if (!result.didCancel && !result.errorCode) {
+			console.log(result.assets[0].uri);
 			if (privacyType === "public") {
 				setPictures((prev) => ({
 					...prev,
-					public: [result.assets[0].uri],
+					public: result.assets[0].uri,
 				}));
 			} else if (privacyType === "private") {
 				setPictures((prev) => ({
 					...prev,
-					private: [result.assets[0].uri],
+					private: result.assets[0].uri,
 				}));
 			}
 		}
+		console.log(pictures);
 	};
 	return (
 		<>
 			<Center className="bg-primary-500 h-[200px] w-[300px]">
-				<Text className="text-typography-0 font-bold">
-					Photos Publique & Privée
-				</Text>
+				<LinearGradient
+					className="w-full items-center py-2"
+					colors={["#FFFFFF", "#CFF1EB"]}
+					start={{ x: 0, y: 1 }}
+					end={{ x: 1, y: 0 }}
+				>
+					<Text className="text-typography-sw font-bold">
+						Photos Publique & Privée
+					</Text>
+				</LinearGradient>
 			</Center>
 			<FormControl className="p-4 border border-outline-300">
 				<HStack space="md" className="justify-center">
 					<Center className="flex-1">
-						<Pressable
-							onPress={() => chooseImage("public")}
-						>
+						<Pressable onPress={() => chooseImage("public")}>
 							<Image
 								size="xl"
 								source={{
@@ -443,9 +425,7 @@ const UserProfilePictures: React.FC = () => {
 						</Pressable>
 					</Center>
 					<Center className="flex-1">
-						<Pressable
-							onPress={() => chooseImage("private")}
-						>
+						<Pressable onPress={() => chooseImage("private")}>
 							<Image
 								size="xl"
 								source={{
@@ -464,20 +444,53 @@ const UserProfilePictures: React.FC = () => {
 const UserProfileScreen: React.FC = () => {
 	const [jwt, setJwt] = useRecoilState(jwtState);
 	const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
-
+	// ---
+	const [age, setAge] = useRecoilState(ageState);
+	const [sex, setSex] = useRecoilState(sexState);
+	const [localization, setLocalization] = useRecoilState(localizationState);
+	const [pictures, setPictures] = useRecoilState(picturesState);
+	const [themes, setThemes] = useRecoilState(themesStates);
+	const [themesSelected, setThemesSelected] =
+		useRecoilState(themesSelectedStates);
 	return (
 		<ScrollView>
 			<Box className="justify-center h-full">
-				<VStack space="lg" className="p-4">
-					<Center className="bg-primary-500">
-						<Text className="text-typography-0 font-bold">
-							{jwtDecoded.ID}
-						</Text>
+				<VStack space="lg" className="p-4" id="user-profile">
+					<Center className="bg-primary-500 h-[200px] w-[300px]">
+						<LinearGradient
+							className="w-full items-center py-2"
+							colors={["#FFFFFF", "#CFF1EB"]}
+							start={{ x: 0, y: 1 }}
+							end={{ x: 1, y: 0 }}
+						>
+							<Text className="text-typography-sw font-bold">
+								{jwtDecoded.ID}
+							</Text>
+						</LinearGradient>
 					</Center>
 					<UserProfilePictures />
 					<UserProfileThemes />
 					<UserProfileInformations />
 				</VStack>
+				<Button
+					mode="contained"
+					onPress={async () => {
+						await userSaveProfile(
+							{
+								age,
+								sex,
+								localization,
+								pictures,
+								themes,
+								themesSelected,
+							},
+							jwtDecoded.ID,
+							jwt.jwt
+						);
+					}}
+				>
+					Enregistrer
+				</Button>
 			</Box>
 		</ScrollView>
 	);

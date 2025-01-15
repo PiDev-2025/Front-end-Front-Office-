@@ -44,14 +44,28 @@ const picturesState = atom<object | null>({
 });
 const themesStates = atom<object | null>({
 	key: "themeState",
-	default: {},
+	default: { parents: [], childs: [] },
 });
-const themesSelectedStates = atom<{ theme: null; subTheme: null }[] | null>({
+const themesSelectedStates = atom<
+	{
+		theme: { name: null; id: null };
+		subTheme: { name: null; id: null }[];
+	}[]
+>({
 	key: "themesSelectedState",
 	default: [
-		{ theme: null, subTheme: null },
-		{ theme: null, subTheme: null },
-		{ theme: null, subTheme: null },
+		{
+			theme: { name: null, id: null },
+			subTheme: { name: null, id: null },
+		},
+		{
+			theme: { name: null, id: null },
+			subTheme: { name: null, id: null },
+		},
+		{
+			theme: { name: null, id: null },
+			subTheme: { name: null, id: null },
+		},
 	],
 });
 

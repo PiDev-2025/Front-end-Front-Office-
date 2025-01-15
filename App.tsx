@@ -55,14 +55,8 @@ const TabUser = createBottomTabNavigator();
 function UserTabs() {
 	return (
 		<TabUser.Navigator>
-			<TabUser.Screen
-				name="UserSignIn"
-				component={UserSignInScreen}
-			/>
-			<TabUser.Screen
-				name="UserSignUp"
-				component={UserSignUpScreen}
-			/>
+			<TabUser.Screen name="UserSignIn" component={UserSignInScreen} />
+			<TabUser.Screen name="UserSignUp" component={UserSignUpScreen} />
 		</TabUser.Navigator>
 	);
 }
@@ -70,10 +64,8 @@ function UserTabs() {
 // App.(js|ts)
 
 export default function App(): React.JSX.Element {
-	const { colorScheme, setColorScheme, isDarkColorScheme } =
-		useColorScheme();
-	const [isColorSchemeLoaded, setIsColorSchemeLoaded] =
-		React.useState(false);
+	const { colorScheme, setColorScheme, isDarkColorScheme } = useColorScheme();
+	const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
 	React.useEffect(() => {
 		(async () => {
 			const theme = await AsyncStorage.getItem("theme");
@@ -105,9 +97,7 @@ export default function App(): React.JSX.Element {
 
 	return (
 		<GluestackUIProvider mode="light">
-			<ThemeProvider
-				value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}
-			>
+			<ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
 				{/* <PostHogProvider
           apiKey="phc_DehZjG9DpbcKUWsd29cmJFfYFp18l8SRE5Cof5Mt2wR"
           options={{
@@ -127,9 +117,7 @@ export default function App(): React.JSX.Element {
 								/>
 								<Stack.Screen
 									name="Environment"
-									component={
-										EnvironmentScreen
-									}
+									component={EnvironmentScreen}
 								/>
 								<Stack.Screen
 									name="APIs"
@@ -148,9 +136,7 @@ export default function App(): React.JSX.Element {
 								/>
 								<Stack.Screen
 									name="VideoChat"
-									component={
-										VideoChatScreen
-									}
+									component={VideoChatScreen}
 								/>
 								<Stack.Screen
 									name="ChatList"
