@@ -35,6 +35,7 @@ import { userSaveProfile } from "./apis/User";
 import {
 	ageAtom,
 	fetchThemesAtom,
+	fetchUserInformationAtom,
 	jwtAtom,
 	jwtDecodedAtom,
 	localizationAtom,
@@ -476,6 +477,16 @@ const UserProfileScreen: React.FC = () => {
 	const [pictures, setPictures] = useAtom(picturesAtom);
 	const [themes, setThemes] = useAtom(themesAtom);
 	const [themesSelected, setThemesSelected] = useAtom(themesSelectedAtoms);
+
+	const [userInformation, setUserInformation] = useAtom(
+		fetchUserInformationAtom
+	);
+	useEffect(() => {
+		if (jwt) {
+			setUserInformation(); // This will trigger the fetch
+		}
+	}, [jwt, setUserInformation]);
+
 	return (
 		<ScrollView>
 			<Box className="justify-center h-full">
@@ -495,7 +506,7 @@ const UserProfileScreen: React.FC = () => {
 					</Center>
 					<UserProfilePictures />
 					<UserProfileThemes />
-					{/* <UserProfileInformations /> */}
+					<UserProfileInformations />
 				</VStack>
 				<Button
 					mode="contained"

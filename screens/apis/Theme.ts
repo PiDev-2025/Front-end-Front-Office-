@@ -364,7 +364,7 @@ async function getThemes(token: string) {
 			url: `${process.env.API_URL}/core/theme/`,
 			headers: { origin: origin, authorization: token },
 		};
-		console.log("options", options);
+		// console.log("options", options);
 		try {
 			const { data } = await axios
 				.request(options)
@@ -375,7 +375,7 @@ async function getThemes(token: string) {
 					}
 					throw error;
 				});
-			console.log("data", data);
+			// console.log("data", data);
 			if (data.length > 0) {
 				return data;
 			} else {

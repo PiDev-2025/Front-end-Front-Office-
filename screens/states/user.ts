@@ -1,5 +1,6 @@
 import { atom } from "jotai";
 import { getThemes } from "../apis/Theme";
+import { getUserInformation } from "../apis/User";
 
 const usernameState = atom<string | null>("dams_qct");
 const emailState = atom<string | null>("damien+5@sympathyworld.co");
@@ -73,6 +74,26 @@ const fetchThemesAtom = atom(
 	}
 );
 
+const userInformationAtom = atom<object[] | null>([{}]);
+
+const fetchUserInformationAtom = atom(
+	(get) => get(userInformationAtom),
+	async (get, set) => {
+		console.log("userInformationAtom");
+		const jwt = get(jwtAtom);
+		const jwtDecoded = get(jwtDecodedAtom);
+		console.log("userInformationAtom:jwt/jwtDecoded.ID", jwt, jwtDecoded);
+		try {
+			const data = await getUserInformation(jwt, jwtDecoded.ID);
+			console.log("userInformationAtom:data", data);
+			set(userInformationAtom, data);
+		} catch (error) {
+			console.error("Failed to fetch themes:", error);
+			set(userInformationAtom, []);
+		}
+	}
+);
+
 const themesSelectedAtoms = atom<
 	{
 		theme: { name: null; id: null };
@@ -120,4 +141,6 @@ export {
 	fetchThemesAtom,
 	themesSelectedAtoms,
 	// userDataAtom,
+	userInformationAtom,
+	fetchUserInformationAtom,
 };

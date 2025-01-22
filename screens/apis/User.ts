@@ -95,9 +95,9 @@ async function userSaveProfile(data: object, userId: string, jwt: string) {
 	}
 }
 
-async function userGetProfile(jwt: string, userId: string) {
+async function getUserInformation(jwt: string, userId: string) {
 	const origin = "qct-sw.react-native.screens.apis.User.userGetProfile";
-	console.log(origin);
+	console.log("getUserInformation", jwt, userId, origin);
 	const options = {
 		method: "GET",
 		url: `${process.env.API_URL}/user/information/${userId}`,
@@ -117,4 +117,4 @@ async function userGetProfile(jwt: string, userId: string) {
 	}
 }
 
-export { userSignUp, userSignIn, userSaveProfile, userGetProfile };
+export { userSignUp, userSignIn, userSaveProfile, getUserInformation };
