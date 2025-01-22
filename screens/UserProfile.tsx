@@ -7,7 +7,6 @@ import { Image } from "@/components/ui/image";
 import { Input, InputField } from "@/components/ui/input";
 import { LinearGradient } from "@/components/ui/linear-gradient";
 import { Pressable } from "@/components/ui/pressable";
-
 import {
 	Radio,
 	RadioGroup,
@@ -27,24 +26,23 @@ import {
 	SelectTrigger,
 } from "@/components/ui/select";
 import { VStack } from "@/components/ui/vstack";
-import React from "react";
+import { useAtom } from "jotai";
+import React, { useEffect } from "react";
 import { ScrollView, Text } from "react-native";
 import { launchImageLibrary } from "react-native-image-picker";
 import { Button } from "react-native-paper";
-import { useRecoilState } from "recoil";
-import { getThemes } from "./apis/Theme";
 import { userSaveProfile } from "./apis/User";
 import {
-	ageState,
-	jwtDecodedState,
-	jwtState,
-	localizationState,
-	picturesState,
-	sexState,
-	themesSelectedStates,
-	themesStates,
+	ageAtom,
+	fetchThemesAtom,
+	jwtAtom,
+	jwtDecodedAtom,
+	localizationAtom,
+	picturesAtom,
+	sexAtom,
+	themesAtom,
+	themesSelectedAtoms,
 } from "./states/user";
-
 interface UserProfileThemeParentProps {
 	theme: any;
 	index: number;
@@ -54,9 +52,20 @@ const UserProfileThemeChild: React.FC<UserProfileThemeParentProps> = ({
 	theme,
 	index,
 }) => {
-	const [themes, setThemes] = useRecoilState(themesStates);
-	const [themesSelected, setThemesSelected] =
-		useRecoilState(themesSelectedStates);
+	const [themes, setThemes] = useAtom(themesAtom);
+	const [themesSelected, setThemesSelected] = useAtom(themesSelectedAtoms);
+	console.log(themes, themesSelected);
+	// React.useEffect(() => {
+	// 	const fetchThemes = async () => {
+	// 		const themesFromApi = await getThemes(jwt);
+	// 		setThemes({
+	// 			parents: themesFromApi.parents,
+	// 			childs: themesFromApi.childs,
+	// 		});
+	// 	};
+
+	// 	fetchThemes();
+	// }, [jwt]);
 	const getSubThemes = (parent: any) => {
 		console.log("getSubThemes:parent", parent);
 		const _parent = themes.parents.filter((p: any) => p.name === parent);
@@ -144,9 +153,8 @@ const UserProfileThemeParent: React.FC<UserProfileThemeParentProps> = ({
 	theme,
 	index,
 }) => {
-	const [themes, setThemes] = useRecoilState(themesStates);
-	const [themesSelected, setThemesSelected] =
-		useRecoilState(themesSelectedStates);
+	const [themes, setThemes] = useAtom(themesAtom);
+	const [themesSelected, setThemesSelected] = useAtom(themesSelectedAtoms);
 	return (
 		<Grid
 			className="gap-3"
@@ -222,22 +230,34 @@ const UserProfileThemeParent: React.FC<UserProfileThemeParentProps> = ({
 };
 
 const UserProfileThemes: React.FC = () => {
-	const [jwt, setJwt] = useRecoilState(jwtState);
-	const [themes, setThemes] = useRecoilState(themesStates);
-	const [themesSelected, setThemesSelected] =
-		useRecoilState(themesSelectedStates);
-	console.log("themesSelected", themesSelected);
-	const getThemesFromApi = async () => {
-		const themesFromApi = await getThemes(jwt.jwt);
-		setThemes({
-			parents: themesFromApi.parents,
-			childs: themesFromApi.childs,
-		});
-	};
-
-	React.useEffect(() => {
-		getThemesFromApi();
-	}, [jwt]);
+	const [jwt, setJwt] = useAtom(jwtAtom);
+	const [jwtDecoded, setJwtDecoded] = useAtom(jwtDecodedAtom);
+	const [themes, setThemes] = useAtom(fetchThemesAtom);
+	const [themesSelected, setThemesSelected] = useAtom(themesSelectedAtoms);
+	// console.log("UserProfileThemes", jwt, themes, themesSelected);
+	// const getThemesFromApi = async (token: string) => {
+	// 	const themesFromApi = await getThemes(token);
+	// 	setThemes({
+	// 		parents: themesFromApi.parents,
+	// 		childs: themesFromApi.childs,
+	// 	});
+	// };
+	// (async () => {
+	// 	await getThemesFromApi(jwt);
+	// })();
+	// React.useEffect(() => {
+	// 	console.log("getThemesFromApi >");
+	// 	(async () => {
+	// 		await getThemesFromApi(jwt);
+	// 	})();
+	// 	console.log("getThemesFromApi <");
+	// }, [jwt]);
+	useEffect(() => {
+		if (jwt) {
+			setThemes(); // This will trigger the fetch
+		}
+	}, [jwt, setThemes]);
+	// console.log("UserProfileThemes", themes, themesSelected);
 	return (
 		<>
 			<Center className="bg-primary-500 h-[200px] w-[300px]">
@@ -247,25 +267,28 @@ const UserProfileThemes: React.FC = () => {
 					start={{ x: 0, y: 1 }}
 					end={{ x: 1, y: 0 }}
 				>
-					<Text className="text-typography-sw font-bold">
+					<Text className="text-typography-sw font-borld">
 						Thématiques Selectionnées
 					</Text>
 				</LinearGradient>
 			</Center>
 			<FormControl className="p-4 border border-outline-300">
 				<VStack space="xl">
-					{themesSelected?.map((theme, index) => (
-						<VStack space="xl" key={index}>
-							<UserProfileThemeParent
-								theme={theme}
-								index={index}
-							/>
-							<UserProfileThemeChild
-								theme={theme}
-								index={index}
-							/>
-						</VStack>
-					))}
+					{themes &&
+						themes.parents &&
+						themes.childs &&
+						themesSelected?.map((theme, index) => (
+							<VStack space="xl" key={index}>
+								<UserProfileThemeParent
+									theme={theme}
+									index={index}
+								/>
+								<UserProfileThemeChild
+									theme={theme}
+									index={index}
+								/>
+							</VStack>
+						))}
 				</VStack>
 			</FormControl>
 		</>
@@ -273,9 +296,9 @@ const UserProfileThemes: React.FC = () => {
 };
 
 const UserProfileInformations: React.FC = () => {
-	const [age, setAge] = useRecoilState(ageState);
-	const [sex, setSex] = useRecoilState(sexState);
-	const [localization, setLocalization] = useRecoilState(localizationState);
+	const [age, setAge] = useAtom(ageAtom);
+	const [sex, setSex] = useAtom(sexAtom);
+	const [localization, setLocalization] = useAtom(localizationAtom);
 	return (
 		<>
 			<Center className="bg-primary-500 h-[200px] w-[300px]">
@@ -371,7 +394,7 @@ const UserProfileInformations: React.FC = () => {
 };
 
 const UserProfilePictures: React.FC = () => {
-	const [pictures, setPictures] = useRecoilState(picturesState);
+	const [pictures, setPictures] = useAtom(picturesAtom);
 	const chooseImage = async (privacyType: string) => {
 		console.log("chooseImage");
 		const result = await launchImageLibrary({
@@ -442,16 +465,17 @@ const UserProfilePictures: React.FC = () => {
 };
 
 const UserProfileScreen: React.FC = () => {
-	const [jwt, setJwt] = useRecoilState(jwtState);
-	const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
+	const [jwt, setJwt] = useAtom(jwtAtom);
+	const [jwtDecoded, setJwtDecoded] = useAtom(jwtDecodedAtom);
 	// ---
-	const [age, setAge] = useRecoilState(ageState);
-	const [sex, setSex] = useRecoilState(sexState);
-	const [localization, setLocalization] = useRecoilState(localizationState);
-	const [pictures, setPictures] = useRecoilState(picturesState);
-	const [themes, setThemes] = useRecoilState(themesStates);
-	const [themesSelected, setThemesSelected] =
-		useRecoilState(themesSelectedStates);
+	// const [userData, setUserData] = useAtom(userDataAtom);
+	// console.log("userData", userData);
+	const [age, setAge] = useAtom(ageAtom);
+	const [sex, setSex] = useAtom(sexAtom);
+	const [localization, setLocalization] = useAtom(localizationAtom);
+	const [pictures, setPictures] = useAtom(picturesAtom);
+	const [themes, setThemes] = useAtom(themesAtom);
+	const [themesSelected, setThemesSelected] = useAtom(themesSelectedAtoms);
 	return (
 		<ScrollView>
 			<Box className="justify-center h-full">
@@ -464,13 +488,14 @@ const UserProfileScreen: React.FC = () => {
 							end={{ x: 1, y: 0 }}
 						>
 							<Text className="text-typography-sw font-bold">
-								{jwtDecoded.ID}
+								{/* {jwtDecoded.ID} */}
+								*username
 							</Text>
 						</LinearGradient>
 					</Center>
 					<UserProfilePictures />
 					<UserProfileThemes />
-					<UserProfileInformations />
+					{/* <UserProfileInformations /> */}
 				</VStack>
 				<Button
 					mode="contained"
@@ -485,7 +510,7 @@ const UserProfileScreen: React.FC = () => {
 								themesSelected,
 							},
 							jwtDecoded.ID,
-							jwt.jwt
+							jwt
 						);
 					}}
 				>

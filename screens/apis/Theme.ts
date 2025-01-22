@@ -349,33 +349,45 @@ const hardData = {
 	],
 };
 
-async function getThemes(jwt: string) {
-	console.log("getThemes", jwt);
+async function getThemes(token: string) {
+	console.log("getThemes.l0", token);
 	const origin = "qct-sw.react-native.screens.apis.UserProfile.getThemes";
-	console.log(origin);
-	console.log(`${process.env.API_URL}/core/theme/`);
-	console.log(jwt);
-	const options = {
-		method: "GET",
-		url: `${process.env.API_URL}/core/theme/`,
-		headers: { origin: origin, authorization: jwt },
-	};
-	try {
-		const { data } = await axios.request(options).catch(async (error) => {
-			if (error.response && error.response.status >= 500) {
-				console.log("Retrying request...");
-				return await axios.request(options);
+	if (token) {
+		console.log(
+			"api/getThemes",
+			origin,
+			token,
+			`${process.env.API_URL}/core/theme/`
+		);
+		const options = {
+			method: "GET",
+			url: `${process.env.API_URL}/core/theme/`,
+			headers: { origin: origin, authorization: token },
+		};
+		console.log("options", options);
+		try {
+			const { data } = await axios
+				.request(options)
+				.catch(async (error) => {
+					if (error.response && error.response.status >= 500) {
+						console.log("Retrying request...");
+						return await axios.request(options);
+					}
+					throw error;
+				});
+			console.log("data", data);
+			if (data.length > 0) {
+				return data;
+			} else {
+				return hardData;
 			}
-			throw error;
-		});
-		console.log(data);
-		if (data.length > 0) {
-			return data;
-		} else {
-			return hardData;
+		} catch (error) {
+			console.error(error);
+			console.error(error.response.data);
 		}
-	} catch (error) {
-		console.error(error);
+	} else {
+		return hardData;
+		// throw new Error("jwt is null");
 	}
 }
 

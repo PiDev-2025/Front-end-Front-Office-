@@ -127,7 +127,7 @@ export default function App(): React.JSX.Element {
 									name="States"
 									component={StatesScreen}
 								/>
-								<Stack.Screen
+								{/* <Stack.Screen
 									name="Chat"
 									component={ChatScreen}
 									options={{
@@ -152,7 +152,7 @@ export default function App(): React.JSX.Element {
 									initialParams={{
 										roomId: "1337",
 									}}
-								/>
+								/> */}
 								<Stack.Screen
 									name="User"
 									component={UserTabs}

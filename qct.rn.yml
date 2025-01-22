@@ -1,0 +1,61 @@
+rn:
+  # splash:
+  signin:
+    - [i.email]
+    - [i.password]
+    - [b.connect]
+  signup:
+    - [username]
+    - [i.email]
+    - [i.password]
+    - [b.connect]
+  _[t.*]_: # tab with * others keys elements
+
+  chat:
+    list:
+    new:
+      # - picture: "https://codesandbox.io/p/sandbox/cju2d?file=%2Fsrc%2FApp.tsx"
+      - [text.sections_*]
+      - [img.pictures_public, img.pictures_private]
+      - [text.sections_*]
+      - [themes_*
+          [
+            generic[text.label, select.data],
+            specialized[text.label, select.data],
+          ]
+        ]
+      - [text.sections_*]
+      - [radio.genders_*]
+    vars:
+      user: <username>
+      sections:
+        1: Photos Publique & Privée
+        2: Thématiques Selectionnées
+        3: Informations Personnelle
+      themes:
+        - generic:
+            label: gen
+            data: https://
+          specialized:
+            label: spe
+            data: https://
+        - generic:
+            label: gen
+            data: https://
+          specialized:
+            label: spe
+            data: https://
+        - generic:
+            label: gen
+            data: https://
+          specialized:
+            label: spe
+            data: https://
+        - - gen
+          - https://
+        - - spe
+          - https://
+
+  profile:
+    tplt:
+      - [text.user]

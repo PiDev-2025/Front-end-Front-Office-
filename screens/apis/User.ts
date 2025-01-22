@@ -17,7 +17,7 @@ async function userSignUp(username: string, email: string, password: string) {
 	try {
 		const { data } = await axios.request(options);
 		console.log(data);
-		return data;
+		return data.jwt;
 	} catch (error) {
 		console.error(error);
 	}
@@ -40,7 +40,7 @@ async function userSignIn(email: string, password: string) {
 	try {
 		const { data } = await axios.request(options);
 		console.log("axios.userSignIn", data);
-		return data;
+		return data.jwt;
 	} catch (error) {
 		console.error(error);
 	}
@@ -62,6 +62,7 @@ async function userSaveProfile(data: object, userId: string, jwt: string) {
 
 	// console.log(themesId);
 	const payload = {
+		user_id: userId,
 		themes: data.themesSelected.flatMap((theme: any) => [
 			theme.subTheme.id,
 			theme.theme.id,
@@ -70,10 +71,8 @@ async function userSaveProfile(data: object, userId: string, jwt: string) {
 		localization_code: Number(data.localization.code),
 		localization_country: data.localization.country,
 		sex: data.sex,
-		pictures: {
-			private: ["blabla", "bloublou"],
-			public: ["blabla", "bloublou"],
-		},
+		pictures_public: ["blabla", "bloublou"],
+		pictures_private: ["blabla", "bloublou"],
 	};
 	const options = {
 		method: "POST",
@@ -101,14 +100,14 @@ async function userGetProfile(jwt: string, userId: string) {
 	console.log(origin);
 	const options = {
 		method: "GET",
-		url: `${process.env.API_URL}/core/user/informations/${userId}`,
+		url: `${process.env.API_URL}/user/information/${userId}`,
 		headers: {
 			"content-type": "application/json",
 			origin: origin,
 			authorization: jwt,
 		},
 	};
-
+	console.log(options);
 	try {
 		const { data } = await axios.request(options);
 		console.log("axios.getUserProfile", data);

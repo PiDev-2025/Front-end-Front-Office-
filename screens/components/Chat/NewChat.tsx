@@ -296,7 +296,7 @@ const NewChat: React.FC = () => {
 		//     const data = await create1V1Chat(
 		//       jwtDecoded.ID.split(":")[1],
 		//       searchQuery,
-		//       jwt.jwt
+		//       jwt
 		//     );
 		//     console.log("chat created supposed data here");
 		//     console.log(data);
