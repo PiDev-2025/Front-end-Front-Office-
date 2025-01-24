@@ -1,4 +1,13 @@
 import axios from "axios";
+import { useAtom } from "jotai";
+import {
+	ageAtom,
+	jwtAtom,
+	localizationAtom,
+	sexAtom,
+	themesSelectedAtoms,
+	userIDAtom,
+} from "../states/user";
 
 async function userSignUp(username: string, email: string, password: string) {
 	const origin = "qct-sw.react-native.screens.apis.User.userSignUp";
@@ -46,7 +55,7 @@ async function userSignIn(email: string, password: string) {
 	}
 }
 
-async function userSaveProfile(data: object, userId: string, jwt: string) {
+async function userSaveProfile() {
 	console.log("userSaveProfile");
 	const origin = "qct-sw.react-native.screens.apis.User.userSaveProfile";
 	// console.log(origin, data.themesSelected);
@@ -61,16 +70,23 @@ async function userSaveProfile(data: object, userId: string, jwt: string) {
 	// console.log(data.pictures);
 
 	// console.log(themesId);
+	const [jwt, setJwt] = useAtom(jwtAtom);
+	const [userId, setUserId] = useAtom(userIDAtom);
+	const [themesSelected, setThemesSelected] = useAtom(themesSelectedAtoms);
+	const [age, setAge] = useAtom(ageAtom);
+	const [sex, setSex] = useAtom(sexAtom);
+	const [localization, setLocalization] = useAtom(localizationAtom);
+	// const [
 	const payload = {
 		user_id: userId,
-		themes: data.themesSelected.flatMap((theme: any) => [
+		themes: themesSelected.flatMap((theme: any) => [
 			theme.subTheme.id,
 			theme.theme.id,
 		]),
-		age: Number(data.age),
-		localization_code: Number(data.localization.code),
-		localization_country: data.localization.country,
-		sex: data.sex,
+		age: Number(age),
+		localization_code: Number(localization.code),
+		localization_country: localization.country,
+		sex: sex,
 		pictures_public: ["blabla", "bloublou"],
 		pictures_private: ["blabla", "bloublou"],
 	};
@@ -100,7 +116,7 @@ async function getUserInformation(jwt: string, userId: string) {
 	console.log("getUserInformation", jwt, userId, origin);
 	const options = {
 		method: "GET",
-		url: `${process.env.API_URL}/user/information/${userId}`,
+		url: `${process.env.API_URL}/user/information/by_user_id/${userId}`,
 		headers: {
 			"content-type": "application/json",
 			origin: origin,

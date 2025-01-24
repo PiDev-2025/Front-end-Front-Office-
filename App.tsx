@@ -11,16 +11,12 @@ import {
 } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import APIsScreen from "./screens/APIs";
-import ChatScreen from "./screens/Chat";
 import EnvironmentScreen from "./screens/Environment";
 import QCTScreen from "./screens/QCTScreen";
 import StatesScreen from "./screens/States";
 import UserProfile from "./screens/UserProfile";
 import UserSignInScreen from "./screens/UserSignIn";
 import UserSignUpScreen from "./screens/UserSignUp";
-import VideoChatScreen from "./screens/VideoChat";
-import ChatList from "./screens/components/Chat/ChatList";
-import NewChat from "./screens/components/Chat/NewChat";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
@@ -62,7 +58,7 @@ function UserTabs() {
 }
 
 // App.(js|ts)
-
+import { Provider } from "jotai";
 export default function App(): React.JSX.Element {
 	const { colorScheme, setColorScheme, isDarkColorScheme } = useColorScheme();
 	const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
@@ -102,32 +98,33 @@ export default function App(): React.JSX.Element {
           apiKey="phc_DehZjG9DpbcKUWsd29cmJFfYFp18l8SRE5Cof5Mt2wR"
           options={{
             host: "https://us.i.posthog.com",
-          }}
-        > */}
-				<NavigationContainer>
-					<Stack.Navigator initialRouteName="SympathyWorld">
-						{jwtState ? (
-							<>
-								<Stack.Screen
-									name="SympathyWorld"
-									component={QCTScreen}
-									options={{
-										headerShown: true,
-									}}
-								/>
-								<Stack.Screen
-									name="Environment"
-									component={EnvironmentScreen}
-								/>
-								<Stack.Screen
-									name="APIs"
-									component={APIsScreen}
-								/>
-								<Stack.Screen
-									name="States"
-									component={StatesScreen}
-								/>
-								{/* <Stack.Screen
+			}}
+			> */}
+				<Provider>
+					<NavigationContainer>
+						<Stack.Navigator initialRouteName="User">
+							{jwtState ? (
+								<>
+									<Stack.Screen
+										name="SympathyWorld"
+										component={QCTScreen}
+										options={{
+											headerShown: true,
+										}}
+									/>
+									<Stack.Screen
+										name="Environment"
+										component={EnvironmentScreen}
+									/>
+									<Stack.Screen
+										name="APIs"
+										component={APIsScreen}
+									/>
+									<Stack.Screen
+										name="States"
+										component={StatesScreen}
+									/>
+									{/* <Stack.Screen
 									name="Chat"
 									component={ChatScreen}
 									options={{
@@ -153,31 +150,32 @@ export default function App(): React.JSX.Element {
 										roomId: "1337",
 									}}
 								/> */}
+									<Stack.Screen
+										name="User"
+										component={UserTabs}
+										options={{
+											headerShown: true,
+										}}
+									/>
+									<Stack.Screen
+										name="UserProfile"
+										component={UserProfile}
+										options={{
+											headerShown: true,
+										}}
+									/>
+								</>
+							) : (
 								<Stack.Screen
 									name="User"
-									component={UserTabs}
-									options={{
-										headerShown: true,
-									}}
+									component={UserSignUpScreen}
+									options={{ headerShown: false }}
 								/>
-								<Stack.Screen
-									name="UserProfile"
-									component={UserProfile}
-									options={{
-										headerShown: true,
-									}}
-								/>
-							</>
-						) : (
-							<Stack.Screen
-								name="User"
-								component={UserSignUpScreen}
-								options={{ headerShown: false }}
-							/>
-						)}
-					</Stack.Navigator>
-					{/* </PostHogProvider> */}
-				</NavigationContainer>
+							)}
+						</Stack.Navigator>
+						{/* </PostHogProvider> */}
+					</NavigationContainer>
+				</Provider>
 			</ThemeProvider>
 		</GluestackUIProvider>
 	);

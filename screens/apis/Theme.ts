@@ -391,4 +391,4 @@ async function getThemes(token: string) {
 	}
 }
 
-export { getThemes };
+export { getThemes, hardData };

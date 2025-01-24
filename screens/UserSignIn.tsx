@@ -15,14 +15,15 @@ import {
 	jwtAtom,
 	jwtDecodedAtom,
 	passwordAtom,
+	userIDAtom,
 	usernameAtom,
 } from "./states/user";
-
-function UserSignUp(): React.JSX.Element {
+function UserSignIn(): React.JSX.Element {
 	const navigation = useNavigation();
 	const [username, setUsername] = useAtom(usernameAtom);
 	const [email, setEmail] = useAtom(emailAtom);
 	const [password, setPassword] = useAtom(passwordAtom);
+	const [userId, setUserID] = useAtom(userIDAtom);
 	const [jwt, setJwt] = useAtom(jwtAtom);
 	const [jwtDecoded, setJwtDecoded] = useAtom(jwtDecodedAtom);
 	const [showPassword, setShowPassword] = React.useState(false);
@@ -33,11 +34,24 @@ function UserSignUp(): React.JSX.Element {
 		try {
 			if (username && email && password) {
 				const data = await userSignIn(email, password);
-				setJwt(data);
-				setJwtDecoded(jwtDecode(data));
-				// navigation.navigate("SympathyWorld");
-				navigation.navigate("SympathyWorld", {
-					screen: "SympathyWorld",
+				if (!data) {
+					throw new Error("Failed to sign in");
+				} else {
+					// console.log(data);
+					setJwt(data);
+					if (data) {
+						const _jwtDecoded = jwtDecode(data);
+						setJwtDecoded(_jwtDecoded);
+						// console.log("jwtDecoded", _jwtDecoded);
+						if (_jwtDecoded.ID) {
+							setUserID(_jwtDecoded.ID);
+							console.log(`userID:${userId}`);
+							// await AsyncStorage.setItem("userID", userID);
+						}
+					}
+				}
+				navigation.navigate("UserProfile", {
+					screen: "UserProfile",
 				});
 			} else {
 				console.error("userID cannot be null");
@@ -98,12 +112,12 @@ function UserSignUp(): React.JSX.Element {
 }
 
 // Main screen
-function UserSignUpScreen(): React.JSX.Element {
+function UserSignInScreen(): React.JSX.Element {
 	return (
 		<SafeAreaView style={{ flex: 1, padding: 20 }}>
-			<UserSignUp />
+			<UserSignIn />
 		</SafeAreaView>
 	);
 }
 
-export default UserSignUpScreen;
+export default UserSignInScreen;
