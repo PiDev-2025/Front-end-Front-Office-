@@ -14,6 +14,13 @@ import {
 	RadioIndicator,
 	RadioLabel,
 } from "@/components/ui/radio";
+import { VStack } from "@/components/ui/vstack";
+import { useAtom, useSetAtom } from "jotai";
+import React, { useEffect } from "react";
+import { ScrollView, Text } from "react-native";
+import { launchImageLibrary } from "react-native-image-picker";
+
+//import { eden } from "@/eden";
 import {
 	Select,
 	SelectBackdrop,
@@ -26,40 +33,26 @@ import {
 	SelectScrollView,
 	SelectTrigger,
 } from "@/components/ui/select";
-import { VStack } from "@/components/ui/vstack";
-import { useAtom } from "jotai";
-import React, { useEffect } from "react";
-import { ScrollView, Text } from "react-native";
-import { launchImageLibrary } from "react-native-image-picker";
-
 import { userSaveProfile } from "./apis/User";
 import {
 	ageAtom,
+	fetchThemesAtom,
 	fetchUserInformationAtom,
 	jwtAtom,
 	localizationAtom,
+	picturesAtom,
 	sexAtom,
 	themesAtom,
 	themesSelectedAtoms,
 	userIDAtom,
 } from "./states/user";
-interface UserProfileThemeParentProps {
-	theme: any;
-	index: number;
-}
-const UserProfileThemeChild: React.FC<
-	UserProfileThemeParentProps & {
-		themes: any;
-		themesSelected: any;
-		setThemesSelected: any;
-	}
-> = ({ theme, index, themes, themesSelected, setThemesSelected }) => {
-	const getSubThemes = (parent: any) => {
-		const _parent = themes.parents.filter((p: any) => p.name === parent);
-		const parentId = _parent[0].id;
-		return themes.childs.filter((child: any) => child.parent === parentId);
-	};
 
+const getSubThemes = (parent: any) => {
+	const _parent = themes.parents.filter((p: any) => p.name === parent);
+	const parentId = _parent[0].id;
+	return themes.childs.filter((child: any) => child.parent === parentId);
+};
+const UserProfileThemeChild: React.FC = () => {
 	return (
 		<Grid
 			className="gap-3"
@@ -128,13 +121,9 @@ const UserProfileThemeChild: React.FC<
 	);
 };
 
-const UserProfileThemeParent: React.FC<
-	UserProfileThemeParentProps & {
-		themes: any;
-		themesSelected: any;
-		setThemesSelected: any;
-	}
-> = ({ theme, index, themes, themesSelected, setThemesSelected }) => {
+const UserProfileThemeParent: React.FC = () => {
+	const [themes, setThemes] = useAtom(themesAtom);
+	const [themesSelected, setThemesSelected] = useAtom(themesSelectedAtoms);
 	return (
 		<Grid
 			className="gap-3"
@@ -152,7 +141,7 @@ const UserProfileThemeParent: React.FC<
 				className="bg-background-50 rounded-md text-center"
 				_extra={{ className: "col-span-4" }}
 			>
-				<Select
+				{/* <Select
 					onValueChange={(value) =>
 						setThemesSelected((prev: any) =>
 							prev.map((item: any, i: number) =>
@@ -194,28 +183,28 @@ const UserProfileThemeParent: React.FC<
 							</SelectContent>
 						</SelectScrollView>
 					</SelectPortal>
-				</Select>
+				</Select> */}
 			</GridItem>
 		</Grid>
 	);
 };
-const UserProfileThemes: React.FC<
-	UserProfileThemeParentProps & {
-		themes: any;
-		themesSelected: any;
-		setThemesSelected: any;
-		setThemes: any;
-		jwt: string;
-	}
-> = ({ theme, index, jwt }) => {
-	const [themes, setThemes] = useAtom(themesAtom);
-	const [themesSelected, setThemesSelected] = useAtom(themesSelectedAtoms);
+const UserProfileThemes: React.FC = () => {
+	console.log("UserProfileThemes");
+	// const [jwt] = useAtom(jwtAtom);
+	const [themes] = useAtom(themesAtom);
+	const [themesSelected] = useAtom(themesSelectedAtoms);
+	// const [themesSelected, setThemesSelected] = useAtom(
+	// 	fetchThemesSelectedAtom
+	// );
 
-	useEffect(() => {
-		if (jwt) {
-			setThemes(jwt); // This will trigger the fetch
-		}
-	}, [jwt, setThemes]);
+	// useEffect(() => {
+	// 	console.log("UserProfileThemes.useEffect");
+	// 	if (jwt) {
+	// 		// setThemes(); // This will trigger the fetch
+	// 		// setThemesSelected();
+	// 		console.log(themes);
+	// 	}
+	// }, [jwt, setThemes, setThemesSelected]);
 
 	return (
 		<>
@@ -238,20 +227,8 @@ const UserProfileThemes: React.FC<
 						themes.childs &&
 						themesSelected?.map((theme, index) => (
 							<VStack space="xl" key={index}>
-								<UserProfileThemeParent
-									theme={theme}
-									index={index}
-									themes={themes}
-									themesSelected={themesSelected}
-									setThemesSelected={setThemesSelected}
-								/>
-								<UserProfileThemeChild
-									theme={theme}
-									index={index}
-									themes={themes}
-									themesSelected={themesSelected}
-									setThemesSelected={setThemesSelected}
-								/>
+								<UserProfileThemeParent />
+								<UserProfileThemeChild />
 							</VStack>
 						))}
 				</VStack>
@@ -299,8 +276,8 @@ const UserProfileInformations: React.FC = () => {
 						</RadioGroup>
 					</VStack>
 					<VStack space="xl">
-						<HStack space="xl">
-							<Box className="w-1/4">
+						<HStack space="xs">
+							{/* <Box className="w-20">
 								<Text className="text-typography-500 color-tertiary-500">
 									Code
 								</Text>
@@ -316,7 +293,7 @@ const UserProfileInformations: React.FC = () => {
 									/>
 								</Input>
 							</Box>
-							<Box className="w-3/4">
+							<Box className="w-32">
 								<Text className="text-typography-500">
 									Pays
 								</Text>
@@ -331,10 +308,19 @@ const UserProfileInformations: React.FC = () => {
 										}
 									/>
 								</Input>
+							</Box> */}
+							<Box className="w-20">
+								<Text className="text-typography-500">Age</Text>
+								<Input className="text-center">
+									<InputField
+										value={age || ""}
+										onChangeText={(text) => setAge(text)}
+									/>
+								</Input>
 							</Box>
 						</HStack>
 					</VStack>
-					<VStack space="xs">
+					{/* <VStack space="xs">
 						<Text className="text-typography-500">Age</Text>
 						<Input className="text-center">
 							<InputField
@@ -342,16 +328,14 @@ const UserProfileInformations: React.FC = () => {
 								onChangeText={(text) => setAge(text)}
 							/>
 						</Input>
-					</VStack>
+					</VStack> */}
 				</VStack>
 			</FormControl>
 		</>
 	);
 };
-const UserProfilePictures: React.FC<{
-	pictures: any;
-	setPictures: any;
-}> = ({ pictures, setPictures }) => {
+const UserProfilePictures: React.FC = () => {
+	const [pictures, setPictures] = useAtom(picturesAtom);
 	const chooseImage = async (privacyType: string) => {
 		console.log("chooseImage");
 		const result = await launchImageLibrary({
@@ -441,6 +425,7 @@ const UserProfileName: React.FC<{
 		</Center>
 	);
 };
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const UserProfileScreen: React.FC = () => {
 	const [jwt, setJwt] = useAtom(jwtAtom);
@@ -448,6 +433,8 @@ const UserProfileScreen: React.FC = () => {
 	const [age, setAge] = useAtom(ageAtom);
 	const [sex, setSex] = useAtom(sexAtom);
 	const [localization, setLocalization] = useAtom(localizationAtom);
+	const setThemes = useSetAtom(fetchThemesAtom);
+	// const setThemesSelected = useSetAtom(fetchThemesSelectedAtom);
 	const [userInformation, setUserInformation] = useAtom(
 		fetchUserInformationAtom
 	);
@@ -471,10 +458,21 @@ const UserProfileScreen: React.FC = () => {
 					country: userInformation.localization_country,
 				});
 			}
-			// if ()
-			// setUserInformation({ jwt, userID: userID.split(":")[1] });
+			// console.log("useEffect.userInformation", userInformation);
+			if (userInformation.themes) {
+				setThemes();
+				console.log("themes", userInformation.themes);
+			}
 		}
-	}, [jwt, userId, setUserInformation]);
+	}, [
+		jwt,
+		userId,
+		setUserInformation,
+		setAge,
+		setSex,
+		setLocalization,
+		setThemes,
+	]);
 
 	return (
 		<LinearGradient
@@ -486,24 +484,14 @@ const UserProfileScreen: React.FC = () => {
 			<ScrollView className="w-full h-full ">
 				<Box className="justify-center h-full">
 					<VStack space="lg" className="" id="user-profile">
-						{userInformation.username && (
+						{/* {userInformation.username && (
 							<UserProfileName
 								username={userInformation.username}
 							/>
-						)}
-						<UserProfileInformations
-							age={age}
-							setAge={setAge}
-							sex={sex}
-							setSex={setSex}
-							localization={localization}
-							setLocalization={setLocalization}
-						/>
-						{/* <UserProfilePictures
-								pictures={pictures}
-								setPictures={setPictures}
-							/>
-							<UserProfileThemes />*/}
+						)} */}
+						<UserProfilePictures />
+						<UserProfileThemes />
+						{/* <UserProfileInformations /> */}
 					</VStack>
 
 					<Button
@@ -511,8 +499,18 @@ const UserProfileScreen: React.FC = () => {
 						onPress={async () => {
 							await userSaveProfile();
 						}}
+						className="bg-tertiary-500"
 					>
-						<ButtonText>Enregistrerr</ButtonText>
+						<LinearGradient
+							className="w-full items-center"
+							colors={["#CFF1EB", "#E1E2E3"]}
+							start={{ x: 0, y: 1 }}
+							end={{ x: 1, y: 0 }}
+						>
+							<ButtonText className="text-primary-500">
+								Enregistrer
+							</ButtonText>
+						</LinearGradient>
 					</Button>
 				</Box>
 			</ScrollView>

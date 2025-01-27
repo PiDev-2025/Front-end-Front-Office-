@@ -1,6 +1,5 @@
-import React from "react";
-
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import React from "react";
 import "./global.css";
 
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";

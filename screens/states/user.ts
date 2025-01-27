@@ -1,5 +1,5 @@
 import { atom } from "jotai";
-import { getThemes, hardData } from "../apis/Theme";
+import { getThemes } from "../apis/Theme";
 import { getUserInformation } from "../apis/User";
 
 const usernameState = atom<string | null>("dams_qct");
@@ -58,13 +58,13 @@ const picturesAtom = atom<object | null>({
 	private: "https://cms-sw.s3.fr-par.scw.cloud/public-picture-001.jpg",
 });
 
-const themesAtom = atom<object[] | null>(hardData);
+const themesAtom = atom<object[] | null>([{}]);
 
 const fetchThemesAtom = atom(
 	(get) => get(themesAtom),
-	async (get, set, { jwt }) => {
+	async (get, set) => {
 		console.log("fetchThemesAtom");
-		// const jwt = get(jwtAtom);
+		const jwt = get(jwtAtom);
 		console.log("fetchThemesAtom:jwt", jwt);
 		try {
 			const data = await getThemes(jwt);
@@ -132,33 +132,115 @@ const fetchUserInformationAtom = atom(
 					code: data.localization_code || 34076,
 					country: data.localization_country || "France",
 				});
+				const themes = await getThemes(jwt);
+				console.log("fetchUserInformationAtom:themes", themes);
+				set(themesAtom, themes);
+				set(themesSelectedAtoms, data.selectedThemes);
 			}
 		} catch (error) {
 			console.error("Failed to fetch user information:", error);
 		}
 	}
 );
-
+const themesSelectHardData = [
+	{
+		theme: { name: null, id: null },
+		subTheme: { name: null, id: null },
+	},
+	{
+		theme: { name: null, id: null },
+		subTheme: { name: null, id: null },
+	},
+	{
+		theme: { name: null, id: null },
+		subTheme: { name: null, id: null },
+	},
+];
 const themesSelectedAtoms = atom<
 	{
 		theme: { name: null; id: null };
-		subTheme: { name: null; id: null }[];
+		subTheme: { name: null; id: null };
 	}[]
->([
-	{
-		theme: { name: null, id: null },
-		subTheme: { name: null, id: null },
-	},
-	{
-		theme: { name: null, id: null },
-		subTheme: { name: null, id: null },
-	},
-	{
-		theme: { name: null, id: null },
-		subTheme: { name: null, id: null },
-	},
-]);
+>();
 
+interface Theme {
+	name: string | null;
+	id: string | null;
+}
+
+interface ThemeStructure {
+	theme: Theme;
+	subTheme: Theme;
+}
+
+const dbObject = {
+	childs: [
+		// ... your child themes here ...
+	],
+	parents: [
+		// ... your parent themes here ...
+	],
+};
+
+// Function to find theme by id in both parents and childs
+function findTheme(id: string): Theme {
+	let found = dbObject.parents.find((parent) => parent.id === id);
+	if (!found) {
+		found = dbObject.childs.find((child) => child.id === id);
+	}
+	return found
+		? { name: found.name, id: found.id }
+		: { name: null, id: null };
+}
+
+// Function to find parent theme for a given child
+function findParentForChild(childId: string): Theme {
+	const child = dbObject.childs.find((c) => c.id === childId);
+	if (child && child.parent) {
+		return findTheme(child.parent);
+	}
+	return { name: null, id: null };
+}
+
+const fetchThemesSelectedAtom = atom(
+	(get) => get(themesSelectedAtoms),
+	async (get, set) => {
+		const userThemes = get(userInformationAtom).themes;
+		console.log("fetchThemesSelectedAtom:themes", userThemes);
+		// const jwt = get(jwtAtom);
+		// console.log("fetchThemesSelectedAtom:jwt", jwt);
+		// try {
+		// 	const userInformation = get(userInformationAtom);
+		// 	console.log(
+		// 		"fetchThemesSelectedAtom:userInformation",
+		// 		userInformation
+		// 	);
+		// const themes = get(themesAtom);
+		// 	// const userThemes = userInformation.themes;
+		// 	if (!userInformation) {
+		// 		console.log("fetchThemesSelectedAtom:themes", themes);
+		// 		console.log("fetchThemesSelectedAtom:userThemes", userThemes);
+		// 		// Processing the list
+		// 		const result: ThemeStructure[] = userThemes.map((id) => {
+		// 			const theme = findTheme(id);
+		// 			const parent = findParentForChild(id); // If it's a child, find its parent, otherwise null
+
+		// 			return {
+		// 				theme: theme,
+		// 				subTheme: theme.name
+		// 					? { name: null, id: null }
+		// 					: parent, // if theme found, subTheme is null; else, parent is subTheme
+		// 			};
+		// 		});
+		// 		console.log(result);
+		// 		set(themesSelectedAtoms, result);
+		// 	}
+		// } catch (error) {
+		// 	console.error("Failed to fetch themes:", error);
+		// 	set(themesAtom, []);
+		// }
+	}
+);
 // const userIDAtom = atom<string | null>("");
 
 export {
@@ -191,4 +273,5 @@ export {
 	userInformationAtom,
 	fetchUserInformationAtom,
 	userIDAtom,
+	fetchThemesSelectedAtom,
 };

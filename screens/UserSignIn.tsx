@@ -50,8 +50,8 @@ function UserSignIn(): React.JSX.Element {
 						}
 					}
 				}
-				navigation.navigate("UserProfile", {
-					screen: "UserProfile",
+				navigation.navigate("SympathyWorld", {
+					screen: "SympathyWorld",
 				});
 			} else {
 				console.error("userID cannot be null");

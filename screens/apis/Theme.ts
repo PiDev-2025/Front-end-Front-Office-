@@ -375,7 +375,7 @@ async function getThemes(token: string) {
 					}
 					throw error;
 				});
-			// console.log("data", data);
+			// console.log("getThemes:data", data);
 			if (data.length > 0) {
 				return data;
 			} else {

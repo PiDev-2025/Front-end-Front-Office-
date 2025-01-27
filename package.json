@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@ap0nia/eden-react-query": "^1.6.0",
     "@expo/html-elements": "^0.4.2",
     "@gluestack-ui/accordion": "^1.0.8",
     "@gluestack-ui/actionsheet": "^0.2.46",
@@ -55,6 +56,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "easing-coordinates": "^2.0.2",
+    "elysia": "^1.2.10",
     "jotai": "^2.11.1",
     "jwt-decode": "^4.0.0",
     "lucide-react-native": "^0.468.0",
