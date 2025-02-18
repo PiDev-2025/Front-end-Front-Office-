@@ -10,6 +10,29 @@ import "react-datepicker/dist/react-datepicker.css";
 const Homepage = () => {
     const [toogleTab, settoogleTab] = useState("Hourly Rental")
 
+    const dataProfile = [
+        {
+            img: "./../images/Tunis.png",
+            name: "5 parking lots available ",
+            Detail: ["Centre Vill", "..", "...", "...", "..."]
+        },
+        {
+            img: "./../images/Tunis.png",
+            name: "5 parking lots available ",
+            Detail: ["Centre Vill", "..", "...", "...", "..."]
+        },
+        {
+            img: "./../images/Tunis.png",
+            name: "5 parking lots available ",
+            Detail: ["Centre Vill", "..", "...", "...", "..."]
+        },
+        {
+            img: "./../images/Tunis.png",
+            name: "5 parking lots available ",
+            Detail: ["Centre Vill", "..", "...", "...", "..."]
+        }
+    ]
+
     const dataCars = [
         {
             img: "./../images/car (4).png",
@@ -83,9 +106,11 @@ const Homepage = () => {
                 <Container className='relative z-[2] w-full'>
                     <Row>
                         <Col md={6}>
-                            <p className='text__18 text-Mgreen mb-2'>CAR RENTAL</p>
-                            <h1 className='font-bold text__48 text-Mwhite mb-2'>Discover the Joy of Flexible and Affordable <br className='hidden xl:block' /> Car Rentals</h1>
-                            <p className='text__18 text-[#A3A3A3] mb-2'>With our car rental services, you can experience the ultimate <br className='hidden xl:block' /> convenience and freedom of exploring your destination at your <br className='hidden xl:block' /> own pace.</p>
+                            <p className='text__18 text-Mgreen mb-2'>CAR PARKING</p>
+                            <h1 className='font-bold text__48 text-Mwhite mb-2'>Find Convenient and Affordable Parking <br className='hidden xl:block' /> </h1>
+                            <p className='text__18 text-[#A3A3A3] mb-2'>Reserve your parking spot by the hour, day, or month with ease. Book in advance or rent your space and enjoy seamless parking in private residential, hotel, or business lots. <br className='hidden xl:block' /> Benefit from competitive rates in city centers, train stations, and airports across Tunisia.
+
+                                Join our community and experience stress-free parking with thousands of satisfied members.<br className='hidden xl:block' /></p>
                         </Col>
                     </Row>
                 </Container>
@@ -96,8 +121,8 @@ const Homepage = () => {
                         <div className="bg-[#ffffff1f] absolute w-full h-full left-0 top-0 md:hidden block"></div>
                         <div className="p-3 md:p-0 relative z-2">
                             <div className="flex items-center text-center mb-4">
-                                <div onClick={() => settoogleTab("Hourly Rental")} className={"py-3 cursor-pointer  md:min-w-[180px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab == "Hourly Rental" ? "border-b border-solid border-[#FFFFFF]" : "opacity-50")}>Hourly Rental</div>
-                                <div onClick={() => settoogleTab("Daily Rental")} className={"py-3 cursor-pointer  md:min-w-[180px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab == "Daily Rental" ? "border-b border-solid border-[#FFFFFF]" : "opacity-50")}>Daily Rental</div>
+                                <div onClick={() => settoogleTab("Hourly Rental")} className={"py-3 cursor-pointer  md:min-w-[180px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab == "Hourly Rental" ? "border-b border-solid border-[#FFFFFF]" : "opacity-50")}>Hourly Parking</div>
+                                <div onClick={() => settoogleTab("Daily Rental")} className={"py-3 cursor-pointer  md:min-w-[180px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab == "Daily Rental" ? "border-b border-solid border-[#FFFFFF]" : "opacity-50")}>Daily Parking</div>
                             </div>
                             {
                                 toogleTab == "Hourly Rental" ? <div className="flex gap-4 flex-wrap md:!flex-nowrap">
@@ -173,7 +198,7 @@ const Homepage = () => {
 
             <HowItWorks />
 
-
+            {/* 
             <section>
                 <Container>
                     <div className="text-center mb-10">
@@ -212,7 +237,7 @@ const Homepage = () => {
             </section>
 
 
-            <section className='pt-0'>
+          <section className='pt-0'>
                 <Container>
                     <p className='text__18 mb-2'>CARENT</p>
                     <h1 className='font-bold text__48 mb-10'>Rent an electric vehicle <br className='md:block hidden' /> with Carent today</h1>
@@ -230,6 +255,51 @@ const Homepage = () => {
                 </Container>
             </section>
 
+*/}
+            <section>
+                <Container>
+                    <div className="text-center mb-8">
+                        <p className='text__18 mb-2'>Find parking near </p>
+                        <h3 className='font-bold text__48'>your destination<br /> </h3>
+                    </div>
+
+                    <Row className='gap-y-4'>
+                        {
+                            dataProfile.map((obj) => {
+                                return <Col className='col-6' lg={3}>
+                                    <div className="w-full border border-solid border-[#E5E5E5] p-2 sm:p-4">
+                                        <div className="w-full h-[150px] sm:h-[250px] bg-[#FAFAFA] mb-3">
+                                            <img src={obj.img} className='w-full h-full object-cover' alt="" />
+                                        </div>
+
+                                        <div className="text-center">
+                                            <h5 className='font-bold text__20 mb-2'>{obj.name}</h5>
+                                            <div className="uppercase text__16 text-[#525252]">
+                                                {Array.isArray(obj.Detail)
+                                                    ? obj.Detail.map((city, index) => (
+                                                        <p key={index}>{city}</p>
+                                                    ))
+                                                    : <p>{obj.Detail}</p> /* If obj.job is a string, display it directly */}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Col>
+                            })
+                        }
+
+                    </Row>
+
+
+                </Container>
+            </section>
+
+            <section>
+                <Container>
+                    <p className='text__18 mb-2'>SMART PARKING, HASSLE-FREE</p>
+                    <h3 className='font-bold text__48 mb-8'>The Future of Parking<br className='hidden sm:block' /> Is Here</h3>
+                    <GridInfo />
+                </Container>
+            </section>
 
             <section className='bg-Mgreen pb-0 relative overflow-hidden'>
                 <img src="./../images/patern.svg" className='absolute left-0 top-0 w-full h-full object-cover' alt="" />
@@ -245,7 +315,7 @@ const Homepage = () => {
                         <div className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass !py-[14px]">Subscribe</div>
                     </div>
 
-                    <img src="./../images/gfjhfgjfgj.png" className='mx-auto' alt="" />
+                    {/*<img src="./../images/gfjhfgjfgj.png" className='mx-auto' alt="" />*/}
                 </Container>
             </section>
         </Fragment >
