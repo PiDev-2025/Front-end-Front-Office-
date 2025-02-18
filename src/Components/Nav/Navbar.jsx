@@ -65,7 +65,7 @@ const Navbar = () => {
 
                     <NavLink to="/" className=''>
                         {
-                            <img src={navabarScroll && (ToogleMenuResponsive == false) ? "./../images/Parkini.png" : "./../images/Parkini1.png"} alt="Parkini" style={{width:"50%"}}/>
+                            <img src={navabarScroll && (ToogleMenuResponsive == false) ? "./../images/Parkini.png" : "./../images/Parkini1.png"} alt="Parkini" style={{width:"30%"}}/>
                         }
 
                     </NavLink>
