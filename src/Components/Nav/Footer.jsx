@@ -9,8 +9,8 @@ const Footer = () => {
                 <Container>
                     <Row className='mb-10 gap-y-8'>
                         <Col md={3}>
-                            <img src="./../images/logo.svg" className='mb-2' alt="" />
-                            <p className='text__16 text-[#D4D4D4]'>With our car rental services, you can experience the ultimate convenience and freedom of exploring your destination at your own pace.</p>
+                            <img src="./../images/Parkini.png" className='mb-2' alt="Parkini logo" style={{width:"50%"}} />
+                            <p className='text__16 text-[#D4D4D4]'>Find Convenient and Affordable Parking.</p>
                         </Col>
                         <Col className='col-6' md={{ span: 2, offset: 1 }}>
                             <h5 className='font-medium text-[#A3A3A3] text__16 mb-3'>Explore</h5>

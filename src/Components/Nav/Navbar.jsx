@@ -41,7 +41,7 @@ const Navbar = () => {
                             <NavLink to="/" onClick={() => setToogleMenuResponsive(!ToogleMenuResponsive)} className='font-medium text-black'>Home</NavLink>
                         </li>
                         <li className='w-full'>
-                            <NavLink to="/how-it-works" onClick={() => setToogleMenuResponsive(!ToogleMenuResponsive)} className='font-medium text-black'>How it works</NavLink>
+                            <NavLink to="/booking" onClick={() => setToogleMenuResponsive(!ToogleMenuResponsive)} className='font-medium text-black'>Park now</NavLink>
                         </li>
                         <li className='w-full'>
                             <NavLink to="/about" onClick={() => setToogleMenuResponsive(!ToogleMenuResponsive)} className='font-medium text-black'>About</NavLink>
@@ -53,7 +53,7 @@ const Navbar = () => {
                             <NavLink to="/contact" onClick={() => setToogleMenuResponsive(!ToogleMenuResponsive)} className='font-medium text-black'>Contact</NavLink>
                         </li>
                         <li className='w-full'>
-                            <NavLink to="/booking" className='cursor-pointer font-medium text-[14px] text-Mblack !border-Mblack btnClass hover:bg-Mblack hover:text-Mwhite'>Book Now</NavLink>
+                            <NavLink to="/login" onClick={() => setToogleMenuResponsive(!ToogleMenuResponsive)} className='cursor-pointer font-medium text-[14px] text-Mblack !border-Mblack btnClass hover:bg-Mblack hover:text-Mwhite'>Login</NavLink>
                         </li>
                     </ul>
                 </Container>
@@ -65,7 +65,7 @@ const Navbar = () => {
 
                     <NavLink to="/" className=''>
                         {
-                            <img src={navabarScroll && (ToogleMenuResponsive == false) ? "./../images/logo.svg" : "./../images/logo2.svg"} alt="" />
+                            <img src={navabarScroll && (ToogleMenuResponsive == false) ? "./../images/Parkini.png" : "./../images/Parkini1.png"} alt="Parkini" style={{width:"50%"}}/>
                         }
 
                     </NavLink>
@@ -76,7 +76,7 @@ const Navbar = () => {
                             <NavLink to="/" className={'font-medium ' + (navabarScroll && (ToogleMenuResponsive == false) ? "text-Mwhite" : "text-Mblack")}>Home</NavLink>
                         </li>
                         <li>
-                            <NavLink to="/how-it-works" className={'font-medium ' + (navabarScroll && (ToogleMenuResponsive == false) ? "text-Mwhite" : "text-Mblack")}>How it works</NavLink>
+                            <NavLink to="/booking" className={'font-medium ' + (navabarScroll && (ToogleMenuResponsive == false) ? "text-Mwhite" : "text-Mblack")}>Park now </NavLink>
                         </li>
                         <li>
                             <NavLink to="/about" className={'font-medium ' + (navabarScroll && (ToogleMenuResponsive == false) ? "text-Mwhite" : "text-Mblack")}>About</NavLink>
@@ -91,8 +91,8 @@ const Navbar = () => {
 
 
 
-                    <NavLink to="/booking" className="ml-auto hidden lg:block">
-                        <div className={'!hidden md:!inline-block cursor-pointer font-medium text__14 ' + (navabarScroll ? "text-Mwhite !border-Mwhite btnClass hover:bg-Mwhite hover:text-Mblack" : "text-Mblack !border-Mblack btnClass hover:bg-Mblack hover:text-Mwhite")}>Book Now</div>
+                    <NavLink to="/login" className="ml-auto hidden lg:block">
+                        <div className={'!hidden md:!inline-block cursor-pointer font-medium text__14 ' + (navabarScroll ? "text-Mwhite !border-Mwhite btnClass hover:bg-Mwhite hover:text-Mblack" : "text-Mblack !border-Mblack btnClass hover:bg-Mblack hover:text-Mwhite")}>Login</div>
                     </NavLink>
 
                     <div onClick={() => setToogleMenuResponsive(!ToogleMenuResponsive)} className={"relative px-1 py-1 barIcon w-[30px] h-[30px] cursor-pointer lg:hidden ml-auto " + (ToogleMenuResponsive ? "active" : "")}>

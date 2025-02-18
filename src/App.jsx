@@ -20,6 +20,8 @@ import Contact from './Pages/Contact';
 import Privacy from './Pages/Privacy';
 import Terms from './Pages/Terms';
 import Faq from './Pages/Faq';
+import Login from './Pages/Login';
+import SignUp from './Pages/SignUp';
 
 const App = () => {
   let location = useLocation();
@@ -41,6 +43,8 @@ const App = () => {
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />
         <Route path="faq" element={<Faq />} />
+        <Route path="login" element={<Login />} />
+        <Route path="sign-up" element={<SignUp />} />
       </Route>
     </Routes>
   )
