@@ -1,9 +1,5 @@
-import React from 'react'
-import {
-  Routes,
-  Route,
-  useLocation,
-} from "react-router-dom";
+import React from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
 import DefaultLayout from './Layouts/DefaultLayout';
@@ -22,6 +18,8 @@ import Terms from './Pages/Terms';
 import Faq from './Pages/Faq';
 import Login from './Pages/Login';
 import SignUp from './Pages/SignUp';
+import ForgotPassword from './Pages/ForgotPassword';
+import ResetPassword from './Pages/ResetPassword';
 
 const App = () => {
   let location = useLocation();
@@ -30,7 +28,7 @@ const App = () => {
   }, [location])
   return (
     <Routes>
-      <Route path="" element={<DefaultLayout />}>
+      <Route path="/" element={<DefaultLayout />}>
         <Route index element={<Homepage />} />
         <Route path="how-it-works" element={<HowItworks />} />
         <Route path="booking" element={<Booking />} />
@@ -45,9 +43,11 @@ const App = () => {
         <Route path="faq" element={<Faq />} />
         <Route path="login" element={<Login />} />
         <Route path="sign-up" element={<SignUp />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password/:token" element={<ResetPassword />} />
       </Route>
     </Routes>
   )
 }
 
-export default App
+export default App;
