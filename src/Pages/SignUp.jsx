@@ -17,7 +17,7 @@ const SignUp = () => {
     role: "Driver",
   });
 
-  const [showOTPModal, setShowOTPModal] = useState(false); // Etat pour afficher la modale OTP
+  const [showOTPModal, setShowOTPModal] = useState(false);
   const navigate = useNavigate();
 
   // Capture des entrées utilisateur
@@ -202,7 +202,9 @@ const SignUp = () => {
           show={showOTPModal}
           handleClose={() => setShowOTPModal(false)}
           email={user.email}
+          password={user.password} // Passer aussi le mot de passe
         />
+
         <br />
         <br />
         <br />
