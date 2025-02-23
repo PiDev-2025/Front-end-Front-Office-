@@ -1,9 +1,7 @@
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-
 import DefaultLayout from './Layouts/DefaultLayout';
-
 import Homepage from './Pages/Homepage';
 import HowItworks from './Pages/HowItworks';
 import Booking from './Pages/Booking';
