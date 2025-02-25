@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import { Col, Container, Form, Row } from 'react-bootstrap';
 import { NavLink, useNavigate } from 'react-router-dom';
@@ -42,6 +43,10 @@ const Login = () => {
         setLoading(false); // Reset loading state after the login attempt
     };
 
+   const handleFaceLogin = () => {
+    // Redirect to face detection page
+    window.location.href = "http://127.0.0.1:5500/src/webcam/index.html";
+  };
     // Handle OTP verification
 
 
@@ -110,6 +115,15 @@ const Login = () => {
                                 <span className="text__14 text-gray-700">Login with Google</span>
                             </a>
                         </div>
+  {/* Face Recognition Login Button */}
+            <div className="text-center mb-4">
+              <button
+                onClick={handleFaceLogin}
+                className="inline-block cursor-pointer text-center font-medium text__16 text-Mwhite !py-[15px] !px-[28px] bg-Mblue hover:bg-Mdarkblue !border-Mblue btnClass md:w-auto w-full transition-colors"
+              >
+                Face Recognition Login
+              </button>
+            </div>
                     </Col>
 
                     <Col md={7}>
@@ -186,3 +200,4 @@ const Login = () => {
 };
 
 export default Login;
+
