@@ -19,7 +19,7 @@ const OTPModal = ({ show, handleClose, email, password }) => {
   const loginAfterOTP = async (password) => {
     try {
       console.log("Password:", password);
-      const response = await axios.post("http://localhost:3001/User/users/login", {
+      const response = await axios.post("http://localhost:3001/User/users/login", { 
         email,
         password,
       });
@@ -72,7 +72,7 @@ const OTPModal = ({ show, handleClose, email, password }) => {
               type="text"
               value={otp}
               onChange={handleOTPChange}
-              placeholder="Enter OTP"
+              placeholder="Enter Code"
             />
             {errorMessage && <p style={{ color: "red", fontSize: "0.9em" }}>{errorMessage}</p>}
           </Form.Group>

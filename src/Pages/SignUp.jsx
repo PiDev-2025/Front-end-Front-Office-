@@ -1,9 +1,31 @@
 import React, { useState, useEffect } from "react";
-import { Col, Container, Form, Row, Button, Modal } from "react-bootstrap";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { Col, Container, Form, Row, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import OTPModal from "../Pages/OTPPopUp";
+import Select from "react-select";
+
+
+const vehicleOptions = [
+  { value: "Moto", label: "Moto", image: "/images/moto.png" },
+  { value: "Citadine", label: "Citadine", image: "/images/voiture-de-ville.png" },
+  { value: "Berline / Petit SUV", label: "Berline / Petit SUV", image: "/images/wagon-salon.png" },
+  { value: "Familiale / Grand SUV", label: "Familiale / Grand SUV", image: "/images/voiture-familiale.png" },
+  { value: "Utilitaire", label: "Utilitaire", image: "/images/voiture-de-livraison.png" },
+];
+
+// Custom Option Component for react-select
+const customOption = (props) => {
+  const { data, innerRef, innerProps } = props;
+  return (
+    <div ref={innerRef} {...innerProps} style={{ display: "flex", alignItems: "center", padding: 10 }}>
+      <img src={data.image} alt={data.label} style={{ width: 30, height: 20, marginRight: 10 }} />
+      {data.label}
+    </div>
+  );
+};
 
 const SignUp = () => {
   const [user, setUser] = useState({
@@ -22,18 +44,46 @@ const SignUp = () => {
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [phoneError, setPhoneError] = useState("");
-  const [password, setPassword] = useState(""); // Store password in state
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [passwordForOTPModal, setPasswordForOTPModal] = useState(""); // New state for password
+  const [passwordForOTPModal, setPasswordForOTPModal] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+
+
   const navigate = useNavigate();
+
+  const generatePassword = async () => {
+    try {
+      const response = await axios.get(
+        "https://www.random.org/passwords/?num=1&len=16&format=plain&rnd=new"
+      ); 
+
+      if (response.status === 200) {
+        const generatedPassword = response.data.trim();
+
+        setUser({
+          ...user,
+          password: generatedPassword,
+          confirmPassword: generatedPassword,
+        });
+      } else {
+        toast.error("Failed to generate password.");
+      }
+    } catch (error) {
+      console.error("Error generating password:", error);
+      toast.error("An error occurred. Please try again later.");
+    }
+  };
 
   const validatePhoneNumber = (phone) => {
     const tunisianPhoneRegex = /^(2|3|4|5|7|9)\d{7}$/; // Vérifie si ça commence par 2,3,4,5,7,9 et fait 8 chiffres
 
     if (!phone) return "Phone number is required.";
-    if (!tunisianPhoneRegex.test(phone)) return "Invalid phone number. Ex: 23456789";
+    if (!tunisianPhoneRegex.test(phone))
+      return "Invalid phone number. Ex: 23456789";
 
     return ""; // Pas d'erreur
   };
@@ -82,7 +132,6 @@ const SignUp = () => {
     const hasUpperCase = /[A-Z]/;
     const hasLowerCase = /[a-z]/;
     const hasNumber = /[0-9]/;
-    const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/;
 
     if (!minLength.test(password)) {
       return "Le mot de passe doit contenir au moins 8 caractères.";
@@ -96,11 +145,8 @@ const SignUp = () => {
     if (!hasNumber.test(password)) {
       return "Le mot de passe doit contenir au moins un chiffre.";
     }
-    if (!hasSymbol.test(password)) {
-      return "Le mot de passe doit contenir au moins un symbole (@, #, !, ...).";
-    }
 
-    return ""; 
+    return "";
   };
 
   useEffect(() => {
@@ -108,7 +154,7 @@ const SignUp = () => {
     if (user.password) {
       setPasswordError(validatePassword(user.password));
     } else {
-      setPasswordError(""); 
+      setPasswordError("");
     }
 
     // Vérification de la correspondance password == confirmPassword
@@ -139,7 +185,7 @@ const SignUp = () => {
       user.firstName &&
       user.lastName &&
       user.email &&
-      isEmailValid && 
+      isEmailValid &&
       isEmailUnique &&
       user.password &&
       user.confirmPassword &&
@@ -170,11 +216,15 @@ const SignUp = () => {
       setIsEmailUnique(true); // Réinitialisation temporaire avant l'appel au serveur
     }
 
-    if (name === "password") {
-      setPassword(value); // Update password state
-    }
+    //if (name === "password") {
+      //setPassword(value); // Update password state
+    //}
   };
 
+  const handleVehicleChange = (selectedOption) => {
+    setSelectedVehicle(selectedOption);
+    setUser({ ...user, vehicleType: selectedOption.value });
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -201,12 +251,14 @@ const SignUp = () => {
         dataToSend
       );
       if (response && response.status === 200) {
-        // Succès: Ouvrir le modal OTP pour vérifier l'email
-        setPasswordForOTPModal(password);
+        setPasswordForOTPModal(user.password);
         setShowOTPModal(true);
       }
-    }  catch (error) {
-      toast.error(error.response?.data?.message || "An error occurred during registration.");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          "An error occurred during registration."
+      );
       console.error(error);
     }
   };
@@ -278,7 +330,9 @@ const SignUp = () => {
               </Row>
 
               <Form.Group className="mb-3">
-                <Form.Label>Email<span className="text-danger">*</span></Form.Label>
+                <Form.Label>
+                  Email<span className="text-danger">*</span>
+                </Form.Label>
                 <Form.Control
                   type="email"
                   name="email"
@@ -290,35 +344,82 @@ const SignUp = () => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Password<span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  type="password"
-                  name="password"
-                  value={user.password}
-                  onChange={handleChange}
-                  placeholder="Password"
-                />
+                <Form.Label className="d-flex align-items-center">
+                  Password<span className="text-danger ms-1">*</span>
+                  {/* Icône incluse dans le label */}
+                  <span
+                    className="ms-2"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setPasswordVisible(!passwordVisible)}
+                  >
+                    {passwordVisible ? (
+                      <FaEye size={20} />
+                    ) : (
+                      <FaEyeSlash size={20} />
+                    )}
+                  </span>
+                </Form.Label>
+
+                {/* Champ input avec bouton "Generate" */}
+                <div className="input-group">
+                  <Form.Control
+                    type={passwordVisible ? "text" : "password"}
+                    name="password"
+                    value={user.password}
+                    onChange={handleChange}
+                    placeholder="Password"
+                    autoComplete="new-password"
+                  />
+                  <Button
+                    variant="outline-secondary"
+                    onClick={generatePassword}
+                  >
+                    Generate
+                  </Button>
+                </div>
+
                 {passwordError && (
                   <p className="text-danger">{passwordError}</p>
                 )}
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Confirm Password<span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  type="password"
-                  name="confirmPassword"
-                  value={user.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="Confirm Password"
-                />
+                <Form.Label className="d-flex align-items-center">
+                  Confirm Password<span className="text-danger ms-1">*</span>
+                  <span
+                    className="ms-2"
+                    style={{ cursor: "pointer" }}
+                    onClick={() =>
+                      setConfirmPasswordVisible(!confirmPasswordVisible)
+                    }
+                  >
+                    {confirmPasswordVisible ? (
+                      <FaEye size={20} />
+                    ) : (
+                      <FaEyeSlash size={20} />
+                    )}
+                  </span>
+                </Form.Label>
+
+                <div className="input-group">
+                  <Form.Control
+                    type={confirmPasswordVisible ? "text" : "password"}
+                    name="confirmPassword"
+                    value={user.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Confirm Password"
+                  />
+                </div>
+
                 {confirmPasswordError && (
                   <p className="text-danger">{confirmPasswordError}</p>
                 )}
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Phone<span className="text-danger">*</span></Form.Label>
+                <Form.Label>
+                  Phone<span className="text-danger">*</span>
+                </Form.Label>
                 <Form.Control
                   type="text"
                   name="phone"
@@ -330,7 +431,9 @@ const SignUp = () => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Role<span className="text-danger">*</span></Form.Label>
+                <Form.Label>
+                  Role<span className="text-danger">*</span>
+                </Form.Label>
                 <Form.Control
                   as="select"
                   name="role"
@@ -344,18 +447,20 @@ const SignUp = () => {
 
               {user.role === "Driver" && (
                 <Form.Group className="mb-3">
-                  <Form.Label>Vehicle Type<span className="text-danger">*</span></Form.Label>
-                  <Form.Control
-                    as="select"
-                    name="vehicleType"
-                    value={user.vehicleType}
-                    onChange={handleChange}
-                  >
-                    <option value="Big">Big</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Small">Small</option>
-                  </Form.Control>
-                </Form.Group>
+                <Form.Label>Vehicle Type<span className="text-danger">*</span></Form.Label>
+                <Select
+                  options={vehicleOptions}
+                  components={{ Option: customOption }}
+                  getOptionLabel={(e) => (
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <img src={e.image} alt={e.label} style={{ width: 30, height: 20, marginRight: 10 }} />
+                      {e.label}
+                    </div>
+                  )}
+                  value={selectedVehicle}
+                  onChange={handleVehicleChange}
+                />
+              </Form.Group>
               )}
 
               <div className="d-flex justify-content-end">
