@@ -9,28 +9,20 @@ const Navbar = () => {
   const [ToogleMenuResponsive, setToogleMenuResponsive] = useState(false);
   const [navabarScroll, setnavabarScroll] = useState(false);
 
-
-  const { user, setUser, logout } = useContext(AuthContext);
+  const { user, login, logout } = useContext(AuthContext);
 
   useEffect(() => {
     // Check if token exists in localStorage
     const token = localStorage.getItem('token');
 
     if (token) {
-      try {
-        const decoded = jwtDecode(token); // Decode token to get user info
-        setUser(decoded);
-      } catch (error) {
-        console.error('Invalid token', error);
-        localStorage.removeItem('token'); // Remove invalid token
-      }
+      login(token);
     }
-  }, [setUser]);
+  }, [login]);
 
   // Logout function
   const handleLogout = () => {
-    // Remove token from localStorage
-    localStorage.removeItem("token");
+    logout();
   
     // Optionally, redirect to the login page or homepage
     window.location.href = "/login"; // or you can use navigate() if using react-router-dom

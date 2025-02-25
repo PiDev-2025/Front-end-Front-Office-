@@ -9,27 +9,26 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        setUser(decoded); // Set user details from token
-      } catch (error) {
-        console.error("Invalid token", error);
-        localStorage.removeItem("token"); // Remove invalid token
-        setToken(null);
-      }
+      login(token);
     } else {
-      setUser(null); // If no token, clear user
+      logout();
     }
   }, [token]);
 
   const login = (newToken) => {
-    setToken(newToken); // Set token in state and localStorage
-    localStorage.setItem('token', newToken);
+    try {
+      setToken(newToken); // Set token in state and localStorage
+      setUser(jwtDecode(newToken));
+      localStorage.setItem('token', newToken);
+    } catch (error) {
+      console.error(error);
+      logout();
+    }
   };
 
   const logout = () => {
-    setToken(null); // Clear token
-    setUser(null); // Clear user
+    setToken(null);
+    setUser(null);
     localStorage.removeItem('token'); // Remove token from localStorage
   };
 

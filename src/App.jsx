@@ -36,10 +36,6 @@ const App = () => {
     if (token) {
       // Store token in local storage
       localStorage.setItem("token", token);
-
-      
-
-      
     }
   }, []);
   return (
