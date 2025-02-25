@@ -1,25 +1,27 @@
-import React, { useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../AuthContext';
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "../AuthContext";
 const GoogleCallback = () => {
-    const navigate = useNavigate();
     const { login } = useContext(AuthContext);
-    useEffect(() => {
-        const queryParams = new URLSearchParams(window.location.search);
-        const token = queryParams.get('token');
-   
-        if (token) {
-            login(token); // If needed to update context state
-            navigate('/');
-        }
-   }, [navigate, login]);
-   
+  const navigate = useNavigate();
 
-    return (
-        <div>
-            <h2>Logging in...</h2>
-        </div>
-    );
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    if (token) {
+      login(token);
+      // Remove token from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Redirect after setting token
+      setTimeout(() => navigate("/"), 1000); // Redirect after 1 sec
+    } else {
+      navigate("/"); // Redirect to login if no token
+    }
+  }, [login, navigate]);
+
+  return <h2>Loading... Please wait</h2>;
 };
 
 export default GoogleCallback;

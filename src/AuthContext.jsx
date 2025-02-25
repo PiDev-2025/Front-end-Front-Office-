@@ -1,35 +1,29 @@
-import React, { createContext, useState, useEffect } from 'react';
-import {jwtDecode} from 'jwt-decode';
+import React, { createContext, useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // Holds user details
-  const [token, setToken] = useState(localStorage.getItem('token')); // Holds token
-
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("token"));
+  
   useEffect(() => {
     if (token) {
-      login(token);
-    } else {
-      logout();
+      setUser(jwtDecode(token));
     }
   }, [token]);
 
   const login = (newToken) => {
-    try {
-      setToken(newToken); // Set token in state and localStorage
-      setUser(jwtDecode(newToken));
-      localStorage.setItem('token', newToken);
-    } catch (error) {
-      console.error(error);
-      logout();
-    }
+    setToken(newToken);
+    setUser(jwtDecode(newToken));
+    localStorage.setItem("token", newToken);
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('token'); // Remove token from localStorage
+    localStorage.removeItem("token");
   };
 
   return (
