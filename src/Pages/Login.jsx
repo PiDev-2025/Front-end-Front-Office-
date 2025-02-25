@@ -1,52 +1,121 @@
-import React from "react";
-import { Col, Container, Form, Row } from "react-bootstrap";
-import { NavLink } from "react-router-dom";
 
+import React, { useState, useEffect, useContext } from 'react';
+import { Col, Container, Form, Row } from 'react-bootstrap';
+import { NavLink, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { AuthContext } from '../AuthContext'; // Make sure to import the hook
 const Login = () => {
-  const handleFaceLogin = () => {
+    // State for form fields and OTP message popup
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [step, setStep] = useState(1); // 1: Login, 2: OTP
+    const [loading, setLoading] = useState(false);
+    const [otp, setOtp] = useState('');
+    const navigate = useNavigate();
+    const { login } = useContext(AuthContext); // Use useContext to access AuthContext
+    // Test si Toastify fonctionne
+    useEffect(() => {
+        toast.info("Toastify est bien chargé !", { position: "top-right", autoClose: 2000 });
+    }, []);
+
+    // Handle form submission for login
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            // Send POST request to backend for login
+            const response = await axios.post('http://localhost:3001/User/login', { email, password });
+            console.log(response.data.message);
+
+            // Check if the backend response contains the OTP sent message
+            toast.success(response.data.message, { position: "top-right", autoClose: 3000 });
+            setStep(2); // Switch to OTP verification step
+        } catch (error) {
+            // Handle error from backend
+            console.error("Error during login:", error);
+            toast.error("Erreur : " + (error.response?.data?.message || "Problème de connexion"), {
+                position: "top-right",
+                autoClose: 5000,
+            });
+        }
+        setLoading(false); // Reset loading state after the login attempt
+    };
+
+   const handleFaceLogin = () => {
     // Redirect to face detection page
     window.location.href = "http://127.0.0.1:5500/src/webcam/index.html";
   };
+    // Handle OTP verification
 
-  return (
-    <section>
-      <Container>
-        <Row className="justify-between">
-          <Col className="mb-4 md:mb-0" md={4}>
-            <h2 className="font-bold text__32 mb-3">Welcome Back!</h2>
-            <p className="text__16 text-[#525252]">
-              Please enter your credentials to access your account.
-            </p>
 
-            <div className="my-4">
-              <p className="text__14 mb-2">Anything your need </p>
-              <h5 className="font-bold text__20 text-Mblue">
-                Parkini@Parkini.com
-              </h5>
-            </div>
+    const handleVerifyOtp = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const response = await axios.post("http://localhost:3001/User/login-verify-otp", {
+                email,
+                otp,
+            });
 
-            <p className="text__14 mb-2">Social Media</p>
-            <div className="flex items-center gap-2">
-              <a href="#!">
-                <img src="./../images/as (1).svg" alt="" />
-              </a>
-              <a href="#!">
-                <img src="./../images/as (2).svg" alt="" />
-              </a>
-              <a href="#!">
-                <img src="./../images/as (3).svg" alt="" />
-              </a>
-              <a href="#!">
-                <img src="./../images/as (4).svg" alt="" />
-              </a>
-              <a href="#!">
-                <img src="./../images/as (5).svg" alt="" />
-              </a>
-            </div>
-          </Col>
+            if (!response.data || !response.data.token) {
+                throw new Error("Réponse invalide du serveur");
+            }
+            console.log(response.data.token);
+            // Use the login function from context to store the token
+            login(response.data.token);
+            toast.success("Connexion réussie !", { position: "top-right", autoClose: 3000 });
+            navigate("/"); // Navigate after state is updated
+        } catch (error) {
+            toast.error("Erreur : " + (error.response?.data?.message || "Problème de vérification OTP"), {
+                position: "top-right",
+                autoClose: 5000,
+            });
+        }
 
-          <Col md={7}>
-            {/* Face Recognition Login Button */}
+        setLoading(false); // Reset loading state after OTP verification attempt
+    };
+    return (
+        <section>
+            <Container>
+                <Row className="justify-between">
+                    <Col className="mb-4 md:mb-0" md={4}>
+                        <h2 className="font-bold text__32 mb-3">Welcome Back!</h2>
+                        <p className="text__16 text-[#525252]">Please enter your credentials to access your account.</p>
+
+                        <div className="my-4">
+                            <p className="text__14 mb-2">Anything you need</p>
+                            <h5 className="font-bold text__20 text-Mblue">Parkini@Parkini.com</h5>
+                        </div>
+
+                        <p className="text__14 mb-2">Social Media</p>
+                        <div className="flex items-center gap-2">
+                            <a href="#!">
+                                <img src="./../images/as (1).svg" alt="" />
+                            </a>
+                            <a href="#!">
+                                <img src="./../images/as (2).svg" alt="" />
+                            </a>
+                            <a href="#!">
+                                <img src="./../images/as (3).svg" alt="" />
+                            </a>
+                            <a href="#!">
+                                <img src="./../images/as (4).svg" alt="" />
+                            </a>
+                            <a href="#!">
+                                <img src="./../images/as (5).svg" alt="" />
+                            </a>
+                        </div>
+
+                        {/* Google Login Button */}
+                        <div className="mt-3">
+                            <a href="http://localhost:3001/auth/google" className="flex items-center gap-2 bg-white shadow-md px-4 py-2 rounded-[20px] border border-gray-300 cursor-pointer">
+                                <img src="./../images/google.png" alt="Google Icon" className="w-5 h-5" />
+                                <span className="text__14 text-gray-700">Login with Google</span>
+                            </a>
+                        </div>
+  {/* Face Recognition Login Button */}
             <div className="text-center mb-4">
               <button
                 onClick={handleFaceLogin}
@@ -55,62 +124,79 @@ const Login = () => {
                 Face Recognition Login
               </button>
             </div>
+                    </Col>
 
-            {/* Divider */}
-            <div className="flex items-center mb-4">
-              <div className="flex-1 border-t border-[#F5F5F5]"></div>
-              <span className="px-4 text-[#A3A3A3] text__14">OR</span>
-              <div className="flex-1 border-t border-[#F5F5F5]"></div>
-            </div>
+                    <Col md={7}>
+                        {step === 1 ? (
+                            <Form onSubmit={handleLogin}>
+                                <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+                                    <Form.Label className="font-normal text__14 text-[#A3A3A3]">Email</Form.Label>
+                                    <Form.Control
+                                        type="email"
+                                        placeholder="Email address"
+                                        className="font-medium text__14 bg-[#FAFAFA] h-[54px] rounded-[20px] px-3 outline-none shadow-none focus:outline-none focus:shadow-none border-[#F5F5F5] focus:border-[#F5F5F5] focus:bg-[#FAFAFA]"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)} // Update email state
+                                    />
+                                </Form.Group>
 
-            {/* Email Input */}
-            <Form.Group className="mb-3" controlId="formEmail">
-              <Form.Label className="font-normal text__14 text-[#A3A3A3]">
-                Email
-              </Form.Label>
-              <Form.Control
-                type="email"
-                placeholder="Email address"
-                className="font-medium text__14 bg-[#FAFAFA] h-[54px] rounded-[20px] px-3 outline-none shadow-none focus:outline-none focus:shadow-none border-[#F5F5F5] focus:border-[#F5F5F5] focus:bg-[#FAFAFA]"
-              />
-            </Form.Group>
+                                <Form.Group className="mb-3" controlId="exampleForm.ControlInput2">
+                                    <Form.Label className="font-normal text__14 text-[#A3A3A3]">Password</Form.Label>
+                                    <Form.Control
+                                        type="password"
+                                        placeholder="Password"
+                                        className="font-medium text__14 bg-[#FAFAFA] h-[54px] rounded-[20px] px-3 outline-none shadow-none focus:outline-none focus:shadow-none border-[#F5F5F5] focus:border-[#F5F5F5] focus:bg-[#FAFAFA]"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)} // Update password state
+                                    />
+                                </Form.Group>
 
-            {/* Password Input */}
-            <Form.Group className="mb-3" controlId="formPassword">
-              <Form.Label className="font-normal text__14 text-[#A3A3A3]">
-                Password
-              </Form.Label>
-              <Form.Control
-                type="password"
-                placeholder="Password"
-                className="font-medium text__14 bg-[#FAFAFA] h-[54px] rounded-[20px] px-3 outline-none shadow-none focus:outline-none focus:shadow-none border-[#F5F5F5] focus:border-[#F5F5F5] focus:bg-[#FAFAFA]"
-              />
-            </Form.Group>
+                                {/* Reset Password Link */}
+                                <div className="text-right mb-3">
+                                    <a href="#!" className="text-[#ED544E] text__14">Forgot Password?</a>
+                                </div>
 
-            {/* Forgot Password */}
-            <div className="text-right mb-3">
-              <a href="#!" className="text-[#ED544E] text__14">
-                Forgot Password?
-              </a>
-            </div>
+                                {/* Connect Button with Sign Up Link */}
+                                <div className="d-flex justify-content-between">
+                                    <button
+                                        type="submit"
+                                        className="inline-block cursor-pointer text-center font-medium text__16 text-Mwhite !py-[15px] !px-[28px] bg-Mblue !border-Mblue btnClass md:w-auto w-full"
+                                        disabled={loading}
+                                    >
+                                        {loading ? "Verifying..." : "login"}
+                                    </button>
 
-            {/* Action Buttons */}
-            <div className="d-flex justify-content-between">
-              <button className="inline-block cursor-pointer text-center font-medium text__16 text-Mwhite !py-[15px] !px-[28px] bg-Mblue hover:bg-Mdarkblue !border-Mblue btnClass md:w-auto w-full transition-colors">
-                Connect
-              </button>
+                                    {/* Sign Up Link */}
+                                    <NavLink to="/sign-up">
+                                        <a className="text-[blue] text__14 self-center">Sign Up</a>
+                                    </NavLink>
+                                </div>
+                            </Form>
+                        ) : (
+                            <Form onSubmit={handleVerifyOtp}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Enter OTP</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        placeholder="Enter OTP"
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value)}
+                                        required
+                                    />
+                                </Form.Group>
 
-              <NavLink to="/sign-up" className="self-center">
-                <span className="text-Mblue hover:text-Mdarkblue text__14 transition-colors">
-                  Sign Up
-                </span>
-              </NavLink>
-            </div>
-          </Col>
-        </Row>
-      </Container>
-    </section>
-  );
+                                <button type="submit" className="btn btn-success w-100" >
+                                    Verify OTP !
+                                </button>
+                            </Form>
+                        )}
+                    </Col>
+                </Row>
+            </Container>
+
+            <ToastContainer />
+        </section>
+    );
 };
 
 export default Login;

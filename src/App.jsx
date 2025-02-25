@@ -1,9 +1,6 @@
-import React from 'react'
-import {
-  Routes,
-  Route,
-  useLocation,
-} from "react-router-dom";
+
+import React from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
 import DefaultLayout from './Layouts/DefaultLayout';
@@ -22,15 +19,30 @@ import Terms from './Pages/Terms';
 import Faq from './Pages/Faq';
 import Login from './Pages/Login';
 import SignUp from './Pages/SignUp';
+import ForgotPassword from './Pages/ForgotPassword';
+import ResetPassword from './Pages/ResetPassword';
+import { AuthProvider } from './AuthContext';
+import GoogleCallback from './Pages/googlecallbackk';
 
 const App = () => {
   let location = useLocation();
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [location])
+  useEffect(() => {
+    // Get token from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+
+    if (token) {
+      // Store token in local storage
+      localStorage.setItem("token", token);
+    }
+  }, []);
   return (
+    <AuthProvider>
     <Routes>
-      <Route path="" element={<DefaultLayout />}>
+      <Route path="/" element={<DefaultLayout />}>
         <Route index element={<Homepage />} />
         <Route path="how-it-works" element={<HowItworks />} />
         <Route path="booking" element={<Booking />} />
@@ -45,9 +57,14 @@ const App = () => {
         <Route path="faq" element={<Faq />} />
         <Route path="login" element={<Login />} />
         <Route path="sign-up" element={<SignUp />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="reset-password/:token" element={<ResetPassword />} />
+        <Route path="google/callback" element={<GoogleCallback />} />
       </Route>
     </Routes>
+    </AuthProvider>
   )
 }
 
-export default App
+export default App;
+
