@@ -152,9 +152,11 @@ const Login = () => {
                                 </Form.Group>
 
                                 {/* Reset Password Link */}
+                                <NavLink to="/forgot-password">
                                 <div className="text-right mb-3">
                                     <a href="#!" className="text-[#ED544E] text__14">Forgot Password?</a>
                                 </div>
+                                </NavLink>
 
                                 {/* Connect Button with Sign Up Link */}
                                 <div className="d-flex justify-content-between">

@@ -93,7 +93,9 @@ const Navbar = () => {
           <div className="ml-auto hidden lg:block">
             {user ? (
               <div className="flex items-center gap-3">
+                <NavLink to="/profile" className="cursor-pointer">
                 <span className={navabarScroll && !ToogleMenuResponsive ? "text-Mwhite" : "text-Mblack"}>{user.name || user.email}</span>
+                </NavLink>
                 <button onClick={handleLogout} className={navabarScroll && !ToogleMenuResponsive ? "text-Mwhite text-red-500 cursor-pointer font-medium" : "text-Mblack text-red-500 cursor-pointer font-medium"}>Logout</button>
               </div>
             ) : (

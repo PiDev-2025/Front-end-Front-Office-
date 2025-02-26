@@ -23,6 +23,7 @@ import ForgotPassword from './Pages/ForgotPassword';
 import ResetPassword from './Pages/ResetPassword';
 import { AuthProvider } from './AuthContext';
 import GoogleCallback from './Pages/googlecallbackk';
+import ProfilePage from './Pages/profile';
 
 const App = () => {
   let location = useLocation();
@@ -60,6 +61,7 @@ const App = () => {
         <Route path="forgot-password" element={<ForgotPassword />} />
         <Route path="reset-password/:token" element={<ResetPassword />} />
         <Route path="google/callback" element={<GoogleCallback />} />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
     </Routes>
     </AuthProvider>
