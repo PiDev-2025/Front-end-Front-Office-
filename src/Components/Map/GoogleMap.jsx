@@ -1,7 +1,7 @@
 import React from 'react';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
-const MapComponent = ({ center, zoom = 13, markers = [] }) => {
+const MapComponent = ({ center, zoom = 15, markers = [] }) => {
   const mapStyles = {
     height: "400px",
     width: "100%",
@@ -50,29 +50,37 @@ const MapComponent = ({ center, zoom = 13, markers = [] }) => {
     }
   ];
 
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+    libraries: ['places']
+  });
+
+  if (!isLoaded) {
+    return <div style={mapStyles}>Loading...</div>;
+  }
+
   return (
-    <LoadScript googleMapsApiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
-      <GoogleMap
-        mapContainerStyle={mapStyles}
-        zoom={zoom}
-        center={center}
-        options={{
-          styles: customMapStyle,
-          disableDefaultUI: true,
-          zoomControl: true,
-          fullscreenControl: true,
-          backgroundColor: '#f5f5f5',
-        }}
-      >
-        {markers.map((marker, index) => (
-          <Marker
-            key={index}
-            position={marker.position}
-            title={marker.title}
-          />
-        ))}
-      </GoogleMap>
-    </LoadScript>
+    <GoogleMap
+      mapContainerStyle={mapStyles}
+      zoom={zoom}
+      center={center}
+      options={{
+        styles: customMapStyle,
+        disableDefaultUI: true,
+        zoomControl: true,
+        fullscreenControl: true,
+        backgroundColor: '#f5f5f5',
+      }}
+    >
+      {markers.map((marker, index) => (
+        <Marker
+          key={index}
+          position={marker.position}
+          title={marker.title}
+        />
+      ))}
+    </GoogleMap>
   );
 };
 
