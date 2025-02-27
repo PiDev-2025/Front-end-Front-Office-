@@ -2,7 +2,7 @@ import React from "react";
 import { SafeAreaView, Text, Button } from "react-native";
 
 import { useNavigation } from "@react-navigation/native";
-import { List, MD3Colors } from "react-native-paper";
+// import { List, MD3Colors } from "react-native-paper";
 import { GIT_TAG, API_URL } from "@env";
 
 import { StyleSheet, View, FlatList, ListRenderItem } from "react-native";

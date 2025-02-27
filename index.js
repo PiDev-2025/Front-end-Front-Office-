@@ -3,18 +3,15 @@
  */
 
 // import { registerGlobals } from "@livekit/react-native";
+// registerGlobals();
 import { verifyInstallation } from "nativewind";
-import { AppRegistry, useColorScheme } from "react-native";
-import {
-	MD3LightTheme as DefaultTheme,
-	PaperProvider,
-} from "react-native-paper";
+import { AppRegistry } from "react-native";
+
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import App from "./App";
 import { name as appName } from "./app.json";
 import "./global.css";
-registerGlobals();
 const lightTheme = {
 	colors: {
 		primary: "rgb(0, 95, 175)",
@@ -105,32 +102,30 @@ const darkTheme = {
 	},
 };
 
-const theme = {
-	...DefaultTheme,
-	// Specify custom property
-	roundness: 2,
-	myOwnProperty: true,
-	// Specify custom property in nested object
-	colors: lightTheme.colors,
-};
+// const theme = {
+// 	...DefaultTheme,
+// 	// Specify custom property
+// 	roundness: 2,
+// 	myOwnProperty: true,
+// 	// Specify custom property in nested object
+// 	colors: lightTheme.colors,
+// };
 
 // import { SurrealProvider } from "./SurrealProvider";
 
 function Main() {
-	const colorScheme = useColorScheme();
+	// const colorScheme = useColorScheme();
 
-	const paperTheme =
-		colorScheme === "dark"
-			? { ...theme, colors: darkTheme }
-			: { ...theme, colors: lightTheme };
+	// const paperTheme =
+	// 	colorScheme === "dark"
+	// 		? { ...theme, colors: darkTheme }
+	// 		: { ...theme, colors: lightTheme };
 	verifyInstallation();
 	return (
 		<SafeAreaProvider>
-			<PaperProvider theme={paperTheme}>
-				{/* <SurrealProvider endpoint={process.env.API_URL} autoConnect> */}
-				<App />
-				{/* </SurrealProvider> */}
-			</PaperProvider>
+			{/* <SurrealProvider endpoint={process.env.API_URL} autoConnect> */}
+			<App />
+			{/* </SurrealProvider> */}
 		</SafeAreaProvider>
 	);
 }

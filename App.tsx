@@ -61,7 +61,7 @@ function UserTabs() {
 
 // --- JOTAIL ---
 import { Provider, createStore } from "jotai";
-import { DevTools } from "jotai-devtools";
+// import { DevTools } from "jotai-devtools";
 // import "jotai-devtools/styles.css";
 
 const customStore = createStore();
@@ -109,7 +109,7 @@ export default function App(): React.JSX.Element {
 			}}
 			> */}
 				<Provider store={customStore}>
-					<DevTools store={customStore} />
+					{/* <DevTools store={customStore} /> */}
 					<NavigationContainer>
 						<Stack.Navigator initialRouteName="User">
 							{jwtAtom ? (
