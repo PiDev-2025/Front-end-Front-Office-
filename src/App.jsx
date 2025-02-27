@@ -24,6 +24,7 @@ import { AuthProvider } from './AuthContext';
 import GoogleCallback from './Pages/googlecallbackk';
 import ProfilePage from './Pages/profile';
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
+import NotFound from './Pages/NotFound';
 
 const App = () => {
   let location = useLocation();
@@ -63,6 +64,7 @@ const App = () => {
             <Route path="reset-password/:token" element={<ResetPassword />} />
             <Route path="google/callback" element={<GoogleCallback />} />
             <Route path="profile" element={<ProfilePage />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </AuthProvider>
