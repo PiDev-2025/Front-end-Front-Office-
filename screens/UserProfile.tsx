@@ -34,6 +34,7 @@ import {
 	SelectTrigger,
 } from "@/components/ui/select";
 import { userSaveProfile } from "./apis/User";
+import { log } from "./libs/logger";
 import {
 	ageAtom,
 	fetchThemesAtom,
@@ -46,12 +47,12 @@ import {
 	themesSelectedAtoms,
 	userIDAtom,
 } from "./states/user";
-
 const getSubThemes = (parent: any) => {
 	const _parent = themes.parents.filter((p: any) => p.name === parent);
 	const parentId = _parent[0].id;
 	return themes.childs.filter((child: any) => child.parent === parentId);
 };
+
 const UserProfileThemeChild: React.FC = () => {
 	return (
 		<Grid
@@ -141,7 +142,7 @@ const UserProfileThemeParent: React.FC = () => {
 				className="bg-background-50 rounded-md text-center"
 				_extra={{ className: "col-span-4" }}
 			>
-				{/* <Select
+				<Select
 					onValueChange={(value) =>
 						setThemesSelected((prev: any) =>
 							prev.map((item: any, i: number) =>
@@ -183,7 +184,7 @@ const UserProfileThemeParent: React.FC = () => {
 							</SelectContent>
 						</SelectScrollView>
 					</SelectPortal>
-				</Select> */}
+				</Select>
 			</GridItem>
 		</Grid>
 	);
@@ -193,6 +194,43 @@ const UserProfileThemes: React.FC = () => {
 	// const [jwt] = useAtom(jwtAtom);
 	const [themes] = useAtom(themesAtom);
 	const [themesSelected] = useAtom(themesSelectedAtoms);
+	log.info("UserProfileThemes.themesSelected", themesSelected);
+
+	if (themesSelected) {
+		// user already selected themes
+	} else {
+		// new user
+		return (
+			<>
+				{/* <Center className="bg-primary-500 h-[200px] w-[300px]">
+					<LinearGradient
+						className="w-full items-center py-2"
+						colors={["#FFFFFF", "#CFF1EB"]}
+						start={{ x: 0, y: 1 }}
+						end={{ x: 1, y: 0 }}
+					>
+						<Text className="text-typography-sw font-bold">
+							Thématiques Sélectionnées
+						</Text>
+					</LinearGradient>
+				</Center>
+				<FormControl className="p-4 border border-outline-300">
+					<VStack space="xl">
+						{themes &&
+							themes.parents &&
+							themes.childs &&
+							themesSelected?.map((theme, index) => (
+								<VStack space="xl" key={index}>
+									<UserProfileThemeParent />
+									<UserProfileThemeChild />
+								</VStack>
+							))}
+					</VStack>
+				</FormControl> */}
+			</>
+		);
+	}
+
 	// const [themesSelected, setThemesSelected] = useAtom(
 	// 	fetchThemesSelectedAtom
 	// );
@@ -205,42 +243,13 @@ const UserProfileThemes: React.FC = () => {
 	// 		console.log(themes);
 	// 	}
 	// }, [jwt, setThemes, setThemesSelected]);
-
-	return (
-		<>
-			<Center className="bg-primary-500 h-[200px] w-[300px]">
-				<LinearGradient
-					className="w-full items-center py-2"
-					colors={["#FFFFFF", "#CFF1EB"]}
-					start={{ x: 0, y: 1 }}
-					end={{ x: 1, y: 0 }}
-				>
-					<Text className="text-typography-sw font-bold">
-						Thématiques Sélectionnées
-					</Text>
-				</LinearGradient>
-			</Center>
-			<FormControl className="p-4 border border-outline-300">
-				<VStack space="xl">
-					{themes &&
-						themes.parents &&
-						themes.childs &&
-						themesSelected?.map((theme, index) => (
-							<VStack space="xl" key={index}>
-								<UserProfileThemeParent />
-								<UserProfileThemeChild />
-							</VStack>
-						))}
-				</VStack>
-			</FormControl>
-		</>
-	);
 };
 const UserProfileInformations: React.FC = () => {
 	const [sex, setSex] = useAtom(sexAtom);
 	const [age, setAge] = useAtom(ageAtom);
 	const [localization, setLocalization] = useAtom(localizationAtom);
-	console.log("UserProfileInformations", sex, age, localization);
+	// console.log("UserProfileInformations", sex, age, localization);
+	log.info("UserProfileInformations", sex, age, localization);
 	return (
 		<>
 			<Center className="bg-primary-500 h-[200px] w-[300px]">
@@ -277,7 +286,7 @@ const UserProfileInformations: React.FC = () => {
 					</VStack>
 					<VStack space="xl">
 						<HStack space="xs">
-							{/* <Box className="w-20">
+							<Box className="w-20">
 								<Text className="text-typography-500 color-tertiary-500">
 									Code
 								</Text>
@@ -308,7 +317,7 @@ const UserProfileInformations: React.FC = () => {
 										}
 									/>
 								</Input>
-							</Box> */}
+							</Box>
 							<Box className="w-20">
 								<Text className="text-typography-500">Age</Text>
 								<Input className="text-center">
@@ -491,7 +500,7 @@ const UserProfileScreen: React.FC = () => {
 						)} */}
 						<UserProfilePictures />
 						<UserProfileThemes />
-						{/* <UserProfileInformations /> */}
+						<UserProfileInformations />
 					</VStack>
 
 					<Button

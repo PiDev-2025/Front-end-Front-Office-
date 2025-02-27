@@ -2,6 +2,7 @@ import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import React from "react";
 import "./global.css";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
 	NavigationContainer,
@@ -9,6 +10,9 @@ import {
 	ThemeProvider,
 } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
+import { Platform } from "react-native";
+import { NAV_THEME } from "./libs/constants";
+import { useColorScheme } from "./libs/useColorScheme";
 import APIsScreen from "./screens/APIs";
 import EnvironmentScreen from "./screens/Environment";
 import QCTScreen from "./screens/QCTScreen";
@@ -16,12 +20,12 @@ import StatesScreen from "./screens/States";
 import UserProfile from "./screens/UserProfile";
 import UserSignInScreen from "./screens/UserSignIn";
 import UserSignUpScreen from "./screens/UserSignUp";
-
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
-import { NAV_THEME } from "./libs/constants";
-import { useColorScheme } from "./libs/useColorScheme";
-import { jwtState } from "./screens/states/user";
+import VideoChatScreen from "./screens/VideoChat";
+import ChatList from "./screens/components/Chat/ChatList";
+import ChatScreen from "./screens/components/Chat/ChatScreen";
+import NewChat from "./screens/components/Chat/NewChat";
+import ProScreen from "./screens/components/Pro/ProScreen";
+import { jwtAtom } from "./screens/states/user";
 
 const LIGHT_THEME: Theme = {
 	dark: false,
@@ -56,8 +60,13 @@ function UserTabs() {
 	);
 }
 
+// --- JOTAIL ---
+import { Provider, createStore } from "jotai";
+import { DevTools } from "jotai-devtools";
+import "jotai-devtools/styles.css";
+const customStore = createStore();
+
 // App.(js|ts)
-import { Provider } from "jotai";
 export default function App(): React.JSX.Element {
 	const { colorScheme, setColorScheme, isDarkColorScheme } = useColorScheme();
 	const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
@@ -99,10 +108,11 @@ export default function App(): React.JSX.Element {
             host: "https://us.i.posthog.com",
 			}}
 			> */}
-				<Provider>
+				<Provider store={customStore}>
+					<DevTools store={customStore} />
 					<NavigationContainer>
 						<Stack.Navigator initialRouteName="User">
-							{jwtState ? (
+							{jwtAtom ? (
 								<>
 									<Stack.Screen
 										name="SympathyWorld"
@@ -123,32 +133,32 @@ export default function App(): React.JSX.Element {
 										name="States"
 										component={StatesScreen}
 									/>
-									{/* <Stack.Screen
-									name="Chat"
-									component={ChatScreen}
-									options={{
-										headerShown: false,
-									}}
-								/>
-								<Stack.Screen
-									name="VideoChat"
-									component={VideoChatScreen}
-								/>
-								<Stack.Screen
-									name="ChatList"
-									component={ChatList}
-								/>
-								<Stack.Screen
-									name="NewChat"
-									component={NewChat}
-								/>
-								<Stack.Screen
-									name="ChatScreen"
-									component={ChatScreen}
-									initialParams={{
-										roomId: "1337",
-									}}
-								/> */}
+									<Stack.Screen
+										name="Chat"
+										component={ChatScreen}
+										options={{
+											headerShown: false,
+										}}
+									/>
+									<Stack.Screen
+										name="VideoChat"
+										component={VideoChatScreen}
+									/>
+									<Stack.Screen
+										name="ChatList"
+										component={ChatList}
+									/>
+									<Stack.Screen
+										name="NewChat"
+										component={NewChat}
+									/>
+									<Stack.Screen
+										name="ChatScreen"
+										component={ChatScreen}
+										initialParams={{
+											roomId: "1337",
+										}}
+									/>
 									<Stack.Screen
 										name="User"
 										component={UserTabs}
@@ -163,11 +173,18 @@ export default function App(): React.JSX.Element {
 											headerShown: true,
 										}}
 									/>
+									<Stack.Screen
+										name="Pro"
+										component={ProScreen}
+										options={{
+											headerShown: true,
+										}}
+									/>
 								</>
 							) : (
 								<Stack.Screen
 									name="User"
-									component={UserSignUpScreen}
+									component={UserTabs}
 									options={{ headerShown: false }}
 								/>
 							)}

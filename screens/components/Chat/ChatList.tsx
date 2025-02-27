@@ -1,6 +1,7 @@
 import { Badge, BadgeIcon, BadgeText } from "@/components/ui/badge";
 import { Grid, GridItem } from "@/components/ui/grid";
 import { useNavigation } from "@react-navigation/native";
+import { useAtom } from "jotai";
 import {
 	ComponentIcon,
 	HashIcon,
@@ -410,7 +411,7 @@ const RoomItem: React.FC<MessageItemProps> = ({ item }) => {
 };
 
 const ChatList: React.FC = () => {
-	const [jwt, setJwt] = useRecoilState(jwtState);
+	const [jwt, setJwt] = useAtom(jwtState);
 	const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
 	const [searchQuery, setSearchQuery] = React.useState("");
 	const rooms1V1 = useRecoilValue(sChats1V1Rooms);

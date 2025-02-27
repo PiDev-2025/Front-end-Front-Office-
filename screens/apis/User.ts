@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useAtom } from "jotai";
+import { log } from "../libs/logger";
 import {
 	ageAtom,
 	jwtAtom,
@@ -8,7 +9,6 @@ import {
 	themesSelectedAtoms,
 	userIDAtom,
 } from "../states/user";
-
 async function userSignUp(username: string, email: string, password: string) {
 	const origin = "qct-sw.react-native.screens.apis.User.userSignUp";
 	console.log(origin);
@@ -126,7 +126,7 @@ async function getUserInformation(jwt: string, userId: string) {
 	console.log(options);
 	try {
 		const { data } = await axios.request(options);
-		console.log("axios.getUserProfile", data);
+		log.info("axios.getUserProfile", data);
 		return data;
 	} catch (error) {
 		console.error(error);

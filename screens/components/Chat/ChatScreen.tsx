@@ -7,7 +7,6 @@ import {
 	StyleSheet,
 	View,
 } from "react-native";
-import { useRecoilState } from "recoil";
 import { get1V1Messages, send1V1Message } from "../../apis/Chat";
 import {
 	aKeyboardVisible,
@@ -201,3 +200,5 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 });
+
+export default ChatScreen;

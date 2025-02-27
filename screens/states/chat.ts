@@ -153,3 +153,9 @@ export const afRoomMessagesAmount = atomFamily({
 	key: "RoomMessagesAmountState",
 	default: (room: string) => sfRoomMessagesAmount(room),
 });
+
+export const chatIdState = atom<string | null>("");
+
+export const messageAmountState = atom<string | null>("");
+
+export const userIdState = atom<string | null>("");

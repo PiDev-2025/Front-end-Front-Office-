@@ -125,7 +125,8 @@ function QCTScreen(): React.JSX.Element {
 					{/* <Section title="States" /> */}
 					<Section title="User" />
 					<Section title="UserProfile" />
-					{/* <Section title="ChatList" /> */}
+					<Section title="Pro" />
+					<Section title="ChatList" />
 					{/* <Section title="VideoChat" /> */}
 					{/* <Section title="Chats" /> */}
 					{/* <LearnMoreLinks /> */}
