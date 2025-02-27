@@ -12,10 +12,10 @@ module.exports = {
 				allowUndefined: true, // allow undefined variables
 			},
 			// Enables hot reload for atoms
-			"jotai/babel/plugin-react-refresh",
 			// Automatically adds debug labels to the atoms
-			"jotai/babel/plugin-debug-label",
 		],
+		"jotai/babel/plugin-react-refresh",
+		"jotai/babel/plugin-debug-label",
 		[
 			"module-resolver",
 			{

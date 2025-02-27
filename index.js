@@ -2,7 +2,7 @@
  * @format
  */
 
-import { registerGlobals } from "@livekit/react-native";
+// import { registerGlobals } from "@livekit/react-native";
 import { verifyInstallation } from "nativewind";
 import { AppRegistry, useColorScheme } from "react-native";
 import {

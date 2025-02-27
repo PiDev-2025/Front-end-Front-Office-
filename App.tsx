@@ -20,7 +20,6 @@ import StatesScreen from "./screens/States";
 import UserProfile from "./screens/UserProfile";
 import UserSignInScreen from "./screens/UserSignIn";
 import UserSignUpScreen from "./screens/UserSignUp";
-import VideoChatScreen from "./screens/VideoChat";
 import ChatList from "./screens/components/Chat/ChatList";
 import ChatScreen from "./screens/components/Chat/ChatScreen";
 import NewChat from "./screens/components/Chat/NewChat";
@@ -63,7 +62,8 @@ function UserTabs() {
 // --- JOTAIL ---
 import { Provider, createStore } from "jotai";
 import { DevTools } from "jotai-devtools";
-import "jotai-devtools/styles.css";
+// import "jotai-devtools/styles.css";
+
 const customStore = createStore();
 
 // App.(js|ts)
@@ -140,10 +140,10 @@ export default function App(): React.JSX.Element {
 											headerShown: false,
 										}}
 									/>
-									<Stack.Screen
+									{/* <Stack.Screen
 										name="VideoChat"
 										component={VideoChatScreen}
-									/>
+									/> */}
 									<Stack.Screen
 										name="ChatList"
 										component={ChatList}
