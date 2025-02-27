@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Col, Container, Form, Row, Alert } from 'react-bootstrap';
+import { Col, Container, Form, Row, Alert, InputGroup } from 'react-bootstrap';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import axios from 'axios';
 
 const ResetPassword = () => {
@@ -10,6 +11,8 @@ const ResetPassword = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     // Password validation function
     const validatePassword = (password) => {
@@ -84,23 +87,41 @@ const ResetPassword = () => {
                             <Form onSubmit={handleSubmit}>
                                 <Form.Group className="mb-4" controlId="formBasicPassword">
                                     <Form.Label className="font-normal text__14 text-[#A3A3A3]">New Password</Form.Label>
-                                    <Form.Control
-                                        type="password"
-                                        placeholder="Enter new password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="font-medium text__14 bg-[#FAFAFA] h-[54px] rounded-[20px] px-3 outline-none shadow-none focus:outline-none focus:shadow-none border-[#F5F5F5] focus:border-[#F5F5F5] focus:bg-[#FAFAFA]"
-                                    />
+                                    <InputGroup>
+                                        <Form.Control
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="Enter new password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            className="font-medium text__14 bg-[#FAFAFA] h-[54px] rounded-[20px] px-3 outline-none shadow-none focus:outline-none focus:shadow-none border-[#F5F5F5] focus:border-[#F5F5F5] focus:bg-[#FAFAFA]"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 z-10 bg-transparent border-0 text-gray-500"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                        >
+                                            {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+                                        </button>
+                                    </InputGroup>
                                 </Form.Group>
                                 <Form.Group className="mb-4" controlId="formBasicConfirmPassword">
                                     <Form.Label className="font-normal text__14 text-[#A3A3A3]">Confirm Password</Form.Label>
-                                    <Form.Control
-                                        type="password"
-                                        placeholder="Confirm new password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="font-medium text__14 bg-[#FAFAFA] h-[54px] rounded-[20px] px-3 outline-none shadow-none focus:outline-none focus:shadow-none border-[#F5F5F5] focus:border-[#F5F5F5] focus:bg-[#FAFAFA]"
-                                    />
+                                    <InputGroup>
+                                        <Form.Control
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            placeholder="Confirm new password"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            className="font-medium text__14 bg-[#FAFAFA] h-[54px] rounded-[20px] px-3 outline-none shadow-none focus:outline-none focus:shadow-none border-[#F5F5F5] focus:border-[#F5F5F5] focus:bg-[#FAFAFA]"
+                                        />
+                                        <button
+                                            type="button"
+                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 z-10 bg-transparent border-0 text-gray-500"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        >
+                                            {showConfirmPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+                                        </button>
+                                    </InputGroup>
                                 </Form.Group>
                                 <button type="submit" className="inline-block w-full cursor-pointer text-center font-medium text__16 text-Mwhite !py-[15px] !px-[28px] bg-Mblue !border-Mblue btnClass transition-all duration-300 hover:opacity-90">
                                     Reset Password
