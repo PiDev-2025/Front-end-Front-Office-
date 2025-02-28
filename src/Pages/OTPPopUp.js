@@ -13,13 +13,14 @@ const OTPModal = ({ show, handleClose, email, password }) => {
 
   const handleOTPChange = (e) => {
     setOtp(e.target.value);
-    setErrorMessage(""); // Clear error message when user types
+    setErrorMessage("");
   };
 
   const loginAfterOTP = async (password) => {
     try {
       console.log("Password:", password);
-      const response = await axios.post("http://localhost:3001/User/loginAfterSignUp", { 
+      const response = await axios.post("http://localhost:3001/User/loginAfterSignUp", {
+
         email,
         password,
       });
@@ -28,11 +29,14 @@ const OTPModal = ({ show, handleClose, email, password }) => {
       if (token) {
         localStorage.setItem("token", token);
         console.log("Token saved:", token);
-
         navigate("/");
+        
+        //const token = localStorage.getItem("token");
+        //console.log("Token récupéré :", token);
       } else {
         toast.error("Authentication error.");
       }
+      
     } catch (error) {
       console.error("Login error after OTP", error);
       toast.error("Unable to login.");

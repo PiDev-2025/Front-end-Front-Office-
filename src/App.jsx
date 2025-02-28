@@ -22,7 +22,8 @@ import ForgotPassword from './Pages/ForgotPassword';
 import ResetPassword from './Pages/ResetPassword';
 import { AuthProvider } from './AuthContext';
 import GoogleCallback from './Pages/googlecallbackk';
-import ProfilePage from './Pages/profile';
+
+import Profile from './Pages/profile'
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import NotFound from './Pages/NotFound';
 
@@ -46,6 +47,7 @@ const App = () => {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<DefaultLayout />}>
+            <Route path="/" element={<DefaultLayout />}>
             <Route index element={<Homepage />} />
             <Route path="how-it-works" element={<HowItworks />} />
             <Route path="booking" element={<Booking />} />
