@@ -1,23 +1,38 @@
 import React, { createContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
-import { useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token"));
-  
+  // Initialize state from localStorage
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [user, setUser] = useState(() => {
+    const savedToken = localStorage.getItem("token");
+    return savedToken ? jwtDecode(savedToken) : null;
+  });
+
   useEffect(() => {
     if (token) {
-      setUser(jwtDecode(token));
+      try {
+        setUser(jwtDecode(token)); // ✅ Just set user, no need to call login
+      } catch (error) {
+        console.error("Invalid token:", error);
+        logout();
+      }
     }
   }, [token]);
 
   const login = (newToken) => {
-    setToken(newToken);
-    setUser(jwtDecode(newToken));
-    localStorage.setItem("token", newToken);
+    if (newToken === token) return; // ✅ Prevent infinite re-renders
+
+    try {
+      setToken(newToken);
+      setUser(jwtDecode(newToken));
+      localStorage.setItem("token", newToken);
+    } catch (error) {
+      console.error(error);
+      logout();
+    }
   };
 
   const logout = () => {

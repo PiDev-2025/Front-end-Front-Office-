@@ -20,6 +20,7 @@ const OTPModal = ({ show, handleClose, email, password }) => {
     try {
       console.log("Password:", password);
       const response = await axios.post("http://localhost:3001/User/loginAfterSignUp", {
+
         email,
         password,
       });

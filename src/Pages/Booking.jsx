@@ -55,18 +55,18 @@ const Booking = () => {
                 <Container>
                     <div className="py-6 border-t border-b border-solid border-[#E5E5E5] w-full mb-10 overflow-auto no-scrollbar">
                         <div className="flex items-center justify-center gap-3 w-[920px] lg:w-full">
-                            {
-                                dataTab.map((obj, i) => {
-                                    return <Fragment>
-                                        <div onClick={() => settabActiveId(obj.id)} className={"flex items-center gap-2 text__16 px-4 py-2 border border-solid rounded-full cursor-pointer " + (obj.id <= tabActiveId ? "!border-Mblue text-Mblue bg-[#EDEDFC]" : '!border-[#E5E5E5] text-[#737373]')}>
-                                            {obj.icon} <span>{obj.title}</span>
-                                        </div>
-                                        {
-                                            (i + 1) < dataTab.length ? <RightArrowIcon color="#737373" /> : ""
-                                        }
-                                    </Fragment>
-                                })
-                            }
+                            {dataTab.map((obj, i) => (
+                                <Fragment key={obj.id}>
+                                    <div 
+                                        onClick={() => settabActiveId(obj.id)} 
+                                        className={"flex items-center gap-2 text__16 px-4 py-2 border border-solid rounded-full cursor-pointer " + 
+                                            (obj.id <= tabActiveId ? "!border-Mblue text-Mblue bg-[#EDEDFC]" : '!border-[#E5E5E5] text-[#737373]')}
+                                    >
+                                        {obj.icon} <span>{obj.title}</span>
+                                    </div>
+                                    {(i + 1) < dataTab.length && <RightArrowIcon key={`arrow-${i}`} color="#737373" />}
+                                </Fragment>
+                            ))}
                         </div>
                     </div>
 
