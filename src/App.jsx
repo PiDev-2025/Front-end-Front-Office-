@@ -23,6 +23,7 @@ import ForgotPassword from './Pages/ForgotPassword';
 import ResetPassword from './Pages/ResetPassword';
 import { AuthProvider } from './AuthContext';
 import GoogleCallback from './Pages/googlecallbackk';
+import Profile from './Pages/profile'
 
 const App = () => {
   let location = useLocation();
@@ -43,6 +44,7 @@ const App = () => {
     <AuthProvider>
     <Routes>
       <Route path="/" element={<DefaultLayout />}>
+      <Route path="profile" element={<Profile />} />
         <Route index element={<Homepage />} />
         <Route path="how-it-works" element={<HowItworks />} />
         <Route path="booking" element={<Booking />} />

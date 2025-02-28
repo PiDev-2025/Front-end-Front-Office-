@@ -7,21 +7,53 @@ import toast from "react-hot-toast";
 import OTPModal from "../Pages/OTPPopUp";
 import Select from "react-select";
 
-
 const vehicleOptions = [
-  { value: "Moto", label: "Moto", image: "/images/moto.png" },
-  { value: "Citadine", label: "Citadine", image: "/images/voiture-de-ville.png" },
-  { value: "Berline / Petit SUV", label: "Berline / Petit SUV", image: "/images/wagon-salon.png" },
-  { value: "Familiale / Grand SUV", label: "Familiale / Grand SUV", image: "/images/voiture-familiale.png" },
-  { value: "Utilitaire", label: "Utilitaire", image: "/images/voiture-de-livraison.png" },
+  {
+    value: "Moto",
+    label: "Moto",
+    image:
+      "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765730/moto_xdypx2.png",
+  },
+  {
+    value: "Citadine",
+    label: "Citadine",
+    image:
+      "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-de-ville_ocwbob.png",
+  },
+  {
+    value: "Berline / Petit SUV",
+    label: "Berline / Petit SUV",
+    image:
+      "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/wagon-salon_bj2j1s.png",
+  },
+  {
+    value: "Familiale / Grand SUV",
+    label: "Familiale / Grand SUV",
+    image:
+      "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-familiale_rmgclg.png",
+  },
+  {
+    value: "Utilitaire",
+    label: "Utilitaire",
+    image:
+      "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-de-livraison_nodnzh.png",
+  },
 ];
 
 // Custom Option Component for react-select
 const customOption = (props) => {
   const { data, innerRef, innerProps } = props;
   return (
-    <div ref={innerRef} {...innerProps} style={{ display: "flex", alignItems: "center", padding: 10 }}>
-      <img src={data.image} alt={data.label} style={{ width: 30, height: 20, marginRight: 10 }} />
+    <div
+      ref={innerRef}
+      {...innerProps}
+      style={{ display: "flex", alignItems: "center", padding: 10 }}
+    >
+      <img
+        src={data.image}
+        alt={data.label}
+        style={{ width: 30, height: 20, marginRight: 10 }}
+      />
       {data.label}
     </div>
   );
@@ -52,14 +84,13 @@ const SignUp = () => {
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
 
-
   const navigate = useNavigate();
 
   const generatePassword = async () => {
     try {
       const response = await axios.get(
         "https://www.random.org/passwords/?num=1&len=16&format=plain&rnd=new"
-      ); 
+      );
 
       if (response.status === 200) {
         const generatedPassword = response.data.trim();
@@ -215,10 +246,6 @@ const SignUp = () => {
       setIsEmailValid(validateEmail(value)); // Vérification rapide
       setIsEmailUnique(true); // Réinitialisation temporaire avant l'appel au serveur
     }
-
-    //if (name === "password") {
-      //setPassword(value); // Update password state
-    //}
   };
 
   const handleVehicleChange = (selectedOption) => {
@@ -446,21 +473,28 @@ const SignUp = () => {
               </Form.Group>
 
               {user.role === "Driver" && (
-                <Form.Group className="mb-3">
-                <Form.Label>Vehicle Type<span className="text-danger">*</span></Form.Label>
-                <Select
-                  options={vehicleOptions}
-                  components={{ Option: customOption }}
-                  getOptionLabel={(e) => (
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <img src={e.image} alt={e.label} style={{ width: 30, height: 20, marginRight: 10 }} />
-                      {e.label}
-                    </div>
-                  )}
-                  value={selectedVehicle}
-                  onChange={handleVehicleChange}
-                />
-              </Form.Group>
+                <div className="mb-3">
+                  <label className="block text-gray-700 mb-1">
+                    Vehicle Type <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    options={vehicleOptions}
+                    components={{ Option: customOption }}
+                    getOptionLabel={(e) => (
+                      <div className="flex items-center">
+                        <img
+                          src={e.image}
+                          alt={e.label}
+                          className="w-8 h-5 mr-3"
+                        />
+                        {e.label}
+                      </div>
+                    )}
+                    value={selectedVehicle}
+                    onChange={handleVehicleChange}
+                    className="w-full"
+                  />
+                </div>
               )}
 
               <div className="d-flex justify-content-end">
