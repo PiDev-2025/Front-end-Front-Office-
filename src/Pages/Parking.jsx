@@ -26,8 +26,9 @@ const Parking = () => {
   // Fetch parking list from the API
   useEffect(() => {
     setLoading(true); // Set loading state to true
-    axios.get('/api/parkings', {
+    axios.get('http://localhost:3001/parkings/parkings', {
       headers: {
+
         'Authorization': `Bearer ${getToken()}`
       }
     })
@@ -111,7 +112,7 @@ const Parking = () => {
     setLoading(true); // Set loading to true while the request is being sent
 
     // Make the API call with token in Authorization header
-    axios.post('http://localhost:3001/parking/submit', formData, {
+    axios.post('http://localhost:3001/parkings/submit', formData, {
       headers: {
         'Authorization': `Bearer ${getToken()}`,
       }
@@ -138,14 +139,14 @@ const Parking = () => {
 
   // View parking details
   const viewParkingDetails = (id) => {
-    navigate(`/parking/${id}`);
+    navigate(`/parkings/parkings/${id}`);
   };
 
   // Delete parking request
   const deleteParking = (id) => {
     if (window.confirm("Are you sure you want to delete this parking?")) {
       setLoading(true); // Set loading state while deleting
-      axios.delete(`/api/parkings/${id}`, {
+      axios.delete(`/parkings/parkings/${id}`, {
         headers: {
           'Authorization': `Bearer ${getToken()}`
         }
