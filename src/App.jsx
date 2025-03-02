@@ -45,6 +45,7 @@ const App = () => {
   return (
     <GoogleMapsProvider>
       <AuthProvider>
+
         <Routes>
           <Route path="/" element={<DefaultLayout />}>
             <Route index element={<Homepage />} />
@@ -69,7 +70,9 @@ const App = () => {
           </Route>
         </Routes>
       </AuthProvider>
-    </GoogleMapsProvider>
+      </GoogleMapsProvider>
+
+
   )
 }
 

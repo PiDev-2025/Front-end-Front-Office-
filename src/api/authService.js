@@ -1,4 +1,3 @@
-import axios from 'axios';
 
 // Function to validate the token format
 export const isValidTokenFormat = (token) => {
