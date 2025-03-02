@@ -10,6 +10,7 @@ import {
 } from "react-bootstrap";
 import { Autocomplete } from "@react-google-maps/api";
 import { useGoogleMaps } from "../../../context/GoogleMapsContext";
+import axios from "axios"; // You can use axios or fetch for the API call
 
 const Step1AddParking = () => {
   const { isLoaded } = useGoogleMaps();
@@ -75,8 +76,9 @@ const Step1AddParking = () => {
     });
   };
 
-    const handleAddRate = (type, rate) => {
+  const handleAddRate = (type, rate) => {
     setRates((prev) => [...prev, { duration: type, rate: rate }]);
+    setHourlyRate(""); // Clear input after adding rate
   };
 
   const onLoad = (autoComplete) => {
@@ -93,21 +95,46 @@ const Step1AddParking = () => {
         };
         setLocation(newLocation);
         setAddress(place.formatted_address);
-        setMarkers([
+        /*setMarkers([
           {
             position: newLocation,
             title: place.formatted_address,
           },
-        ]);
+        ]);*/
       }
     }
   };
-
   const handleSubmit = (e) => {
     e.preventDefault();
+  
+    // Validation for location
+    if (!address || !location.lat || !location.lng) {
+      alert("Please select a valid location.");
+      return;
+    }
+  
+    // Validation for rates
+    if (rates.length === 0) {
+      alert("At least one tariff is required.");
+      return;
+    }
+  
+    // Validation for characteristics (features)
+    if (characteristics.length === 0) {
+      alert("Please select at least one parking feature.");
+      return;
+    }
+  
+    // Validation for selected vehicle types
+    if (selectedvehicules.length === 0) {
+      alert("Please select at least one vehicle type.");
+      return;
+    }
+  
     // Process the form submission here, send to backend or state management
     console.log("Form Submitted with rates:", rates);
   };
+  
 
   if (!isLoaded) {
     return <div>Loading...</div>;
@@ -126,23 +153,9 @@ const Step1AddParking = () => {
         break;
     }
   };
-  
 
   return (
     <div className="bg-white p-6 rounded-[20px]">
-      <style>
-        {`
-      .font-weight-bold {
-        font-weight: 600;
-      }
-      .text-dark {
-        color: #333;
-      }
-      .h5 {
-        font-size: 1.25rem;
-      }
-    `}
-      </style>
       <Row className="justify-content-center">
         <Col lg={8} md={10}>
           <Form onSubmit={handleSubmit}>
@@ -158,6 +171,7 @@ const Step1AddParking = () => {
                   className="form-control-custom"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
+                  required
                 />
               </Autocomplete>
             </Form.Group>
@@ -171,25 +185,24 @@ const Step1AddParking = () => {
                 type="number"
                 placeholder="Total spots available"
                 className="form-control-custom"
-                onChange={handleChange}
+                required
               />
             </Form.Group>
 
             {/* Hourly Rate */}
+            {/* Rate Input */}
             <Form.Group className="mb-4">
               <Form.Label className="font-weight-bold text-dark h5">
-                Rate for 1 {tariffType === "" ? "Hour" : tariffType} (DT)
+                {rates.length === 0 ? `Rate for 1 ${tariffType === "" ? "Hour" : tariffType} (DT)` : "Add Another Tariff"}
               </Form.Label>
               <Row className="align-items-center">
                 <Col xs={9} md={9}>
                   <Form.Control
                     type="number"
-                    placeholder={`Rate for 1 ${
-                      tariffType === "" ? "Hour" : tariffType
-                    }`}
+                    placeholder={`Rate for 1 ${tariffType === "" ? "Hour" : tariffType}`}
                     value={hourlyRate}
                     onChange={(e) => setHourlyRate(e.target.value)}
-                    required
+                    required={rates.length === 0}
                   />
                 </Col>
                 <Col xs={3} md={3}>
@@ -203,7 +216,6 @@ const Step1AddParking = () => {
                           tariffType === "" ? "Hour" : tariffType,
                           hourlyRate
                         );
-                        setHourlyRate("");
                       }
                     }}
                   >
@@ -224,9 +236,7 @@ const Step1AddParking = () => {
               >
                 <Dropdown.Item eventKey="Day">Tariff for a Day</Dropdown.Item>
                 <Dropdown.Item eventKey="Week">Tariff for a Week</Dropdown.Item>
-                <Dropdown.Item eventKey="Month">
-                  Tariff for a Month
-                </Dropdown.Item>
+                <Dropdown.Item eventKey="Month">Tariff for a Month</Dropdown.Item>
               </DropdownButton>
             </Form.Group>
 
@@ -249,7 +259,6 @@ const Step1AddParking = () => {
                         variant="outline-danger"
                         size="sm"
                         onClick={() => {
-                          // Remove the item from the list based on its index
                           const updatedRates = rates.filter(
                             (_, i) => i !== index
                           );
@@ -271,6 +280,7 @@ const Step1AddParking = () => {
               </Form.Label>
               <div>
                 {[
+                  // Add Features list
                   "Indoor Parking",
                   "Underground Parking",
                   "Unlimited Entrances & Exits",
@@ -296,10 +306,10 @@ const Step1AddParking = () => {
               </div>
             </Form.Group>
 
-            {/* vehicule Types */}
+            {/* Vehicle Types */}
             <Form.Group className="mt-4">
               <Form.Label className="font-weight-bold text-dark h5">
-                Suitable vehicule Types
+                Suitable vehicle Types
               </Form.Label>
               <Row>
                 {vehiculeOptions.map((option) => (
@@ -329,6 +339,11 @@ const Step1AddParking = () => {
                 ))}
               </Row>
             </Form.Group>
+
+            {/* Submit Button */}
+            <Button type="submit" variant="primary" className="w-100">
+              Submit
+            </Button>
           </Form>
         </Col>
       </Row>
