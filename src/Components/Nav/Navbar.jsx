@@ -59,7 +59,7 @@ const Navbar = () => {
             <li className="w-full"><NavLink to="/about" onClick={() => setToogleMenuResponsive(false)} className="font-medium text-black">About</NavLink></li>
             <li className="w-full"><NavLink to="/faq" onClick={() => setToogleMenuResponsive(false)} className="font-medium text-black">FAQ</NavLink></li>
             <li className="w-full"><NavLink to="/contact" onClick={() => setToogleMenuResponsive(false)} className="font-medium text-black">Contact</NavLink></li>
-
+            <li className="w-full"><NavLink to="/parkings" onClick={() => setToogleMenuResponsive(false)} className="font-medium text-black">Parkings</NavLink></li>
             {/* Show Logout or Login Button */}
             <li className="w-full">
               {user ? (
@@ -87,6 +87,7 @@ const Navbar = () => {
             <li><NavLink to="/about" className={navabarScroll && !ToogleMenuResponsive ? "text-Mwhite" : "text-Mblack"}>About</NavLink></li>
             <li><NavLink to="/faq" className={navabarScroll && !ToogleMenuResponsive ? "text-Mwhite" : "text-Mblack"}>FAQ</NavLink></li>
             <li><NavLink to="/contact" className={navabarScroll && !ToogleMenuResponsive ? "text-Mwhite" : "text-Mblack"}>Contact</NavLink></li>
+            <li><NavLink to="/parkings" className={navabarScroll && !ToogleMenuResponsive ? "text-Mwhite" : "text-Mblack"}>Parkings</NavLink></li>
           </ul>
 
           {/* Show User Name or Login Button */}
