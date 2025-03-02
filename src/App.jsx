@@ -45,38 +45,35 @@ const App = () => {
   return (
     <GoogleMapsProvider>
       <AuthProvider>
-      
+
         <Routes>
-     
-            <Route path="/" element={<DefaultLayout />}>
-              <Route index element={<Homepage />} />
-              <Route path="how-it-works" element={<HowItworks />} />
-             
-                <Route path="booking" element={<Booking />} />
-             
-              <Route path="careers" element={<Careers />} />
-              <Route path="about" element={<About />} />
-              <Route path="job/detail" element={<JobDetail />} />
-              <Route path="blog" element={<Blog />} />
-              <Route path="blog/detail" element={<BlogDetail />} />
-              <Route path="contact" element={<Contact />} />
-              <Route path="privacy" element={<Privacy />} />
-              <Route path="terms" element={<Terms />} />
-              <Route path="faq" element={<Faq />} />
-              <Route path="login" element={<Login />} />
-              <Route path="sign-up" element={<SignUp />} />
-              <Route path="forgot-password" element={<ForgotPassword />} />
-              <Route path="reset-password/:token" element={<ResetPassword />} />
-              <Route path="google/callback" element={<GoogleCallback />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="*" element={<NotFound />} />
-            </Route>
+          <Route path="/" element={<DefaultLayout />}>
+            <Route index element={<Homepage />} />
+            <Route path="how-it-works" element={<HowItworks />} />
+            <Route path="booking" element={<Booking />} />
+            <Route path="careers" element={<Careers />} />
+            <Route path="about" element={<About />} />
+            <Route path="job/detail" element={<JobDetail />} />
+            <Route path="blog" element={<Blog />} />
+            <Route path="blog/detail" element={<BlogDetail />} />
+            <Route path="contact" element={<Contact />} />
+            <Route path="privacy" element={<Privacy />} />
+            <Route path="terms" element={<Terms />} />
+            <Route path="faq" element={<Faq />} />
+            <Route path="login" element={<Login />} />
+            <Route path="sign-up" element={<SignUp />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="reset-password/:token" element={<ResetPassword />} />
+            <Route path="google/callback" element={<GoogleCallback />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
         </Routes>
-      
       </AuthProvider>
       </GoogleMapsProvider>
+
+
   )
-  
 }
 
 export default App;
