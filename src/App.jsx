@@ -22,10 +22,10 @@ import ForgotPassword from './Pages/ForgotPassword';
 import ResetPassword from './Pages/ResetPassword';
 import { AuthProvider } from './AuthContext';
 import GoogleCallback from './Pages/googlecallbackk';
-
-import Profile from './Pages/profile'
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import NotFound from './Pages/NotFound';
+import Profile from './Pages/profile';
+import AddParking from './Pages/addParking'
 
 const App = () => {
   let location = useLocation();
@@ -47,12 +47,13 @@ const App = () => {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<DefaultLayout />}>
-            <Route path="/" element={<DefaultLayout />}>
             <Route index element={<Homepage />} />
+            <Route path="AddParking" element={<AddParking />} />
             <Route path="how-it-works" element={<HowItworks />} />
             <Route path="booking" element={<Booking />} />
             <Route path="careers" element={<Careers />} />
             <Route path="about" element={<About />} />
+            <Route path="profile" element={<Profile />} />
             <Route path="job/detail" element={<JobDetail />} />
             <Route path="blog" element={<Blog />} />
             <Route path="blog/detail" element={<BlogDetail />} />
@@ -65,8 +66,7 @@ const App = () => {
             <Route path="forgot-password" element={<ForgotPassword />} />
             <Route path="reset-password/:token" element={<ResetPassword />} />
             <Route path="google/callback" element={<GoogleCallback />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="*" element={<NotFound />} />
+              <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </AuthProvider>
@@ -75,4 +75,3 @@ const App = () => {
 }
 
 export default App;
-
