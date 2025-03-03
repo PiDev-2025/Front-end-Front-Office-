@@ -1,8 +1,6 @@
-import React from 'react'
-import { Fragment } from 'react'
-import { Col, Container, Form, Row } from 'react-bootstrap'
+import React, { Fragment, useState } from 'react'
+import { Col, Container, Row } from 'react-bootstrap'
 import { CarIcon, DocumentIcon, LocationIcon, RightArrowIcon, SettingIcon } from '../Components/Icon/Icon'
-import { useState } from 'react'
 
 import SecLocation from "./../Components/Pages/Step/Location"
 import ChooseCar from "./../Components/Pages/Step/ChooseCar"
@@ -70,7 +68,7 @@ const Booking = () => {
                         </div>
                     </div>
 
-                    <div className="mb-6">
+                    <div className="mb-6" >
                         {
                             showContent(tabActiveId)
                         }
