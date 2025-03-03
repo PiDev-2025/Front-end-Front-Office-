@@ -3,24 +3,35 @@ import { Col, Container, Form, Row } from 'react-bootstrap'
 import { CardCar } from '../Components/Card/Card'
 import HowItWorks from '../Components/Pages/HowItWorks'
 import GridInfo from '../Components/Pages/GridInfo'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Autocomplete } from '@react-google-maps/api';
 import { useGoogleMaps } from '../context/GoogleMapsContext';
+import { useSearch } from '../context/SearchContext';
 
 const Homepage = () => {
+    const navigate = useNavigate();
+    const { searchData, updateSearchData } = useSearch();
     const { isLoaded } = useGoogleMaps();
-    const [toogleTab, settoogleTab] = useState("On time")
-    const [vehicleType, setVehicleType] = useState(null)
+    
+    // Get values from context or use defaults
+    const [toogleTab, settoogleTab] = useState(searchData.toogleTab)
+    const [vehicleType, setVehicleType] = useState(searchData.vehicleType)
     const [showVehicleDropdown, setShowVehicleDropdown] = useState(false);
     const [focusedVehicleIndex, setFocusedVehicleIndex] = useState(-1);
     const dropdownRef = useRef(null);
     
     // Google Maps Autocomplete states
     const [autocomplete, setAutocomplete] = useState(null);
-    const [address, setAddress] = useState('');
-    const [location, setLocation] = useState(null);
+    const [address, setAddress] = useState(searchData.address || '');
+    const [location, setLocation] = useState(searchData.location);
+
+    // Date and time states
+    const [startDate, setStartDate] = useState(searchData.startDate);
+    const [endDate, setEndDate] = useState(searchData.endDate);
+    const [startTime, setStartTime] = useState(searchData.startTime || "14:41");
+    const [endTime, setEndTime] = useState(searchData.endTime || "15:41");
 
     // Google Maps Autocomplete handlers
     const onLoadAutocomplete = (autoC) => {
@@ -31,10 +42,11 @@ const Homepage = () => {
         if (autocomplete !== null) {
             const place = autocomplete.getPlace();
             if (place.geometry) {
-                setLocation({
+                const newLocation = {
                     lat: place.geometry.location.lat(),
                     lng: place.geometry.location.lng()
-                });
+                };
+                setLocation(newLocation);
                 setAddress(place.formatted_address);
             } else {
                 console.log('Selected place has no geometry');
@@ -42,6 +54,24 @@ const Homepage = () => {
         } else {
             console.log('Autocomplete is not loaded yet!');
         }
+    };
+    
+    // Handle search form submission
+    const handleSearch = () => {
+        // Save all form data to the context
+        updateSearchData({
+            toogleTab,
+            address,
+            location,
+            vehicleType,
+            startDate,
+            endDate,
+            startTime,
+            endTime
+        });
+        
+        // Navigate to the booking page
+        navigate('/booking');
     };
 
     const dataProfile = [
@@ -130,11 +160,6 @@ const Homepage = () => {
         },
     ]
 
-    const [startDate, setStartDate] = useState();
-    const [endDate, setEndDate] = useState();
-    const [startTime, setStartTime] = useState("14:41");
-    const [endTime, setEndTime] = useState("15:41");
-    
     const vehicleTypes = [
         { id: "2wheels", name: "2 wheels", description: "Motorcycle, scooter, …" },
         { id: "little", name: "Little", description: "Clio, 208, Twingo, Polo, Corsa, …" },
@@ -393,7 +418,12 @@ const Homepage = () => {
                                         </div>
                                     </div>
                                     
-                                    <button className="font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8">Search</button>
+                                    <button 
+                                        onClick={handleSearch}
+                                        className="font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8"
+                                    >
+                                        Search
+                                    </button>
                                 </div> 
                                 : 
                                 <div className="flex flex-col gap-4">
@@ -516,7 +546,12 @@ const Homepage = () => {
                                         </div>
                                     </div>
                                     
-                                    <button className="font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8">Search</button>
+                                    <button 
+                                        onClick={handleSearch}
+                                        className="font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8"
+                                    >
+                                        Search
+                                    </button>
                                 </div>
                             }
                         </Col>
