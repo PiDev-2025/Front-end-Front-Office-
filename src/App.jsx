@@ -1,9 +1,8 @@
-import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import React from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
-import DefaultLayout from './Layouts/DefaultLayout';
-
+import DefaultLayout from "./Layouts/DefaultLayout";
 import Homepage from './Pages/Homepage';
 import HowItworks from './Pages/HowItworks';
 import Booking from './Pages/Booking';
@@ -27,12 +26,13 @@ import Profile from './Pages/profile'
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import { SearchProvider } from './context/SearchContext';
 import NotFound from './Pages/NotFound';
+import FaceAuth from "./Components/FaceAuth/FaceAuth";
 
 const App = () => {
   let location = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [location])
+    window.scrollTo(0, 0);
+  }, [location]);
   useEffect(() => {
     // Get token from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -68,13 +68,13 @@ const App = () => {
               <Route path="google/callback" element={<GoogleCallback />} />
               <Route path="profile" element={<Profile />} />
               <Route path="*" element={<NotFound />} />
+              <Route path="/login/face" element={<FaceAuth/>} />
             </Route>
           </Routes>
         </AuthProvider>
       </SearchProvider>
     </GoogleMapsProvider>
-  )
-}
+  );
+};
 
 export default App;
-
