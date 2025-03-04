@@ -26,6 +26,7 @@ import ProfilePage from './Pages/profile';
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import NotFound from './Pages/NotFound';
 import Parking from "./Pages/Parking";
+import ParkingDetails from "./Pages/ParkingDetails";
 
 const App = () => {
   let location = useLocation();
@@ -66,6 +67,7 @@ const App = () => {
             <Route path="google/callback" element={<GoogleCallback />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="parkings" element={<Parking />} />
+            <Route path="ParkingDetails" element={<ParkingDetails />} />
             <Route path="*" element={<NotFound />} />
             
           </Route>
