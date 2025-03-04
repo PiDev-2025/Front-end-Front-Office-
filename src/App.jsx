@@ -21,11 +21,12 @@ import ForgotPassword from './Pages/ForgotPassword';
 import ResetPassword from './Pages/ResetPassword';
 import { AuthProvider } from './AuthContext';
 import GoogleCallback from './Pages/googlecallbackk';
-
-import Profile from './Pages/profile'
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import { SearchProvider } from './context/SearchContext';
 import NotFound from './Pages/NotFound';
+import Profile from './Pages/profile';
+import OwnerAddPaking from '../src/Components/Pages/Step/Step1AddParking';
+import Step2UploadImages from '../src/Components/Pages/Step/Step2AddParking';
 import FaceAuth from "./Components/FaceAuth/FaceAuth";
 
 const App = () => {
@@ -45,11 +46,14 @@ const App = () => {
   }, []);
   return (
     <GoogleMapsProvider>
+
       <SearchProvider>
         <AuthProvider>
           <Routes>
             <Route path="/" element={<DefaultLayout />}>
               <Route index element={<Homepage />} />
+              <Route path="ownerAddPaking" element={<OwnerAddPaking />} />
+              <Route path="step2/:parkingId" element={<Step2UploadImages />} />
               <Route path="how-it-works" element={<HowItworks />} />
               <Route path="booking" element={<Booking />} />
               <Route path="careers" element={<Careers />} />
