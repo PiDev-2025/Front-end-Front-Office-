@@ -4,16 +4,21 @@ import { useGoogleMaps } from "../../../context/GoogleMapsContext";
 import { useSearch } from "../../../context/SearchContext";
 import { Form } from 'react-bootstrap';
 import DatePicker from "react-datepicker";
+import { useNavigate } from "react-router-dom";
+
+
 import "react-datepicker/dist/react-datepicker.css";
 
 const mapContainerStyle = { width: "100%", height: "calc(100vh - 90px)" }; // Adjusted for search bar
 const defaultCenter = { lat: 48.8566, lng: 2.3522 };
 
-const parkings = [
+
+/*const parkings = [
     { id: 1, name: "Gare de Lyon - SAEMES", lat: 48.8472, lng: 2.3696, price: "€3/hr" },
     { id: 2, name: "Bastille - Boulevard Bourdon", lat: 48.8534, lng: 2.3695, price: "€4/hr" },
     { id: 3, name: "Gare de Lyon - Citadines", lat: 48.8452, lng: 2.3710, price: "€2.5/hr" },
-];
+];*/
+
 
 const SecLocation = () => {
     const { isLoaded } = useGoogleMaps();
@@ -36,16 +41,29 @@ const SecLocation = () => {
     const [address, setAddress] = useState(searchData.address || '');
     const [location, setLocation] = useState(searchData.location);
     const [isSearching, setIsSearching] = useState(false);
+    const [debouncedAddress, setDebouncedAddress] = useState(address);
+    const [mapLocation, setMapLocation] = useState(defaultCenter);
+
+    const navigate = useNavigate(); // Hook pour naviguer entre les pages
+    
 
     // Vehicle types for dropdown
     const vehicleTypes = [
-        { id: "2wheels", name: "2 wheels", description: "Motorcycle, scooter, …" },
-        { id: "little", name: "Little", description: "Clio, 208, Twingo, Polo, Corsa, …" },
-        { id: "average", name: "AVERAGE", description: "Megane, 308, Scenic, C3 Picasso, Kangoo, Juke, …" },
-        { id: "big", name: "Big", description: "C4 Picasso, 508, BMW 3 Series, X-Trail, RAV4, Tiguan, …" },
-        { id: "high", name: "High", description: "Mercedes Vito, Renault Trafic, …" },
-        { id: "very-high", name: "Very high", description: "Mercedes Sprinter, Renault Master, …" },
+        { id: "Moto", name: "2 wheels", description: "Motorcycle, scooter, …" },
+        { id: "Citadine", name: "Citadine", description: "Clio, 208, Twingo, Polo, Corsa, …" },
+       
+        { id: "Berline / Petit SUV", name: "Berline / Petit SUV", description: "C4 Picasso, 508, BMW 3 Series, X-Trail, RAV4, Tiguan, …" },
+        { id: "Utilitaire", name: "Utilitaire", description: "Mercedes Vito, Renault Trafic, …" },
+        { id: "Familiale / Grand SUV", name: "Familiale / Grand SUV", description: "Mercedes Sprinter, Renault Master, …" },
     ];
+
+    
+
+
+    // Fonction pour arrêter l'affichage du marqueur lorsque la souris quitte
+    const handleMouseLeave = () => {
+        setHoveredParking(null);
+    };
 
     // Handle vehicle selection
     const handleVehicleSelect = (id) => {
@@ -103,15 +121,27 @@ const SecLocation = () => {
             toogleTab
         });
     }, [startDate, endDate, startTime, endTime, toogleTab]);
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedAddress(address);
+        }, 800);
 
-    // Handle search form submission
-    const handleSearch = () => {
+        return () => clearTimeout(handler);
+    }, [address]);
+
+
+    const handleSearch = async () => {
         setIsSearching(true);
-        
-        // Update all form data in the context
+
+        if (!debouncedAddress) {
+            console.error("Adresse non définie, impossible d'effectuer la recherche");
+            setIsSearching(false);
+            return;
+        }
+
         updateSearchData({
             toogleTab,
-            address,
+            address: debouncedAddress,
             location,
             vehicleType,
             startDate,
@@ -119,14 +149,41 @@ const SecLocation = () => {
             startTime,
             endTime
         });
-        
-        // Simulate search delay
-        setTimeout(() => {
+
+        try {
+            const response = await fetch("http://localhost:3001/parkings/location", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ location: debouncedAddress }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Erreur API: ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            setStoredParkings(data);
+        } catch (error) {
+            console.error("Erreur lors du chargement des parkings :", error);
+            alert("Erreur lors de la recherche des parkings. Vérifiez votre connexion ou contactez l'administrateur.");
+        } finally {
             setIsSearching(false);
-            // You could update parking data here based on search criteria
-            console.log("Searching for parkings with:", { address, vehicleType, startDate, endDate });
-        }, 1000);
+        }
     };
+    useEffect(() => {
+        if (activeParking && mapRef) {
+            mapRef.panTo({ lat: activeParking.lat, lng: activeParking.lng });
+            mapRef.setZoom(16);
+        }
+    }, [activeParking]);
+
+    const handleMarkerClick = (parking) => {
+        setActiveParking(parking);
+    };
+
+    if (!isLoaded) return <div>Loading Google Maps...</div>;
+    
 
     // Set map center based on context location or default
     useEffect(() => {
@@ -135,8 +192,41 @@ const SecLocation = () => {
             mapRef.setZoom(15);
         }
     }, [mapRef, location]);
+     // Fonction pour récupérer les parkings depuis le backend
+     useEffect(() => {
+        if (!debouncedAddress) return; // ✅ Correction : évite l'appel conditionnel
 
-    useEffect(() => {
+        const fetchParkings = async () => {
+            try {
+                const response = await fetch("http://localhost:3001/parkings/location", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ location: debouncedAddress }),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erreur API: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+                setStoredParkings(data);
+
+                // ✅ Correction : assure que la carte se centre correctement
+                if (data.length > 0) {
+                    setMapLocation({ lat: data[0].lat, lng: data[0].lng });
+                }
+            } catch (error) {
+                console.error("Erreur lors du chargement des parkings :", error);
+            }
+        };
+
+        fetchParkings();
+    }, [debouncedAddress]); // ✅ `useEffect` appelé de manière sûre
+
+    
+
+   /* useEffect(() => {
         const storedData = localStorage.getItem("parkings");
         if (storedData) {
             setStoredParkings(JSON.parse(storedData));
@@ -146,11 +236,12 @@ const SecLocation = () => {
         }
     }, []);
 
-    useEffect(() => {
+    
+    /*useEffect(() => {
         if (storedParkings.length > 0) {
             localStorage.setItem("parkings", JSON.stringify(storedParkings));
         }
-    }, [storedParkings]);
+    }, [storedParkings]);*/
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -174,10 +265,34 @@ const SecLocation = () => {
             mapRef.setZoom(16);
         }
     };
-
-    const handleMarkerClick = (parking) => {
-        setActiveParking(parking);
-    };
+    const vehiculeOptions = [
+        {
+            value: "Moto",
+            label: "Motorcycle",
+            image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765730/moto_xdypx2.png",
+        },
+        {
+            value: "Citadine",
+            label: "City Car",
+            image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-de-ville_ocwbob.png",
+        },
+        {
+            value: "Berline / Petit SUV",
+            label: "Sedan / Small SUV",
+            image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/wagon-salon_bj2j1s.png",
+        },
+        {
+            value: "Familiale / Grand SUV",
+            label: "Family / Large SUV",
+            image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-familiale_rmgclg.png",
+        },
+        {
+            value: "Utilitaire",
+            label: "Utility vehicle",
+            image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-de-livraison_nodnzh.png",
+        },
+    ];
+  
 
     if (!isLoaded) return <div>Loading Google Maps...</div>;
 
@@ -345,79 +460,109 @@ const SecLocation = () => {
                 </div>
             </div>
 
-            {/* Map and Parking List */}
             <div className="flex flex-1 bg-gray-100 overflow-hidden">
-                {/* Sidebar */}
-                <div className="w-1/3 bg-white p-4 overflow-y-auto shadow-lg rounded-l-lg">
-                    <h2 className="text-xl font-bold mb-4">🚗 Available Parkings</h2>
-                    <ul className="space-y-3">
-                        {storedParkings.map((parking) => (
-                            <li
-                                key={parking.id}
-                                className={`p-3 rounded-lg shadow-md cursor-pointer transition transform hover:scale-102 hover:shadow-lg ${
-                                    activeParking?.id === parking.id ? 'bg-blue-50 border-l-2 border-blue-500' : 'bg-gray-50'
-                                }`}
-                                onMouseEnter={() => handleHover(parking)}
-                                onClick={() => handleMarkerClick(parking)}
-                            >
-                                <img src="/images/marker.png" alt="Parking" className="w-10 h-10 mr-2 float-left" />
-                                <div>
-                                    <h3 className="text-base font-semibold">{parking.name}</h3>
-                                    <p className="text-gray-500 text-sm">{parking.price}</p>
-                                    <p className="text-green-500 font-medium text-xs">🚶 4 min walk</p>
-                                </div>
-                                <div className="clear-both"></div>
-                            </li>
-                        ))}
-                    </ul>
+        {/* Sidebar */}
+        <div className="w-1/3 bg-white p-4 overflow-y-auto shadow-lg rounded-l-lg">
+    <h2 className="text-xl font-bold mb-4">🚗 Available Parkings</h2>
+    <ul className="space-y-3">
+        {storedParkings.map((parking) => (
+            <li
+                key={parking._id}
+                className="p-4 rounded-lg shadow-md bg-white cursor-pointer hover:shadow-lg transition"
+                onClick={() => navigate(`/parkings/${parking._id}`)} // Redirection vers la page de détails
+            >
+                {/* Image du parking */}
+                <img 
+                    src={parking.images?.[0] || "https://via.placeholder.com/150"} 
+                    alt={parking.nameP} 
+                    className="w-full h-32 object-cover rounded-md mb-3"
+                />
+
+                {/* Nom et Localisation */}
+                <h3 className="text-lg font-semibold text-gray-900">{parking.nameP}</h3>
+                <p className="text-gray-500 text-sm">{parking.location}</p>
+
+                {/* Prix */}
+                <div className="mt-2 text-sm text-gray-700 space-y-1">
+                    <p>💰 <span className="font-semibold">Hourly:</span> {parking.pricing.perHour}€</p>
+                    <p>📅 <span className="font-semibold">Daily:</span> {parking.pricing.perDay}€</p>
+                    <p>🗓️ <span className="font-semibold">Weekly:</span> {parking.pricing.perWeek}€</p>
                 </div>
 
-                {/* Google Map */}
-                <div className="w-2/3 relative">
-                    <GoogleMap
-                        mapContainerStyle={mapContainerStyle}
-                        zoom={14}
-                        center={location || defaultCenter}
-                        onLoad={(map) => setMapRef(map)}
-                        options={{
-                            streetViewControl: false,
-                            mapTypeControl: false,
+                {/* Types de véhicules autorisés */}
+                <div className="mt-3 flex gap-2 flex-wrap">
+                    {parking.vehicleTypes.map((type) => {
+                        const vehicle = vehiculeOptions.find((v) => v.value === type);
+                        return vehicle ? (
+                            <div key={type} className="flex flex-col items-center text-center">
+                                <img src={vehicle.image} alt={vehicle.label} className="w-10 h-10" />
+                                <span className="text-xs text-gray-600">{vehicle.label}</span>
+                            </div>
+                        ) : null;
+                    })}
+                </div>
+
+                {/* Bouton "Détails" */}
+                <button 
+                    className="mt-3 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition"
+                    onClick={(e) => {
+                        e.stopPropagation(); // Empêche le clic de sélectionner un marqueur sur la carte
+                        navigate(`/parkings/${parking._id}`);
+                    }}
+                >
+                    Détails
+                </button>
+            </li>
+        ))}
+    </ul>
+</div>
+
+        {/* Google Map */}
+        <div className="w-2/3 relative">
+            <GoogleMap
+                mapContainerStyle={mapContainerStyle}
+                zoom={14}
+                center={mapLocation}
+                onLoad={(map) => setMapRef(map)}
+                options={{ streetViewControl: false, mapTypeControl: false }}
+            >
+                {/* Marqueurs dynamiques pour chaque parking */}
+                {storedParkings.map((parking) => (
+                    <Marker
+                        key={parking._id}
+                        position={{ lat: parking.lat, lng: parking.lng }}
+                        icon={{
+                            url: hoveredParking === parking.id || activeParking?.id === parking.id
+                                ? "/images/black-mark.png"
+                                : "/images/red-mark.png",
+                            scaledSize: new window.google.maps.Size(40, 40),
                         }}
-                    >
-                        {storedParkings.map((parking) => (
-                            <Marker
-                                key={parking.id}
-                                position={{ lat: parking.lat, lng: parking.lng }}
-                                icon={{
-                                    url: hoveredParking === parking.id || activeParking?.id === parking.id 
-                                        ? "/images/black-mark.png" : "/images/red-mark.png",
-                                    scaledSize: new window.google.maps.Size(40, 40),
-                                }}
-                                onClick={() => handleMarkerClick(parking)}
-                            />
-                        ))}
+                        onMouseEnter={() => handleHover(parking)}
+                        onClick={() => handleMarkerClick(parking)}
+                    />
+                ))}
 
-                        {/* Show InfoWindow only when clicking on marker */}
-                        {activeParking && (
-                            <InfoWindow
-                                position={{ lat: activeParking.lat, lng: activeParking.lng }}
-                                onCloseClick={() => setActiveParking(null)}
-                            >
-                                <div>
-                                    <h3 className="text-base font-bold">{activeParking.name}</h3>
-                                    <p>{activeParking.price}</p>
-                                    <p className="text-blue-500">🚶 4 min walk</p>
-                                    <button className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
-                                        Select
-                                    </button>
-                                </div>
-                            </InfoWindow>
-                        )}
-                    </GoogleMap>
-                </div>
-            </div>
+                {/* InfoWindow affiché lorsqu'on clique sur un marqueur */}
+                {activeParking && (
+                    <InfoWindow
+                        position={{ lat: activeParking.lat, lng: activeParking.lng }}
+                        onCloseClick={() => setActiveParking(null)}
+                    >
+                        <div className="p-3">
+                            <h3 className="text-lg font-semibold">{activeParking.nameP}</h3>
+                            <p className="text-gray-500">{activeParking.location}</p>
+                            <p className="text-gray-700 font-semibold mt-2">💰 {activeParking.pricing?.perHour}€/h</p>
+                            <p className="text-gray-700 font-semibold">📅 {activeParking.pricing?.perDay}€/jour</p>
+                            <p className="text-gray-700 font-semibold">🗓️ {activeParking.pricing?.perWeek}€/semaine</p>
+                        </div>
+                    </InfoWindow>
+                )}
+            </GoogleMap>
         </div>
+    </div>
+</div>
     );
 };
+
 
 export default SecLocation;
