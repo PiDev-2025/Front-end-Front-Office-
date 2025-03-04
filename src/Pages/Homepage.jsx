@@ -1,14 +1,78 @@
-import React, { Fragment, useState } from 'react'
+import React, { Fragment, useState, useEffect, useRef } from 'react'
 import { Col, Container, Form, Row } from 'react-bootstrap'
 import { CardCar } from '../Components/Card/Card'
 import HowItWorks from '../Components/Pages/HowItWorks'
 import GridInfo from '../Components/Pages/GridInfo'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { Autocomplete } from '@react-google-maps/api';
+import { useGoogleMaps } from '../context/GoogleMapsContext';
+import { useSearch } from '../context/SearchContext';
 
 const Homepage = () => {
-    const [toogleTab, settoogleTab] = useState("Hourly Rental")
+    const navigate = useNavigate();
+    const { searchData, updateSearchData } = useSearch();
+    const { isLoaded } = useGoogleMaps();
+    
+    // Get values from context or use defaults
+    const [toogleTab, settoogleTab] = useState(searchData.toogleTab)
+    const [vehicleType, setVehicleType] = useState(searchData.vehicleType)
+    const [showVehicleDropdown, setShowVehicleDropdown] = useState(false);
+    const [focusedVehicleIndex, setFocusedVehicleIndex] = useState(-1);
+    const dropdownRef = useRef(null);
+    
+    // Google Maps Autocomplete states
+    const [autocomplete, setAutocomplete] = useState(null);
+    const [address, setAddress] = useState(searchData.address || '');
+    const [location, setLocation] = useState(searchData.location);
+
+    // Date and time states
+    const [startDate, setStartDate] = useState(searchData.startDate);
+    const [endDate, setEndDate] = useState(searchData.endDate);
+    const [startTime, setStartTime] = useState(searchData.startTime || "14:41");
+    const [endTime, setEndTime] = useState(searchData.endTime || "15:41");
+
+    // Google Maps Autocomplete handlers
+    const onLoadAutocomplete = (autoC) => {
+        setAutocomplete(autoC);
+    };
+
+    const onPlaceChanged = () => {
+        if (autocomplete !== null) {
+            const place = autocomplete.getPlace();
+            if (place.geometry) {
+                const newLocation = {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng()
+                };
+                setLocation(newLocation);
+                setAddress(place.formatted_address);
+            } else {
+                console.log('Selected place has no geometry');
+            }
+        } else {
+            console.log('Autocomplete is not loaded yet!');
+        }
+    };
+    
+    // Handle search form submission
+    const handleSearch = () => {
+        // Save all form data to the context
+        updateSearchData({
+            toogleTab,
+            address,
+            location,
+            vehicleType,
+            startDate,
+            endDate,
+            startTime,
+            endTime
+        });
+        
+        // Navigate to the booking page
+        navigate('/booking');
+    };
 
     const dataProfile = [
         {
@@ -96,105 +160,405 @@ const Homepage = () => {
         },
     ]
 
-    const [startDate, setStartDate] = useState();
-    const [endDate, setEndDate] = useState();
+    const vehicleTypes = [
+        { id: "2wheels", name: "2 wheels", description: "Motorcycle, scooter, …" },
+        { id: "little", name: "Little", description: "Clio, 208, Twingo, Polo, Corsa, …" },
+        { id: "average", name: "AVERAGE", description: "Megane, 308, Scenic, C3 Picasso, Kangoo, Juke, …" },
+        { id: "big", name: "Big", description: "C4 Picasso, 508, BMW 3 Series, X-Trail, RAV4, Tiguan, …" },
+        { id: "high", name: "High", description: "Mercedes Vito, Renault Trafic, …" },
+        { id: "very-high", name: "Very high", description: "Mercedes Sprinter, Renault Master, …" },
+    ];
+    
+    // Function to handle vehicle selection and close dropdown
+    const handleVehicleSelect = (id) => {
+        setVehicleType(id);
+        setShowVehicleDropdown(false);
+        setFocusedVehicleIndex(-1);
+    };
+
+    // Get selected vehicle name
+    const getSelectedVehicleName = () => {
+        const selected = vehicleTypes.find(type => type.id === vehicleType);
+        return selected ? selected.name : "Select vehicle type";
+    };
+    
+    // Handle keyboard navigation in dropdown
+    const handleVehicleKeyDown = (e) => {
+        if (!showVehicleDropdown) {
+            if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+                setShowVehicleDropdown(true);
+                setFocusedVehicleIndex(0);
+                e.preventDefault();
+            }
+            return;
+        }
+        
+        switch (e.key) {
+            case "Escape":
+                setShowVehicleDropdown(false);
+                setFocusedVehicleIndex(-1);
+                break;
+            case "ArrowDown":
+                setFocusedVehicleIndex(prevIndex => 
+                    prevIndex < vehicleTypes.length - 1 ? prevIndex + 1 : 0
+                );
+                e.preventDefault();
+                break;
+            case "ArrowUp":
+                setFocusedVehicleIndex(prevIndex => 
+                    prevIndex > 0 ? prevIndex - 1 : vehicleTypes.length - 1
+                );
+                e.preventDefault();
+                break;
+            case "Enter":
+            case " ":
+                if (focusedVehicleIndex >= 0) {
+                    handleVehicleSelect(vehicleTypes[focusedVehicleIndex].id);
+                }
+                e.preventDefault();
+                break;
+            default:
+                break;
+        }
+    };
+    
+    // Scroll focused item into view
+    useEffect(() => {
+        if (dropdownRef.current && focusedVehicleIndex >= 0) {
+            const focusedItem = dropdownRef.current.children[focusedVehicleIndex];
+            if (focusedItem) {
+                focusedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+    }, [focusedVehicleIndex]);
+    
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target) && 
+                showVehicleDropdown && !event.target.closest('.vehicle-dropdown-toggle')) {
+                setShowVehicleDropdown(false);
+                setFocusedVehicleIndex(-1);
+            }
+        };
+        
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showVehicleDropdown]);
+
     return (
         <Fragment>
             {/* start:hero */}
             <section className='relative overflow-hidden min-h-[calc(100vh_-_88px)] lg:min-h-[calc(100vh_-_98px)] bg-[#010101] flex flex-wrap pb-0'>
                 <img src="./../images/img (1).png" className='absolute left-0 top-0 w-full h-full object-cover object-top hidden md:block' alt="" />
-                <Container className='relative z-[2] w-full'>
-                    <Row>
-                        <Col md={6}>
+                <Container className='relative z-[2] w-full flex flex-col h-full'>
+                    <Row className='flex-grow items-center'>
+                        <Col md={5} lg={6} className="mt-8 md:mt-0 mb-6 md:mb-0">
                             <p className='text__18 text-Mgreen mb-2'>CAR PARKING</p>
-                            <h1 className='font-bold text__48 text-Mwhite mb-2'>Find Convenient and Affordable Parking <br className='hidden xl:block' /> </h1>
-                            <p className='text__18 text-[#A3A3A3] mb-2'>Reserve your parking spot by the hour, day, or month with ease. Book in advance or rent your space and enjoy seamless parking in private residential, hotel, or business lots. <br className='hidden xl:block' /> Benefit from competitive rates in city centers, train stations, and airports across Tunisia.
-
-                                Join our community and experience stress-free parking with thousands of satisfied members.<br className='hidden xl:block' /></p>
+                            <h1 className='font-bold text__48 text-Mwhite mb-4'>Find Convenient and Affordable Parking</h1>
+                            <p className='text__18 text-[#A3A3A3] mb-4 md:mb-0'>Reserve your parking spot by the hour, day, or month with ease. Book in advance or rent your space and enjoy seamless parking in private residential, hotel, or business lots.</p>
+                            <p className='text__18 text-[#A3A3A3] hidden md:block'>Benefit from competitive rates in city centers, train stations, and airports across Tunisia. Join our community and experience stress-free parking with thousands of satisfied members.</p>
+                        </Col>
+                        
+                        <Col md={7} lg={6} className="bg-[#00000080] backdrop-blur-sm rounded-lg p-4 shadow-lg">
+                            <div className="flex items-center text-center mb-4 border-b border-[#333]">
+                                <div onClick={() => settoogleTab("On time")} className={"py-3 cursor-pointer md:min-w-[140px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab == "On time" ? "border-b-2 border-solid border-Mgreen -mb-px" : "opacity-50")}>On time</div>
+                                <div onClick={() => settoogleTab("Monthly")} className={"py-3 cursor-pointer md:min-w-[140px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab == "Monthly" ? "border-b-2 border-solid border-Mgreen -mb-px" : "opacity-50")}>Monthly</div>
+                            </div>
+                            
+                            {
+                                toogleTab == "On time" ? 
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex flex-wrap md:flex-nowrap gap-4">
+                                        <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full md:w-[50%] transition-all hover:bg-[#ffffff26]">
+                                            <img src="./../images/icon.svg" alt="" />
+                                            {isLoaded ? (
+                                                <Autocomplete
+                                                    onLoad={onLoadAutocomplete}
+                                                    onPlaceChanged={onPlaceChanged}
+                                                >
+                                                    <Form.Control 
+                                                        type="text" 
+                                                        className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
+                                                        placeholder="Enter your destination" 
+                                                        value={address}
+                                                        onChange={(e) => setAddress(e.target.value)}
+                                                    />
+                                                </Autocomplete>
+                                            ) : (
+                                                <Form.Control 
+                                                    type="text" 
+                                                    className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
+                                                    placeholder="Loading Google Maps..." 
+                                                    disabled
+                                                />
+                                            )}
+                                        </div>
+                                        
+                                        <div className="relative w-full md:w-[50%]">
+                                            <div 
+                                                className="vehicle-dropdown-toggle flex items-center justify-between bg-[#ffffff1a] px-3 py-3 h-[54px] rounded-[16px] cursor-pointer transition-all hover:bg-[#ffffff26]"
+                                                onClick={() => setShowVehicleDropdown(!showVehicleDropdown)}
+                                                onKeyDown={handleVehicleKeyDown}
+                                                tabIndex={0}
+                                                role="combobox"
+                                                aria-expanded={showVehicleDropdown}
+                                                aria-haspopup="listbox"
+                                                aria-labelledby="vehicle-type-label"
+                                            >
+                                                <div className="text-Mwhite text__14">{getSelectedVehicleName()}</div>
+                                                <div className="flex items-center">
+                                                    {/* Simplified: Keep only the down arrow button for dropdown navigation */}
+                                                    <button 
+                                                        className="p-1 mr-1 text-white opacity-60 hover:opacity-100 focus:opacity-100" 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (!showVehicleDropdown) {
+                                                                setShowVehicleDropdown(true);
+                                                                setFocusedVehicleIndex(0);
+                                                            } else {
+                                                                setFocusedVehicleIndex(prev => 
+                                                                    prev < vehicleTypes.length - 1 ? prev + 1 : 0
+                                                                );
+                                                            }
+                                                        }}
+                                                        aria-label="Navigate vehicle types"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                                            <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            {showVehicleDropdown && (
+                                                <div 
+                                                    ref={dropdownRef}
+                                                    className="absolute left-0 right-0 mt-1 bg-[#1e1e1e] rounded-lg border border-[#333] shadow-lg z-10 max-h-[240px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-[#1e1e1e]"
+                                                    role="listbox"
+                                                >
+                                                    {vehicleTypes.map((type, index) => (
+                                                        <div 
+                                                            key={type.id}
+                                                            id={`vehicle-option-${type.id}`}
+                                                            onClick={() => handleVehicleSelect(type.id)}
+                                                            className={`p-3 cursor-pointer hover:bg-[#333] ${
+                                                                vehicleType === type.id ? 'bg-Mblue text-white' : 
+                                                                focusedVehicleIndex === index ? 'bg-[#333] text-white border-l-2 border-Mgreen' : 'text-Mwhite'
+                                                            }`}
+                                                            role="option"
+                                                            aria-selected={vehicleType === type.id}
+                                                            data-index={index}
+                                                        >
+                                                            <div className="font-medium">{type.name}</div>
+                                                            <div className="text-xs opacity-80">{type.description}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex flex-wrap md:flex-nowrap gap-4">
+                                        <div className="w-full md:w-1/2">
+                                            <label className="text-Mwhite text__14 block mb-1">Beginning</label>
+                                            <div className="flex w-full gap-2">
+                                                <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] flex-grow transition-all hover:bg-[#ffffff26]">
+                                                    <img src="./../images/icon-1.svg" alt="" />
+                                                    <DatePicker
+                                                        className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none w-full'
+                                                        placeholderText="Sun March 2"
+                                                        selected={startDate}
+                                                        onChange={(date) => setStartDate(date)}
+                                                        selectsStart
+                                                        startDate={startDate}
+                                                        endDate={endDate}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-[120px] transition-all hover:bg-[#ffffff26]">
+                                                    <img src="./../images/icon-2.svg" alt="" />
+                                                    <Form.Control
+                                                        type="time"
+                                                        className='bg-transparent text-Mwhite text__14 font-normal outline-none border-none shadow-none'
+                                                        value={startTime}
+                                                        onChange={(e) => setStartTime(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="w-full md:w-1/2">
+                                            <label className="text-Mwhite text__14 block mb-1">END</label>
+                                            <div className="flex w-full gap-2">
+                                                <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] flex-grow transition-all hover:bg-[#ffffff26]">
+                                                    <img src="./../images/icon-1.svg" alt="" />
+                                                    <DatePicker
+                                                        className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none w-full'
+                                                        placeholderText="end date"
+                                                        selected={endDate}
+                                                        onChange={(date) => setEndDate(date)}
+                                                        selectsEnd
+                                                        startDate={startDate}
+                                                        endDate={endDate}
+                                                        minDate={startDate}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-[120px] transition-all hover:bg-[#ffffff26]">
+                                                    <img src="./../images/icon-2.svg" alt="" />
+                                                    <Form.Control
+                                                        type="time"
+                                                        className='bg-transparent text-Mwhite text__14 font-normal outline-none border-none shadow-none'
+                                                        value={endTime}
+                                                        onChange={(e) => setEndTime(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={handleSearch}
+                                        className="font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8"
+                                    >
+                                        Search
+                                    </button>
+                                </div> 
+                                : 
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex flex-wrap md:flex-nowrap gap-4">
+                                        <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full md:w-[50%] transition-all hover:bg-[#ffffff26]">
+                                            <img src="./../images/icon.svg" alt="" />
+                                            {isLoaded ? (
+                                                <Autocomplete
+                                                    onLoad={onLoadAutocomplete}
+                                                    onPlaceChanged={onPlaceChanged}
+                                                >
+                                                    <Form.Control 
+                                                        type="text" 
+                                                        className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
+                                                        placeholder="Enter your destination" 
+                                                        value={address}
+                                                        onChange={(e) => setAddress(e.target.value)}
+                                                    />
+                                                </Autocomplete>
+                                            ) : (
+                                                <Form.Control 
+                                                    type="text" 
+                                                    className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
+                                                    placeholder="Loading Google Maps..." 
+                                                    disabled
+                                                />
+                                            )}
+                                        </div>
+                                        
+                                        <div className="relative w-full md:w-[50%]">
+                                            <div 
+                                                className="vehicle-dropdown-toggle flex items-center justify-between bg-[#ffffff1a] px-3 py-3 h-[54px] rounded-[16px] cursor-pointer transition-all hover:bg-[#ffffff26]"
+                                                onClick={() => setShowVehicleDropdown(!showVehicleDropdown)}
+                                                onKeyDown={handleVehicleKeyDown}
+                                                tabIndex={0}
+                                                role="combobox"
+                                                aria-expanded={showVehicleDropdown}
+                                                aria-haspopup="listbox"
+                                                aria-labelledby="vehicle-type-label"
+                                            >
+                                                <div className="text-Mwhite text__14">{getSelectedVehicleName()}</div>
+                                                <div className="flex items-center">
+                                                    {/* Simplified: Keep only the down arrow button for dropdown navigation */}
+                                                    <button 
+                                                        className="p-1 mr-1 text-white opacity-60 hover:opacity-100 focus:opacity-100" 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (!showVehicleDropdown) {
+                                                                setShowVehicleDropdown(true);
+                                                                setFocusedVehicleIndex(0);
+                                                            } else {
+                                                                setFocusedVehicleIndex(prev => 
+                                                                    prev < vehicleTypes.length - 1 ? prev + 1 : 0
+                                                                );
+                                                            }
+                                                        }}
+                                                        aria-label="Navigate vehicle types"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                                            <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            {showVehicleDropdown && (
+                                                <div 
+                                                    ref={dropdownRef}
+                                                    className="absolute left-0 right-0 mt-1 bg-[#1e1e1e] rounded-lg border border-[#333] shadow-lg z-10 max-h-[240px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-[#1e1e1e]"
+                                                    role="listbox"
+                                                >
+                                                    {vehicleTypes.map((type, index) => (
+                                                        <div 
+                                                            key={type.id}
+                                                            id={`vehicle-option-${type.id}`}
+                                                            onClick={() => handleVehicleSelect(type.id)}
+                                                            className={`p-3 cursor-pointer hover:bg-[#333] ${
+                                                                vehicleType === type.id ? 'bg-Mblue text-white' : 
+                                                                focusedVehicleIndex === index ? 'bg-[#333] text-white border-l-2 border-Mgreen' : 'text-Mwhite'
+                                                            }`}
+                                                            role="option"
+                                                            aria-selected={vehicleType === type.id}
+                                                            data-index={index}
+                                                        >
+                                                            <div className="font-medium">{type.name}</div>
+                                                            <div className="text-xs opacity-80">{type.description}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex flex-wrap md:flex-nowrap gap-4">
+                                        <div className="w-full md:w-1/2">
+                                            <label className="text-Mwhite text__14 block mb-1">Beginning</label>
+                                            <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full transition-all hover:bg-[#ffffff26]">
+                                                <img src="./../images/icon-1.svg" alt="" />
+                                                <DatePicker
+                                                    className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none w-full'
+                                                    placeholderText="Select start date"
+                                                    selected={startDate}
+                                                    onChange={(date) => setStartDate(date)}
+                                                />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="w-full md:w-1/2">
+                                            <label className="text-Mwhite text__14 block mb-1">END</label>
+                                            <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full transition-all hover:bg-[#ffffff26]">
+                                                <img src="./../images/icon-1.svg" alt="" />
+                                                <DatePicker
+                                                    className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none w-full'
+                                                    placeholderText="Select end date"
+                                                    selected={endDate}
+                                                    onChange={(date) => setEndDate(date)}
+                                                    minDate={startDate}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={handleSearch}
+                                        className="font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8"
+                                    >
+                                        Search
+                                    </button>
+                                </div>
+                            }
                         </Col>
                     </Row>
                 </Container>
-
-                <div className="self-end w-full pt-4 pb-[2rem] relative">
-                    <div className="bkdropHead absolute w-full h-full left-0 top-0 hidden md:block"></div>
-                    <Container className='relative z-2'>
-                        <div className="bg-[#ffffff1f] absolute w-full h-full left-0 top-0 md:hidden block"></div>
-                        <div className="p-3 md:p-0 relative z-2">
-                            <div className="flex items-center text-center mb-4">
-                                <div onClick={() => settoogleTab("Hourly Rental")} className={"py-3 cursor-pointer  md:min-w-[180px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab == "Hourly Rental" ? "border-b border-solid border-[#FFFFFF]" : "opacity-50")}>Hourly Parking</div>
-                                <div onClick={() => settoogleTab("Daily Rental")} className={"py-3 cursor-pointer  md:min-w-[180px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab == "Daily Rental" ? "border-b border-solid border-[#FFFFFF]" : "opacity-50")}>Daily Parking</div>
-                            </div>
-                            {
-                                toogleTab == "Hourly Rental" ? <div className="flex gap-4 flex-wrap md:!flex-nowrap">
-                                    <div className="flex items-center gap-2 bg-[#ffffff0f] px-3 rounded-[16px] w-full md:w-[50%]">
-                                        <img src="./../images/icon.svg" alt="" />
-                                        <Form.Control type="text" className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' placeholder="Select Location" />
-                                    </div>
-                                    <div className="flex w-[calc((100%_/_2)_-_1rem)] md:w-auto items-center gap-2 bg-[#ffffff0f] px-3 rounded-[16px]">
-                                        <img src="./../images/icon-1.svg" alt="" />
-                                        <DatePicker
-                                            className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none'
-                                            placeholderText="Pickup Date"
-                                            selected={startDate}
-                                            onChange={(date) => setStartDate(date)}
-                                            selectsStart
-                                            startDate={startDate}
-                                            endDate={endDate}
-                                        />
-                                    </div>
-                                    <div className="flex w-[calc((100%_/_2)_-_1rem)] md:w-auto items-center gap-2 bg-[#ffffff0f] px-3 rounded-[16px]">
-                                        <img src="./../images/icon-2.svg" alt="" />
-                                        <DatePicker
-                                            className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none'
-                                            placeholderText="Return Date"
-                                            selected={endDate}
-                                            onChange={(date) => setEndDate(date)}
-                                            selectsEnd
-                                            startDate={startDate}
-                                            endDate={endDate}
-                                            minDate={startDate}
-                                        />
-                                    </div>
-                                    <a href="#!" className="inline-block cursor-pointer font-medium text__14 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass w-full md:w-auto text-center">Search</a>
-                                </div> : <div className="flex gap-4 flex-wrap md:!flex-nowrap">
-                                    <div className="flex items-center gap-2 bg-[#ffffff0f] px-3 rounded-[16px] w-full md:w-[50%]">
-                                        <img src="./../images/icon.svg" alt="" />
-                                        <Form.Control type="text" className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' placeholder="Select Location" />
-                                    </div>
-                                    <div className="flex w-[calc((100%_/_2)_-_1rem)] md:w-auto items-center gap-2 bg-[#ffffff0f] px-3 rounded-[16px]">
-                                        <img src="./../images/icon-1.svg" alt="" />
-                                        <DatePicker
-                                            className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none'
-                                            placeholderText="Pickup Date"
-                                            selected={startDate}
-                                            onChange={(date) => setStartDate(date)}
-                                            selectsStart
-                                            startDate={startDate}
-                                            endDate={endDate}
-                                        />
-                                    </div>
-                                    <div className="flex w-[calc((100%_/_2)_-_1rem)] md:w-auto items-center gap-2 bg-[#ffffff0f] px-3 rounded-[16px]">
-                                        <img src="./../images/icon-2.svg" alt="" />
-                                        <DatePicker
-                                            className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none'
-                                            placeholderText="Return Date"
-                                            selected={endDate}
-                                            onChange={(date) => setEndDate(date)}
-                                            selectsEnd
-                                            startDate={startDate}
-                                            endDate={endDate}
-                                            minDate={startDate}
-                                        />
-                                    </div>
-                                    <a href="#!" className="inline-block cursor-pointer font-medium text__14 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass w-full md:w-auto text-center">Search</a>
-                                </div>
-                            }
-                        </div>
-                    </Container>
-                </div>
             </section>
             {/* end:hero */}
-
 
             <HowItWorks />
 
@@ -256,6 +620,7 @@ const Homepage = () => {
             </section>
 
 */}
+
             <section>
                 <Container>
                     <div className="text-center mb-8">

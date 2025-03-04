@@ -1,6 +1,6 @@
 import React from 'react'
 import { Fragment } from 'react'
-import { Col, Container, Form, Pagination, Row } from 'react-bootstrap'
+import { Col, Container, Row } from 'react-bootstrap'
 
 const Terms = () => {
     return (
