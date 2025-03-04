@@ -70,7 +70,7 @@ const Booking = () => {
                         </div>
                     </div>
 
-                    <div className="mb-6">
+                    <div className="mb-6" >
                         {
                             showContent(tabActiveId)
                         }

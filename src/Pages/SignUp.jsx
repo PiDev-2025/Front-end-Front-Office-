@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Col, Container, Form, Row, Button } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import OTPModal from "../Pages/OTPPopUp";
@@ -84,7 +83,7 @@ const SignUp = () => {
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
 
-  const navigate = useNavigate();
+
 
   const generatePassword = async () => {
     try {
