@@ -26,7 +26,8 @@ import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import NotFound from './Pages/NotFound';
 import Profile from './Pages/profile';
 import AddParking from './Pages/addParking';
-import test from './Pages/parking';
+import Step1 from '../src/Components/Pages/Step/Step1AddParking';
+import Step2UploadImages from '../src/Components/Pages/Step/Step2AddParking';
 
 const App = () => {
   let location = useLocation();
@@ -50,7 +51,8 @@ const App = () => {
           <Route path="/" element={<DefaultLayout />}>
             <Route index element={<Homepage />} />
             <Route path="AddParking" element={<AddParking />} />
-            <Route path="test" element={<test />} />
+            <Route path="step1" element={<Step1 />} />
+            <Route path="step2/:parkingId" element={<Step2UploadImages />} />
             <Route path="how-it-works" element={<HowItworks />} />
             <Route path="booking" element={<Booking />} />
             <Route path="careers" element={<Careers />} />

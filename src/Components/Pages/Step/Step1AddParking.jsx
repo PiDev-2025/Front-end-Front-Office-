@@ -11,6 +11,14 @@ import {
 import { Autocomplete } from "@react-google-maps/api";
 import { useGoogleMaps } from "../../../context/GoogleMapsContext";
 import axios from "axios"; // You can use axios or fetch for the API call
+import { useNavigate } from "react-router-dom";
+import {
+  FaMapMarkerAlt,
+  FaMoneyBillAlt,
+  FaCar,
+  FaBuilding,
+  FaTrashAlt,
+} from "react-icons/fa"; // Import icons
 
 const Step1AddParking = () => {
   const { isLoaded } = useGoogleMaps();
@@ -23,6 +31,8 @@ const Step1AddParking = () => {
   const [vehicleType, setVehicleType] = useState([]);
   const [hourlyRate, setHourlyRate] = useState(undefined);
   const [totalSpots, setTotalSpots] = useState("");
+  const navigate = useNavigate();
+
 
   const vehicleOptions = [
     {
@@ -61,7 +71,6 @@ const Step1AddParking = () => {
     setTotalSpots(e.target.value);
   };
 
-  // Fonction de gestion du changement de type de véhicule
   const handleVehicleChange = (event) => {
     const value = event.target.value;
     setVehicleType((prev) =>
@@ -72,8 +81,26 @@ const Step1AddParking = () => {
   };
 
   const handleAddRate = (type, rate) => {
-    setPricing((prev) => [...prev, { duration: type, rate }]);
-    setHourlyRate(undefined); // Réinitialiser le tarif après ajout
+    // Vérifiez si le tarif pour le type existe déjà dans la liste
+    const existingRateIndex = pricing.findIndex(
+      (pricingRate) => pricingRate.duration === type
+    );
+
+    if (existingRateIndex !== -1) {
+      // Si le tarif existe déjà, modifiez-le
+      const updatedPricing = [...pricing];
+      updatedPricing[existingRateIndex] = { duration: type, rate }; // Mettez à jour le tarif existant
+      setPricing(updatedPricing);
+    } else {
+      // Si le tarif n'existe pas, ajoutez-le à la liste
+      setPricing((prev) => [...prev, { duration: type, rate }]);
+    }
+    setHourlyRate(undefined); // Réinitialiser le tarif après ajout ou modification
+  };
+
+  const handleRemoveRate = (index) => {
+    const updatedPricing = pricing.filter((_, i) => i !== index);
+    setPricing(updatedPricing);
   };
 
   const onLoad = (autoComplete) => setAutocomplete(autoComplete);
@@ -90,7 +117,7 @@ const Step1AddParking = () => {
       }
     }
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -103,13 +130,12 @@ const Step1AddParking = () => {
       return;
     }
 
-    // Prepare the form data
+    // Préparation des données du formulaire
     const formData = new FormData();
     formData.append("name", "Parking Name"); // Remplacez avec votre champ de saisie de nom
     formData.append("location", JSON.stringify(location));
-    formData.append("totalSpots", totalSpots); // Ajout de la valeur du nombre de places
+    formData.append("totalSpots", totalSpots);
 
-    // Pricing should have keys like 'hourly', 'daily', 'weekly', 'monthly'
     const pricingData = {};
     pricing.forEach((rate) => {
       if (rate.duration === "Hour") pricingData.hourly = rate.rate;
@@ -118,9 +144,8 @@ const Step1AddParking = () => {
       else if (rate.duration === "Month") pricingData.monthly = rate.rate;
     });
 
-    formData.append("pricing", JSON.stringify(pricingData)); // Ajouter les tarifs au formulaire
-
-    formData.append("vehicleType", JSON.stringify(vehicleType)); // Ajout des types de véhicules sélectionnés
+    formData.append("pricing", JSON.stringify(pricingData));
+    formData.append("vehicleType", JSON.stringify(vehicleType));
     formData.append("features", JSON.stringify(features));
 
     try {
@@ -130,13 +155,14 @@ const Step1AddParking = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // Ensure token is stored in localStorage
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
-
+      const parkingId = response.data.parking._id;
+      console.log("voila l'id", parkingId);
       console.log("Parking added successfully:", response.data);
-      alert("Parking added successfully!");
+      navigate(`/step2/${parkingId}`);
     } catch (error) {
       console.error("Error adding parking:", error);
       alert("Error adding parking. Please try again.");
@@ -146,10 +172,23 @@ const Step1AddParking = () => {
   if (!isLoaded) return <div>Loading...</div>;
 
   return (
-    <div className="bg-white p-6 rounded-[20px]">
+    <div
+      className="container mx-auto my-10 p-6 bg-white rounded-lg shadow-xl"
+      style={{ paddingLeft: "50px" }}
+    >
+      <h2 className="text-center text-2xl font-bold mb-6 text-blue-600">
+        Add Your Parking Spot Request
+      </h2>
+      <p className="text-center mb-6 text-gray-600">
+        Submit your parking request here!
+      </p>
       <Form onSubmit={handleSubmit}>
-        <Form.Group>
-          <Form.Label>Pickup Location</Form.Label>
+        <Form.Group className="mb-5">
+          <Form.Label className="font-semibold d-flex align-items-center">
+            <FaMapMarkerAlt className="mr-2 text-blue-500" />{" "}
+            {/* L'icône à gauche */}
+            Pickup Location <span className="text-danger">*</span>
+          </Form.Label>
           <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
             <Form.Control
               type="text"
@@ -157,59 +196,130 @@ const Step1AddParking = () => {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               required
+              className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-3/4"
             />
           </Autocomplete>
         </Form.Group>
-        <Form.Group>
-          <Form.Label>Total Number of Spots</Form.Label>
+
+        <Form.Group className="mb-5">
+          <Form.Label className="font-semibold d-flex align-items-center">
+            <FaBuilding className="mr-2 text-green-500" />{" "}
+            {/* L'icône à gauche */}
+            Total Number of Spots <span className="text-danger">*</span>
+          </Form.Label>
           <Form.Control
             type="number"
             value={totalSpots}
             onChange={handleTotalSpotsChange}
             required
+            className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-3/4"
           />
         </Form.Group>
-        <Form.Group>
-          <Form.Label>
-            {pricing.length === 0
-              ? `Rate for 1 ${tariffType || "Hour"} (DT)`
-              : "Add Another Tariff"}
+
+        <Form.Group className="mb-4">
+          <Form.Label className="font-semibold d-flex align-items-center">
+            <FaMoneyBillAlt className="mr-2 text-yellow-500" />
+            Rate for 1 {tariffType || "Hour"} (DT){" "}
+            <span className="text-danger">*</span>
           </Form.Label>
-          <Row>
-            <Col>
+          <Row className="align-items-center">
+            <Col xs={7}>
               <Form.Control
                 type="number"
                 placeholder="Rate"
                 value={hourlyRate || ""}
                 onChange={(e) => setHourlyRate(e.target.value)}
                 required={pricing.length === 0}
+                className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </Col>
-            <Col>
+            <Col xs={2} className="d-flex justify-content-end">
               <Button
+                variant="primary"
                 onClick={() => handleAddRate(tariffType || "Hour", hourlyRate)}
+                className="w-100 p-2 rounded-md"
               >
                 Add Tariff
               </Button>
             </Col>
           </Row>
         </Form.Group>
+
         <DropdownButton
           title={`Add another tariff (${tariffType || "Hour"})`}
           onSelect={(eventKey) => setTariffType(eventKey)}
+          className="mb-3 w-3/4"
         >
+          <Dropdown.Item eventKey="Hour">Tariff for an Hour</Dropdown.Item>
           <Dropdown.Item eventKey="Day">Tariff for a Day</Dropdown.Item>
           <Dropdown.Item eventKey="Week">Tariff for a Week</Dropdown.Item>
           <Dropdown.Item eventKey="Month">Tariff for a Month</Dropdown.Item>
         </DropdownButton>
-        {pricing.length > 0 &&
-          pricing.map((rate, index) => (
-            <ListGroup.Item key={index}>
-              {rate.duration}: {rate.rate} Dt
-            </ListGroup.Item>
-          ))}
-        <Form.Group>
-          <Form.Label>Parking Features</Form.Label>
+
+        {pricing.length > 0 && (
+          <ListGroup className="mb-5" style={{ maxWidth: "500px" }}>
+            {" "}
+            {/* Limite la largeur de la liste */}
+            {pricing.map((rate, index) => (
+              <ListGroup.Item
+                key={index}
+                className="d-flex justify-content-between align-items-center p-3 mb-2 bg-gray-100 rounded-md shadow-sm"
+              >
+                <div className="flex items-center">
+                  <span className="font-semibold mr-2">{rate.duration}</span>:{" "}
+                  {rate.rate} DT
+                </div>
+                <Button
+                  variant="danger"
+                  onClick={() => handleRemoveRate(index)}
+                  className="p-1 rounded-circle"
+                  style={{ color: "red" }} // Couleur statique rouge pour l'icône
+                >
+                  <FaTrashAlt />
+                </Button>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        )}
+
+        <Form.Group className="mb-5">
+          <Form.Label className="font-semibold d-flex align-items-center">
+            <FaCar className="mr-2 text-blue-500" /> {/* L'icône à gauche */}
+            Suitable Vehicle Types <span className="text-danger">*</span>
+          </Form.Label>
+          <Row>
+            {vehicleOptions.map((option) => (
+              <Col key={option.value} xs={6} md={4} lg={3}>
+                <Form.Check
+                  type="checkbox"
+                  id={option.value}
+                  label={
+                    <div className="flex items-center">
+                      <img
+                        src={option.image}
+                        alt={option.label}
+                        width="40"
+                        className="mr-2"
+                      />
+                      {option.label}
+                    </div>
+                  }
+                  value={option.value}
+                  checked={vehicleType.includes(option.value)}
+                  onChange={handleVehicleChange}
+                  className="max-w-full" // Ensures it stays within the available width
+                />
+              </Col>
+            ))}
+          </Row>
+        </Form.Group>
+
+        <Form.Group className="mb-5">
+          <Form.Label className="font-semibold d-flex align-items-center">
+            <FaBuilding className="mr-2 text-green-500" />{" "}
+            {/* L'icône à gauche */}
+            Parking Features <span className="text-danger">*</span>
+          </Form.Label>
           {[
             "Indoor Parking",
             "Underground Parking",
@@ -229,29 +339,21 @@ const Step1AddParking = () => {
                     : prev.filter((item) => item !== value)
                 );
               }}
+              className="mb-2"
             />
           ))}
         </Form.Group>
-        <Form.Group>
-          <Form.Label>Suitable Vehicle Types</Form.Label>
-          <Row>
-            {vehicleOptions.map((option) => (
-              <Col key={option.value} xs={6} md={4}>
-                <Form.Check
-                  type="checkbox"
-                  id={option.value}
-                  label={
-                    <img src={option.image} alt={option.label} width="60" />
-                  }
-                  value={option.value}
-                  checked={vehicleType.includes(option.value)}
-                  onChange={handleVehicleChange}
-                />
-              </Col>
-            ))}
-          </Row>
-        </Form.Group>
-        <Button type="submit">Submit</Button>
+
+        <div className="flex justify-end items-center space-x-3">
+          <span className="text-gray-500 opacity-70">Go to Step 2</span>
+          <Button
+            variant="success"
+            type="submit"
+            className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 shadow-md"
+          >
+            Continue
+          </Button>
+        </div>
       </Form>
     </div>
   );
