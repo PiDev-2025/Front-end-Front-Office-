@@ -9,12 +9,16 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Autocomplete } from '@react-google-maps/api';
 import { useGoogleMaps } from '../context/GoogleMapsContext';
 import { useSearch } from '../context/SearchContext';
+import LoadingPopup from '../Components/LoadingPopup';
 
 const Homepage = () => {
     const navigate = useNavigate();
     const { searchData, updateSearchData } = useSearch();
     const { isLoaded } = useGoogleMaps();
     
+    // Loading popup state
+    const [isSearching, setIsSearching] = useState(false);
+
     // Get values from context or use defaults
     const [toogleTab, settoogleTab] = useState(searchData.toogleTab)
     const [vehicleType, setVehicleType] = useState(searchData.vehicleType)
@@ -70,8 +74,15 @@ const Homepage = () => {
             endTime
         });
         
-        // Navigate to the booking page
-        navigate('/booking');
+        // Show loading popup
+        setIsSearching(true);
+        
+        // Navigate to the booking page after delay
+        setTimeout(() => {
+            setIsSearching(false);
+            navigate('/booking');
+        }, 2000); // 2 seconds delay
+
     };
 
     const dataProfile = [
@@ -250,6 +261,12 @@ const Homepage = () => {
 
     return (
         <Fragment>
+            {/* Enhanced Loading Popup */}
+            <LoadingPopup 
+                isVisible={isSearching} 
+                message="We are looking for a place for you" 
+            />
+
             {/* start:hero */}
             <section className='relative overflow-hidden min-h-[calc(100vh_-_88px)] lg:min-h-[calc(100vh_-_98px)] bg-[#010101] flex flex-wrap pb-0'>
                 <img src="./../images/img (1).png" className='absolute left-0 top-0 w-full h-full object-cover object-top hidden md:block' alt="" />
@@ -420,9 +437,18 @@ const Homepage = () => {
                                     
                                     <button 
                                         onClick={handleSearch}
-                                        className="font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8"
+                                        disabled={isSearching}
+                                        className={`font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8 ${isSearching ? 'opacity-75 cursor-not-allowed' : ''}`}
                                     >
-                                        Search
+                                        {isSearching ? (
+                                            <>
+                                                <span className="inline-block mr-2 animate-spin">⟳</span>
+                                                Searching...
+                                            </>
+                                        ) : (
+                                            'Search'
+                                        )}
+
                                     </button>
                                 </div> 
                                 : 
@@ -548,9 +574,18 @@ const Homepage = () => {
                                     
                                     <button 
                                         onClick={handleSearch}
-                                        className="font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8"
+                                        disabled={isSearching}
+                                        className={`font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8 ${isSearching ? 'opacity-75 cursor-not-allowed' : ''}`}
                                     >
-                                        Search
+                                        {isSearching ? (
+                                            <>
+                                                <span className="inline-block mr-2 animate-spin">⟳</span>
+                                                Searching...
+                                            </>
+                                        ) : (
+                                            'Search'
+                                        )}
+
                                     </button>
                                 </div>
                             }
@@ -688,3 +723,5 @@ const Homepage = () => {
 }
 
 export default Homepage
+
+

@@ -28,6 +28,8 @@ import Profile from './Pages/profile';
 import OwnerAddPaking from '../src/Components/Pages/Step/Step1AddParking';
 import Step2UploadImages from '../src/Components/Pages/Step/Step2AddParking';
 import FaceAuth from "./Components/FaceAuth/FaceAuth";
+import ParkingDetails from "./Pages/ParkingDetails";
+
 
 const App = () => {
   let location = useLocation();
@@ -46,6 +48,7 @@ const App = () => {
   }, []);
   return (
     <GoogleMapsProvider>
+
 
       <SearchProvider>
         <AuthProvider>
@@ -70,6 +73,8 @@ const App = () => {
               <Route path="forgot-password" element={<ForgotPassword />} />
               <Route path="reset-password/:token" element={<ResetPassword />} />
               <Route path="google/callback" element={<GoogleCallback />} />
+                              <Route path="/parkings/:id" element={<ParkingDetails />} />
+
               <Route path="profile" element={<Profile />} />
               <Route path="*" element={<NotFound />} />
               <Route path="/login/face" element={<FaceAuth/>} />
@@ -82,3 +87,4 @@ const App = () => {
 };
 
 export default App;
+
