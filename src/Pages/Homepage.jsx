@@ -18,7 +18,7 @@ const Homepage = () => {
     
     // Loading popup state
     const [isSearching, setIsSearching] = useState(false);
-    
+
     // Get values from context or use defaults
     const [toogleTab, settoogleTab] = useState(searchData.toogleTab)
     const [vehicleType, setVehicleType] = useState(searchData.vehicleType)
@@ -82,6 +82,7 @@ const Homepage = () => {
             setIsSearching(false);
             navigate('/booking');
         }, 2000); // 2 seconds delay
+
     };
 
     const dataProfile = [
@@ -447,6 +448,7 @@ const Homepage = () => {
                                         ) : (
                                             'Search'
                                         )}
+
                                     </button>
                                 </div> 
                                 : 
@@ -583,6 +585,7 @@ const Homepage = () => {
                                         ) : (
                                             'Search'
                                         )}
+
                                     </button>
                                 </div>
                             }
@@ -720,3 +723,5 @@ const Homepage = () => {
 }
 
 export default Homepage
+
+
