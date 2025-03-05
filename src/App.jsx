@@ -25,8 +25,7 @@ import GoogleCallback from './Pages/googlecallbackk';
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import NotFound from './Pages/NotFound';
 import Profile from './Pages/profile';
-import AddParking from './Pages/addParking';
-import Step1 from '../src/Components/Pages/Step/Step1AddParking';
+import OwnerAddPaking from '../src/Components/Pages/Step/Step1AddParking';
 import Step2UploadImages from '../src/Components/Pages/Step/Step2AddParking';
 
 const App = () => {
@@ -50,8 +49,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<DefaultLayout />}>
             <Route index element={<Homepage />} />
-            <Route path="AddParking" element={<AddParking />} />
-            <Route path="step1" element={<Step1 />} />
+            <Route path="ownerAddPaking" element={<OwnerAddPaking />} />
             <Route path="step2/:parkingId" element={<Step2UploadImages />} />
             <Route path="how-it-works" element={<HowItworks />} />
             <Route path="booking" element={<Booking />} />

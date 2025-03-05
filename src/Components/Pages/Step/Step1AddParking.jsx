@@ -20,7 +20,7 @@ import {
   FaTrashAlt,
 } from "react-icons/fa"; // Import icons
 
-const Step1AddParking = () => {
+const OwnerAddPaking = () => {
   const { isLoaded } = useGoogleMaps();
   const [location, setLocation] = useState({ lat: undefined, lng: undefined });
   const [address, setAddress] = useState("");
@@ -359,4 +359,4 @@ const Step1AddParking = () => {
   );
 };
 
-export default Step1AddParking;
+export default OwnerAddPaking;
