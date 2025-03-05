@@ -5,47 +5,514 @@ import { useSearch } from "../../../context/SearchContext";
 import { Form } from 'react-bootstrap';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import ParkingDetails from "../../../Pages/ParkingDetails";
 
 const mapContainerStyle = { width: "100%", height: "calc(100vh - 90px)" }; // Adjusted for search bar
-const defaultCenter = { lat: 48.8566, lng: 2.3522 };
+const defaultCenter = { lat: 36.8, lng: 10.18 }; // Tunisia center
+const MAX_DISTANCE_KM = 5; // Default maximum distance in kilometers to consider a parking "nearby"
 
-const parkings = [
-    { id: 1, name: "Gare de Lyon - SAEMES", lat: 48.8472, lng: 2.3696, price: "€3/hr" },
-    { id: 2, name: "Bastille - Boulevard Bourdon", lat: 48.8534, lng: 2.3695, price: "€4/hr" },
-    { id: 3, name: "Gare de Lyon - Citadines", lat: 48.8452, lng: 2.3710, price: "€2.5/hr" },
-];
+// User location marker icon
+const userLocationIcon = {
+    url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='32' height='32'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23ff3e00' fill-opacity='0.3'/%3E%3Ccircle cx='12' cy='12' r='6' fill='%23ff3e00'/%3E%3C/svg%3E",
+    scaledSize: { width: 32, height: 32 },
+    anchor: { x: 16, y: 16 }
+};
+
+// Available parking marker icon (green)
+const availableParkingIcon = {
+    url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='36' height='36'%3E%3Cpath fill='%2322C55E' d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z'/%3E%3Ctext x='12' y='9' font-size='10' text-anchor='middle' font-weight='bold' fill='white'>P</text>%3C/svg%3E",
+    scaledSize: { width: 36, height: 36 },
+    anchor: { x: 18, y: 36 }
+};
+
+// Almost full parking marker icon (orange)
+const limitedParkingIcon = {
+    url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='36' height='36'%3E%3Cpath fill='%23F59E0B' d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z'/%3E%3Ctext x='12' y='9' font-size='10' text-anchor='middle' font-weight='bold' fill='white'>P</text>%3C/svg%3E",
+    scaledSize: { width: 36, height: 36 },
+    anchor: { x: 18, y: 36 }
+};
+
+// Popup component for parking details
+const ParkingDetailsPopup = ({ parking, onClose }) => {
+    if (!parking) return null;
+    
+    // Close when clicking on the background overlay, but not when clicking on the content
+    const handleBackgroundClick = (e) => {
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
+    };
+
+    return (
+        <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={handleBackgroundClick} // Add click handler to the background
+        >
+            <div className="bg-white rounded-xl shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-3 flex justify-end">
+                    <button 
+                        onClick={onClose} 
+                        className="text-gray-500 hover:text-gray-800 transition-colors"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                {/* Use the ParkingDetails component */}
+                <ParkingDetails parkingData={parking} isPopup={true} />
+            </div>
+        </div>
+    );
+};
 
 const SecLocation = () => {
     const { isLoaded } = useGoogleMaps();
     const { searchData, updateSearchData } = useSearch();
+    const navigate = useNavigate();
     const [mapRef, setMapRef] = useState(null);
     const [activeParking, setActiveParking] = useState(null);
-    const [storedParkings, setStoredParkings] = useState([]);
+    const [parkings, setParkings] = useState([]);
+    const [filteredParkings, setFilteredParkings] = useState([]);
     const [hoveredParking, setHoveredParking] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [hasSearched, setHasSearched] = useState(false);
+    const [userLocation, setUserLocation] = useState(null);
     
-    // Search form states - initialize from context
-    const [toogleTab, settoogleTab] = useState(searchData.toogleTab || "On time");
+    // Set today as minimum date for date pickers
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to beginning of day for accurate comparison
+    
+    // Date validation error state
+    const [dateError, setDateError] = useState("");
+    
+    // Search form states - initialize from context with validation
+    const [toogleTab] = useState(searchData.toogleTab || "On time");
     const [vehicleType, setVehicleType] = useState(searchData.vehicleType);
     const [showVehicleDropdown, setShowVehicleDropdown] = useState(false);
     const dropdownRef = useRef(null);
-    const [startDate, setStartDate] = useState(searchData.startDate);
-    const [endDate, setEndDate] = useState(searchData.endDate);
+    
+    // Initialize date states with validation
+    const [startDate, setStartDate] = useState(() => {
+        const contextStartDate = searchData.startDate;
+        // If date from context exists and is not in the past, use it
+        if (contextStartDate && new Date(contextStartDate) >= today) {
+            return new Date(contextStartDate);
+        }
+        // Otherwise use today as default
+        return today;
+    });
+    
+    const [endDate, setEndDate] = useState(() => {
+        const contextEndDate = searchData.endDate;
+        // If date from context exists and is valid, use it
+        if (contextEndDate && new Date(contextEndDate) >= (startDate || today)) {
+            return new Date(contextEndDate);
+        }
+        // Otherwise set to day after start date
+        const nextDay = new Date(startDate || today);
+        nextDay.setDate(nextDay.getDate() + 1);
+        return nextDay;
+    });
+    
     const [startTime, setStartTime] = useState(searchData.startTime || "14:41");
     const [endTime, setEndTime] = useState(searchData.endTime || "15:41");
     const [autocomplete, setAutocomplete] = useState(null);
     const [address, setAddress] = useState(searchData.address || '');
-    const [location, setLocation] = useState(searchData.location);
+    const [location, setLocation] = useState(searchData.location || defaultCenter);
     const [isSearching, setIsSearching] = useState(false);
+    const [searchRadius, setSearchRadius] = useState(MAX_DISTANCE_KM);
 
-    // Vehicle types for dropdown
-    const vehicleTypes = [
-        { id: "2wheels", name: "2 wheels", description: "Motorcycle, scooter, …" },
-        { id: "little", name: "Little", description: "Clio, 208, Twingo, Polo, Corsa, …" },
-        { id: "average", name: "AVERAGE", description: "Megane, 308, Scenic, C3 Picasso, Kangoo, Juke, …" },
-        { id: "big", name: "Big", description: "C4 Picasso, 508, BMW 3 Series, X-Trail, RAV4, Tiguan, …" },
-        { id: "high", name: "High", description: "Mercedes Vito, Renault Trafic, …" },
-        { id: "very-high", name: "Very high", description: "Mercedes Sprinter, Renault Master, …" },
-    ];
+    // Add state for popup visibility
+    const [showPopup, setShowPopup] = useState(false);
+    const [selectedParking, setSelectedParking] = useState(null);
+
+    // Fix 1: Add a ref to track if this is the first render
+    const initialRenderRef = useRef(true);
+    
+    // Fix 2: Add a ref to track if we should auto-search
+    const shouldAutoSearchRef = useRef(false);
+
+    // Function to calculate distance between two points using the Haversine formula
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371; // Radius of the Earth in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c; // Distance in km
+    };
+
+    // Get user's current location
+    const getUserLocation = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userPos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    setLocation(userPos);
+                    setUserLocation(userPos);
+                    
+                    // Reverse geocode to get the address
+                    if (window.google && isLoaded) {
+                        const geocoder = new window.google.maps.Geocoder();
+                        geocoder.geocode({ location: userPos }, (results, status) => {
+                            if (status === "OK" && results[0]) {
+                                setAddress(results[0].formatted_address);
+                                updateSearchData({ 
+                                    address: results[0].formatted_address,
+                                    location: userPos
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Pan map to user's location and search for parkings
+                    if (mapRef) {
+                        mapRef.panTo(userPos);
+                        mapRef.setZoom(15);
+                    }
+                    
+                    // Automatically search for parkings near user's location
+                    handleSearch(userPos);
+                },
+                (error) => {
+                    console.error("Error getting user location:", error);
+                    alert("Unable to retrieve your location. Please check your browser settings.");
+                }
+            );
+        } else {
+            alert("Geolocation is not supported by your browser.");
+        }
+    };
+
+    // Fetch parkings from API
+    useEffect(() => {
+        // Only run once on component mount
+        const fetchParkings = async () => {
+            try {
+                setLoading(true);
+                console.log("Fetching parkings from API...");
+                const response = await axios.get('http://localhost:3001/api/parkings');
+                console.log("API response:", response.data);
+                
+                // Transform the API data format to match our needs
+                const formattedParkings = response.data.map(parking => ({
+                    id: parking._id,
+                    name: parking.nameP,
+                    location: parking.location,
+                    lat: parking.position.lat,
+                    lng: parking.position.lon,
+                    price: `€${parking.pricing}/hr`,
+                    pricingValue: parking.pricing,
+                    totalSpots: parking.totalSpots,
+                    availableSpots: parking.availableSpots,
+                    parkingId: parking.parkingId,
+                    availabilityPercentage: Math.floor((parking.availableSpots / parking.totalSpots) * 100)
+                }));
+                
+                console.log("Formatted parkings:", formattedParkings);
+                setParkings(formattedParkings);
+                
+                // Only auto-search if we have initial context location data
+                if (searchData.location && searchData.address && shouldAutoSearchRef.current) {
+                    setTimeout(() => {
+                        handleSearch(searchData.location);
+                    }, 300);
+                    shouldAutoSearchRef.current = false;
+                } else {
+                    setFilteredParkings([]); // Start with empty list until user searches
+                }
+                
+                setLoading(false);
+            } catch (err) {
+                setError("Failed to fetch parking data");
+                console.error("Error fetching parking data:", err);
+                setLoading(false);
+            }
+        };
+
+        fetchParkings();
+    }, []); // Remove dependencies to run only once on mount
+    
+    // Fix 4: Add a separate effect to track when to perform an auto-search
+    useEffect(() => {
+        // Skip first render
+        if (initialRenderRef.current) {
+            initialRenderRef.current = false;
+            
+            // If we have location data on first render, mark that we should auto-search
+            if (searchData.location && searchData.address) {
+                shouldAutoSearchRef.current = true;
+            }
+            return;
+        }
+        
+        // Don't auto-search after first render - let the user trigger searches explicitly
+    }, [searchData.location, searchData.address]);
+
+    // Filter parkings by proximity to the selected location
+    const filterParkingsByLocation = (targetLat, targetLng, maxDistance = searchRadius) => {
+        if (!targetLat || !targetLng) return [];
+        
+        const results = parkings.filter(parking => {
+            const distance = calculateDistance(
+                targetLat, targetLng,
+                parking.lat, parking.lng
+            );
+            
+            // Add distance to each parking object for display
+            parking.distance = distance.toFixed(1);
+            
+            // Return true if the parking is within the max distance
+            return distance <= maxDistance;
+        }).sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance)); // Sort by distance
+        
+        return results;
+    };
+
+    // Find name-based matches (as an alternative search method)
+    const findNameMatches = (searchTerm) => {
+        if (!searchTerm || searchTerm.trim() === '') return [];
+        
+        const normalizedSearch = searchTerm.toLowerCase().trim();
+        return parkings.filter(parking => {
+            const nameMatches = parking.name.toLowerCase().includes(normalizedSearch);
+            const locationMatches = parking.location.toLowerCase().includes(normalizedSearch);
+            return nameMatches || locationMatches;
+        });
+    };
+    
+    // Google Maps Autocomplete handlers
+    const onLoadAutocomplete = (autoC) => {
+        setAutocomplete(autoC);
+    };
+
+    const onPlaceChanged = () => {
+        if (autocomplete !== null) {
+            const place = autocomplete.getPlace();
+            if (place.geometry) {
+                const newLocation = {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng()
+                };
+                
+                setLocation(newLocation);
+                setAddress(place.formatted_address);
+                
+                // Update context when location changes
+                updateSearchData({ 
+                    address: place.formatted_address,
+                    location: newLocation
+                });
+                
+                // Pan map to new location
+                if (mapRef) {
+                    mapRef.panTo(newLocation);
+                    mapRef.setZoom(15);
+                }
+                
+                // Automatically search for parking near this location
+                setHasSearched(true);
+                handleSearch(newLocation);
+            } else {
+                console.log('Selected place has no geometry');
+            }
+        } else {
+            console.log('Autocomplete is not loaded yet!');
+        }
+    };
+
+    // Handle address input change (manual typing)
+    const handleAddressChange = (e) => {
+        const value = e.target.value;
+        setAddress(value);
+        updateSearchData({ address: value });
+        
+        if (value.trim() === '') {
+            setFilteredParkings([]); // Reset to empty list instead of showing all
+            setHasSearched(false);
+        }
+    };
+
+    // Update context when form values change
+    useEffect(() => {
+        // Only update if values have actually changed
+        const contextStartDate = searchData.startDate ? new Date(searchData.startDate).getTime() : null;
+        const currentStartDate = startDate ? startDate.getTime() : null;
+        
+        const contextEndDate = searchData.endDate ? new Date(searchData.endDate).getTime() : null;
+        const currentEndDate = endDate ? endDate.getTime() : null;
+        
+        if (
+            searchData.startTime !== startTime ||
+            searchData.endTime !== endTime ||
+            contextStartDate !== currentStartDate ||
+            contextEndDate !== currentEndDate ||
+            searchData.toogleTab !== toogleTab
+        ) {
+            updateSearchData({
+                startDate,
+                endDate,
+                startTime,
+                endTime,
+                toogleTab
+            });
+        }
+    }, [startDate, endDate, startTime, endTime, toogleTab, updateSearchData]);
+
+    // Handle start date change with validation
+    const handleStartDateChange = (date) => {
+        if (date) {
+            // Always enforce today as minimum date
+            if (date < today) {
+                setDateError("Start date cannot be in the past");
+                return;
+            }
+
+            setStartDate(date);
+            setDateError("");
+            
+            // Update context with validated date
+            updateSearchData({ startDate: date });
+
+            // If end date is now before start date, adjust it
+            if (endDate && date > endDate) {
+                // Set end date to day after new start date
+                const newEndDate = new Date(date);
+                newEndDate.setDate(date.getDate() + 1);
+                setEndDate(newEndDate);
+                updateSearchData({ endDate: newEndDate });
+            }
+        }
+    };
+
+    // Handle end date change with validation
+    const handleEndDateChange = (date) => {
+        if (date) {
+            // End date must be >= start date
+            if (startDate && date < startDate) {
+                setDateError("End date must be after start date");
+                return;
+            }
+            
+            setEndDate(date);
+            setDateError("");
+            
+            // Update context with validated date
+            updateSearchData({ endDate: date });
+        }
+    };
+
+    // Update time handlers with context updates
+    const handleStartTimeChange = (e) => {
+        const value = e.target.value;
+        setStartTime(value);
+        updateSearchData({ startTime: value });
+    };
+
+    const handleEndTimeChange = (e) => {
+        const value = e.target.value;
+        setEndTime(value);
+        updateSearchData({ endTime: value });
+    };
+
+    // Expanded handle search function with validation
+    const handleSearch = (targetLocation) => {
+        // Validate dates before proceeding
+        if (startDate < today) {
+            setDateError("Start date cannot be in the past");
+            return;
+        }
+        
+        if (endDate < startDate) {
+            setDateError("End date must be after start date");
+            return;
+        }
+        
+        // Clear any validation errors
+        setDateError("");
+        
+        setIsSearching(true);
+        setHasSearched(true);
+        
+        // Use provided target location or the current location state
+        const searchLocation = targetLocation || location;
+        
+        // Update all form data in the context
+        updateSearchData({
+            toogleTab,
+            address,
+            location: searchLocation,
+            vehicleType,
+            startDate,
+            endDate,
+            startTime,
+            endTime
+        });
+        
+        // Simulate search delay
+        setTimeout(() => {
+            setIsSearching(false);
+            
+            // Filter by proximity
+            const locationResults = filterParkingsByLocation(searchLocation.lat, searchLocation.lng);
+            
+            // If no proximity results, try name-based matching as backup
+            if (locationResults.length === 0) {
+                const nameResults = findNameMatches(address);
+                setFilteredParkings(nameResults.length > 0 ? nameResults : []);
+            } else {
+                setFilteredParkings(locationResults);
+            }
+            
+            // If we have filtered results, adjust the map to show them
+            if (locationResults.length > 0 && mapRef) {
+                const bounds = new window.google.maps.LatLngBounds();
+                // Add the search location to bounds
+                bounds.extend(searchLocation);
+                
+                // Add all parking locations to bounds
+                locationResults.forEach(parking => {
+                    bounds.extend({ lat: parking.lat, lng: parking.lng });
+                });
+                
+                mapRef.fitBounds(bounds);
+                
+                // If there's only one result or bounds are too small, zoom in a bit more
+                setTimeout(() => {
+                    if (mapRef.getZoom() > 17) {
+                        mapRef.setZoom(17);
+                    } else if (mapRef.getZoom() < 13) {
+                        mapRef.setZoom(13);
+                    }
+                }, 300);
+            } else if (mapRef) {
+                // If no parkings found, just center on the searched location
+                mapRef.panTo(searchLocation);
+                mapRef.setZoom(14);
+            }
+            
+            console.log("Searched for parkings with:", { address, vehicleType, startDate, endDate });
+        }, 1000);
+    };
+
+    // Set map center based on context location or default
+    useEffect(() => {
+        if (location && mapRef) {
+            mapRef.panTo(location);
+            mapRef.setZoom(15);
+        }
+    }, [mapRef, location]);
 
     // Handle vehicle selection
     const handleVehicleSelect = (id) => {
@@ -62,96 +529,6 @@ const SecLocation = () => {
         return selected ? selected.name : "Select vehicle type";
     };
 
-    // Google Maps Autocomplete handlers
-    const onLoadAutocomplete = (autoC) => {
-        setAutocomplete(autoC);
-    };
-
-    const onPlaceChanged = () => {
-        if (autocomplete !== null) {
-            const place = autocomplete.getPlace();
-            if (place.geometry) {
-                const newLocation = {
-                    lat: place.geometry.location.lat(),
-                    lng: place.geometry.location.lng()
-                };
-                setLocation(newLocation);
-                setAddress(place.formatted_address);
-                
-                // Update context when location changes
-                updateSearchData({ 
-                    address: place.formatted_address,
-                    location: newLocation
-                });
-                
-                // Pan map to new location
-                if (mapRef) {
-                    mapRef.panTo(newLocation);
-                    mapRef.setZoom(15);
-                }
-            }
-        }
-    };
-
-    // Update context when form values change
-    useEffect(() => {
-        updateSearchData({
-            startDate,
-            endDate,
-            startTime,
-            endTime,
-            toogleTab
-        });
-    }, [startDate, endDate, startTime, endTime, toogleTab]);
-
-    // Handle search form submission
-    const handleSearch = () => {
-        setIsSearching(true);
-        
-        // Update all form data in the context
-        updateSearchData({
-            toogleTab,
-            address,
-            location,
-            vehicleType,
-            startDate,
-            endDate,
-            startTime,
-            endTime
-        });
-        
-        // Simulate search delay
-        setTimeout(() => {
-            setIsSearching(false);
-            // You could update parking data here based on search criteria
-            console.log("Searching for parkings with:", { address, vehicleType, startDate, endDate });
-        }, 1000);
-    };
-
-    // Set map center based on context location or default
-    useEffect(() => {
-        if (location && mapRef) {
-            mapRef.panTo(location);
-            mapRef.setZoom(15);
-        }
-    }, [mapRef, location]);
-
-    useEffect(() => {
-        const storedData = localStorage.getItem("parkings");
-        if (storedData) {
-            setStoredParkings(JSON.parse(storedData));
-        } else {
-            setStoredParkings(parkings);
-            localStorage.setItem("parkings", JSON.stringify(parkings));
-        }
-    }, []);
-
-    useEffect(() => {
-        if (storedParkings.length > 0) {
-            localStorage.setItem("parkings", JSON.stringify(storedParkings));
-        }
-    }, [storedParkings]);
-
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -167,30 +544,121 @@ const SecLocation = () => {
         };
     }, [showVehicleDropdown]);
 
+    // Handle hover over parking item in list
     const handleHover = (parking) => {
         setHoveredParking(parking.id);
         if (mapRef) {
             mapRef.panTo({ lat: parking.lat, lng: parking.lng });
-            mapRef.setZoom(16);
         }
     };
 
+    // Handle marker click to show info window
     const handleMarkerClick = (parking) => {
         setActiveParking(parking);
     };
 
-    if (!isLoaded) return <div>Loading Google Maps...</div>;
+    // Get marker icon based on parking availability
+    const getParkingMarkerIcon = (parking) => {
+        // If parking is almost full (less than 20% spots available), use orange icon
+        if (parking.availabilityPercentage < 20) {
+            return limitedParkingIcon;
+        }
+        // Otherwise use green icon for good availability
+        return availableParkingIcon;
+    };
+
+    // Vehicle types for dropdown
+    const vehicleTypes = [
+        { id: "2wheels", name: "2 wheels", description: "Motorcycle, scooter, …" },
+        { id: "little", name: "Little", description: "Clio, 208, Twingo, Polo, Corsa, …" },
+        { id: "average", name: "AVERAGE", description: "Megane, 308, Scenic, C3 Picasso, Kangoo, Juke, …" },
+        { id: "big", name: "Big", description: "C4 Picasso, 508, BMW 3 Series, X-Trail, RAV4, Tiguan, …" },
+        { id: "high", name: "High", description: "Mercedes Vito, Renault Trafic, …" },
+        { id: "very-high", name: "Very high", description: "Mercedes Sprinter, Renault Master, …" },
+    ];
+
+    // Handle search radius change
+    const handleRadiusChange = (value) => {
+        setSearchRadius(value);
+        if (location && hasSearched) {
+            // Re-run the search with the new radius
+            const locationResults = filterParkingsByLocation(location.lat, location.lng, value);
+            setFilteredParkings(locationResults);
+            
+            // Adjust map bounds
+            if (mapRef && locationResults.length > 0) {
+                const bounds = new window.google.maps.LatLngBounds();
+                bounds.extend(location);
+                locationResults.forEach(parking => {
+                    bounds.extend({ lat: parking.lat, lng: parking.lng });
+                });
+                mapRef.fitBounds(bounds);
+                
+                // Adjust zoom level if needed
+                setTimeout(() => {
+                    if (mapRef.getZoom() > 17) {
+                        mapRef.setZoom(17);
+                    } else if (mapRef.getZoom() < 13) {
+                        mapRef.setZoom(13);
+                    }
+                }, 300);
+            }
+        }
+    };
+
+    // Function to open popup with parking details
+    const handleShowDetails = (parking, e) => {
+        if (e) {
+            e.stopPropagation(); // Prevent triggering parent click events
+        }
+        setSelectedParking(parking);
+        setShowPopup(true);
+    };
+    
+    // Function to close popup
+    const handleClosePopup = () => {
+        setShowPopup(false);
+    };
+
+    if (!isLoaded) return (
+        <div className="flex justify-center items-center h-[70vh]">
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading Google Maps...</p>
+            </div>
+        </div>
+    );
 
     return (
         <div className="flex flex-col h-full">
+            {/* Show popup if visible */}
+            {showPopup && selectedParking && (
+                <ParkingDetailsPopup
+                    parking={selectedParking}
+                    onClose={handleClosePopup}
+                />
+            )}
+            
             {/* Horizontal Search Form */}
             <div className="bg-gray-100 py-3 mb-4 rounded-lg shadow-md">
+                {/* Display validation error message if present */}
+                {dateError && (
+                    <div className="mx-4 mb-3 text-red-500 bg-red-100 border border-red-400 rounded px-3 py-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        {dateError}
+                    </div>
+                )}
+                
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end px-4">
                     {/* Destination Input */}
                     <div className="md:col-span-3">
                         <label className="text-gray-700 text-xs mb-1 block font-medium">Destination</label>
                         <div className="flex items-center gap-2 bg-white px-3 rounded-lg border transition-all hover:border-blue-500 h-10">
-                            <img src="./../images/icon.svg" alt="" className="w-4 h-4" />
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="text-gray-500" viewBox="0 0 16 16">
+                                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                            </svg>
                             {isLoaded ? (
                                 <Autocomplete
                                     onLoad={onLoadAutocomplete}
@@ -201,10 +669,7 @@ const SecLocation = () => {
                                         className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent text-xs text-gray-800 h-8 px-0 w-full' 
                                         placeholder="Enter destination" 
                                         value={address}
-                                        onChange={(e) => {
-                                            setAddress(e.target.value);
-                                            updateSearchData({ address: e.target.value });
-                                        }}
+                                        onChange={handleAddressChange}
                                     />
                                 </Autocomplete>
                             ) : (
@@ -253,54 +718,53 @@ const SecLocation = () => {
                     </div>
                     
                     {/* Start Date & Time */}
-                    <div className="md:col-span-3">
+                    <div className="md:col-span-2">
                         <label className="text-gray-700 text-xs mb-1 block font-medium">Start Date & Time</label>
                         <div className="flex gap-1">
                             <div className="flex items-center gap-1 bg-white px-2 rounded-lg border transition-all hover:border-blue-500 flex-grow h-10">
-                                <img src="./../images/icon-1.svg" alt="" className="w-3 h-3" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" className="text-gray-500" viewBox="0 0 16 16">
+                                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                                </svg>
                                 <DatePicker
                                     className='bg-transparent text-gray-800 text-xs outline-none w-full h-8'
                                     placeholderText="Start date"
                                     selected={startDate}
-                                    onChange={(date) => {
-                                        setStartDate(date);
-                                        updateSearchData({ startDate: date });
-                                    }}
+                                    onChange={handleStartDateChange}
                                     selectsStart
                                     startDate={startDate}
                                     endDate={endDate}
                                     dateFormat="MMM d"
+                                    minDate={today} // Set minimum date to today
                                 />
                             </div>
                             <div className="flex items-center gap-1 bg-white px-2 rounded-lg border transition-all hover:border-blue-500 w-[80px] h-10">
-                                <img src="./../images/icon-2.svg" alt="" className="w-3 h-3" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" className="text-gray-500" viewBox="0 0 16 16">
+                                    <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                                </svg>
                                 <Form.Control
                                     type="time"
                                     className='bg-transparent text-gray-800 text-xs border-none shadow-none h-8 px-0 w-full'
                                     value={startTime}
-                                    onChange={(e) => {
-                                        setStartTime(e.target.value);
-                                        updateSearchData({ startTime: e.target.value });
-                                    }}
+                                    onChange={handleStartTimeChange}
                                 />
                             </div>
                         </div>
                     </div>
                     
                     {/* End Date & Time */}
-                    <div className="md:col-span-3">
+                    <div className="md:col-span-2">
                         <label className="text-gray-700 text-xs mb-1 block font-medium">End Date & Time</label>
                         <div className="flex gap-1">
                             <div className="flex items-center gap-1 bg-white px-2 rounded-lg border transition-all hover:border-blue-500 flex-grow h-10">
-                                <img src="./../images/icon-1.svg" alt="" className="w-3 h-3" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" className="text-gray-500" viewBox="0 0 16 16">
+                                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                                </svg>
                                 <DatePicker
                                     className='bg-transparent text-gray-800 text-xs outline-none w-full h-8'
                                     placeholderText="End date"
                                     selected={endDate}
-                                    onChange={(date) => {
-                                        setEndDate(date);
-                                        updateSearchData({ endDate: date });
-                                    }}
+                                    onChange={handleEndDateChange}
                                     selectsEnd
                                     startDate={startDate}
                                     endDate={endDate}
@@ -309,15 +773,15 @@ const SecLocation = () => {
                                 />
                             </div>
                             <div className="flex items-center gap-1 bg-white px-2 rounded-lg border transition-all hover:border-blue-500 w-[80px] h-10">
-                                <img src="./../images/icon-2.svg" alt="" className="w-3 h-3" />
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" className="text-gray-500" viewBox="0 0 16 16">
+                                    <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                                </svg>
                                 <Form.Control
                                     type="time"
                                     className='bg-transparent text-gray-800 text-xs border-none shadow-none h-8 px-0 w-full'
                                     value={endTime}
-                                    onChange={(e) => {
-                                        setEndTime(e.target.value);
-                                        updateSearchData({ endTime: e.target.value });
-                                    }}
+                                    onChange={handleEndTimeChange}
                                 />
                             </div>
                         </div>
@@ -326,7 +790,7 @@ const SecLocation = () => {
                     {/* Search Button */}
                     <div className="md:col-span-1">
                         <button 
-                            onClick={handleSearch}
+                            onClick={() => handleSearch()}
                             className="bg-blue-600 text-white rounded-lg py-2 px-4 w-full h-10 hover:bg-blue-700 transition-colors flex items-center justify-center"
                             disabled={isSearching}
                         >
@@ -343,6 +807,22 @@ const SecLocation = () => {
                         </button>
                     </div>
                 </div>
+                
+                {/* Search radius slider - becomes visible after search */}
+                {hasSearched && (
+                    <div className="mt-3 px-4 flex items-center">
+                        <div className="text-sm text-gray-600 mr-2">Search radius:</div>
+                        <input 
+                            type="range" 
+                            min="1" 
+                            max="30" 
+                            value={searchRadius} 
+                            onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
+                            className="w-40 mx-2"
+                        />
+                        <div className="text-sm font-medium text-blue-600">{searchRadius} km</div>
+                    </div>
+                )}
             </div>
 
             {/* Map and Parking List */}
@@ -350,68 +830,168 @@ const SecLocation = () => {
                 {/* Sidebar */}
                 <div className="w-1/3 bg-white p-4 overflow-y-auto shadow-lg rounded-l-lg">
                     <h2 className="text-xl font-bold mb-4">🚗 Available Parkings</h2>
-                    <ul className="space-y-3">
-                        {storedParkings.map((parking) => (
-                            <li
-                                key={parking.id}
-                                className={`p-3 rounded-lg shadow-md cursor-pointer transition transform hover:scale-102 hover:shadow-lg ${
-                                    activeParking?.id === parking.id ? 'bg-blue-50 border-l-2 border-blue-500' : 'bg-gray-50'
-                                }`}
-                                onMouseEnter={() => handleHover(parking)}
-                                onClick={() => handleMarkerClick(parking)}
-                            >
-                                <img src="/images/marker.png" alt="Parking" className="w-10 h-10 mr-2 float-left" />
-                                <div>
-                                    <h3 className="text-base font-semibold">{parking.name}</h3>
-                                    <p className="text-gray-500 text-sm">{parking.price}</p>
-                                    <p className="text-green-500 font-medium text-xs">🚶 4 min walk</p>
+                    
+                    {loading ? (
+                        <div className="flex justify-center items-center p-10">
+                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+                        </div>
+                    ) : error ? (
+                        <div className="text-red-500 p-4 text-center">{error}</div>
+                    ) : hasSearched && filteredParkings.length === 0 ? (
+                        <div className="text-gray-500 p-6 text-center bg-gray-50 rounded-lg">
+                            <div className="mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" className="mx-auto text-gray-400" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-medium">No parking spots found</h3>
+                            <p className="mt-2">
+                                We couldn't find any parking spots near "{address}". 
+                                <br />Try increasing the search radius or trying a different location.
+                            </p>
+                            <div className="mt-4 flex gap-2 justify-center">
+                                <button onClick={() => {
+                                    handleRadiusChange(Math.min(searchRadius + 5, 30));
+                                }} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm">
+                                    Increase radius
+                                </button>
+                                <button onClick={() => {
+                                    setAddress('');
+                                    setFilteredParkings(parkings);
+                                    updateSearchData({ address: '' });
+                                    setHasSearched(false);
+                                }} className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm">
+                                    Show all parkings
+                                </button>
+                            </div>
+                        </div>
+                    ) : !hasSearched ? (
+                        <div className="text-gray-500 p-6 text-center bg-gray-50 rounded-lg">
+                            <div className="mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" className="mx-auto text-gray-400" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-medium">No parking spots found</h3>
+                            <p className="mt-2">
+                                We couldn't find any parking spots near "{address}". 
+                                <br />Try increasing the search radius or trying a different location.
+                            </p>
+                            <div className="mt-4 flex gap-2 justify-center">
+                                <button onClick={() => {
+                                    handleRadiusChange(Math.min(searchRadius + 5, 30));
+                                }} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm">
+                                    Increase radius
+                                </button>
+                                <button onClick={() => {
+                                    setAddress('');
+                                    setFilteredParkings(parkings);
+                                    updateSearchData({ address: '' });
+                                    setHasSearched(false);
+                                }} className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm">
+                                    Show all parkings
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {filteredParkings.map(parking => (
+                                <div 
+                                    key={parking.id} 
+                                    className={`p-4 rounded-lg shadow-md transition-all cursor-pointer ${
+                                        hoveredParking === parking.id ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-white'
+                                    }`}
+                                    onMouseEnter={() => handleHover(parking)}
+                                    onMouseLeave={() => setHoveredParking(null)}
+                                    onClick={() => handleMarkerClick(parking)}
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <h3 className="text-lg font-semibold">{parking.name}</h3>
+                                            <p className="text-sm text-gray-600">{parking.location}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-medium text-blue-600">{parking.price}</p>
+                                            <p className="text-xs text-gray-500">{parking.distance} km away</p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 text-xs text-gray-500">
+                                        <p>Total spots: {parking.totalSpots}</p>
+                                        <p>Available spots: {parking.availableSpots}</p>
+                                    </div>
+                                    
+                                    {/* Add Details button */}
+                                    <div className="mt-3 flex justify-between">
+                                        <button 
+                                            className="bg-blue-600 text-blue py-1 px-3 rounded-md hover:bg-blue-700 transition text-sm"
+                                            onClick={(e) => handleShowDetails(parking, e)}
+                                        >
+                                            View Details
+                                        </button>
+                                        
+                                        <button 
+                                            className="bg-green-600 text-blue py-1 px-3 rounded-md hover:bg-green-700 transition text-sm"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/parkings/${parking.id}`);
+                                            }}
+                                        >
+                                            Book Now
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="clear-both"></div>
-                            </li>
-                        ))}
-                    </ul>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
-                {/* Google Map */}
-                <div className="w-2/3 relative">
+                {/* Map */}
+                <div className="flex-1">
                     <GoogleMap
                         mapContainerStyle={mapContainerStyle}
-                        zoom={14}
-                        center={location || defaultCenter}
-                        onLoad={(map) => setMapRef(map)}
-                        options={{
-                            streetViewControl: false,
-                            mapTypeControl: false,
-                        }}
+                        center={location}
+                        zoom={15}
+                        onLoad={map => setMapRef(map)}
                     >
-                        {storedParkings.map((parking) => (
-                            <Marker
-                                key={parking.id}
+                        {filteredParkings.map(parking => (
+                            <Marker 
+                                key={parking.id} 
                                 position={{ lat: parking.lat, lng: parking.lng }}
-                                icon={{
-                                    url: hoveredParking === parking.id || activeParking?.id === parking.id 
-                                        ? "/images/black-mark.png" : "/images/red-mark.png",
-                                    scaledSize: new window.google.maps.Size(40, 40),
-                                }}
                                 onClick={() => handleMarkerClick(parking)}
+                                icon={getParkingMarkerIcon(parking)}
                             />
                         ))}
-
-                        {/* Show InfoWindow only when clicking on marker */}
                         {activeParking && (
                             <InfoWindow
                                 position={{ lat: activeParking.lat, lng: activeParking.lng }}
                                 onCloseClick={() => setActiveParking(null)}
                             >
                                 <div>
-                                    <h3 className="text-base font-bold">{activeParking.name}</h3>
-                                    <p>{activeParking.price}</p>
-                                    <p className="text-blue-500">🚶 4 min walk</p>
-                                    <button className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
-                                        Select
+                                    <h3 className="text-lg font-semibold">{activeParking.name}</h3>
+                                    <p className="text-sm text-gray-600">{activeParking.location}</p>
+                                    <p className="text-sm font-medium text-blue-600">{activeParking.price}</p>
+                                    <p className="text-xs text-gray-500">{activeParking.distance} km away</p>
+                                    <p className="text-xs text-gray-500">Total spots: {activeParking.totalSpots}</p>
+                                    <p className="text-xs text-gray-500">Available spots: {activeParking.availableSpots}</p>
+                                    <button 
+                                        className="mt-2 bg-blue-600 text-white py-1 px-2 rounded-sm text-xs"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleShowDetails(activeParking);
+                                        }}
+                                    >
+                                        View Details
                                     </button>
                                 </div>
                             </InfoWindow>
+                        )}
+                        {userLocation && (
+                            <Marker 
+                                position={userLocation}
+                                icon={userLocationIcon}
+                            />
                         )}
                     </GoogleMap>
                 </div>

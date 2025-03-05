@@ -27,6 +27,8 @@ import Profile from './Pages/profile'
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import { SearchProvider } from './context/SearchContext';
 import NotFound from './Pages/NotFound';
+import ParkingDetails from "./Pages/ParkingDetails";
+
 
 const App = () => {
   let location = useLocation();
@@ -67,7 +69,10 @@ const App = () => {
               <Route path="reset-password/:token" element={<ResetPassword />} />
               <Route path="google/callback" element={<GoogleCallback />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="/parkings/:id" element={<ParkingDetails />} />
               <Route path="*" element={<NotFound />} />
+              
+              
             </Route>
           </Routes>
         </AuthProvider>
