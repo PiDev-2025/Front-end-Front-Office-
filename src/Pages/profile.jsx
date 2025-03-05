@@ -119,7 +119,12 @@ const updateUserProfile = async (userData, token, image, password) => {
     formData.append("email", userData.email);
     formData.append("phone", userData.phone);
     formData.append("role", userData.role);
-    formData.append("vehicleType", userData.vehicleType);
+
+    // Vérifier si vehicleType est défini avant de l'ajouter
+    if (userData.vehicleType) {
+      formData.append("vehicleType", userData.vehicleType);
+    }
+
     if (password) formData.append("password", password);
 
     const response = await fetch("http://localhost:3001/User/update-profile", {
@@ -139,6 +144,8 @@ const updateUserProfile = async (userData, token, image, password) => {
     return null;
   }
 };
+
+
 const validatePhoneNumber = (phone) => {
   // Expression régulière pour un numéro tunisien (ex: +216 XX XXX XXX)
   const phonePattern = /^(2|3|4|5|7|9)\d{7}$/;
