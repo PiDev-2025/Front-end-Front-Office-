@@ -32,6 +32,7 @@ import Step2UploadImages from '../src/Components/Pages/Step/Step2AddParking';
 import FaceAuth from "./Components/FaceAuth/FaceAuth";
 import ParkingDetails from "./Pages/ParkingDetails";
 import SecLocation from './Components/Pages/Step/Location';
+import ParkingPlan from "./Pages/viualisation3D"
 
 
 const App = () => {
@@ -52,38 +53,42 @@ const App = () => {
   return (
     <GoogleMapsProvider>
       <SearchProvider>
-        <FavoritesProvider>
-          <AuthProvider>
-            <Routes>
-              <Route path="/" element={<DefaultLayout />}>
-                <Route index element={<Homepage />} />
-                <Route path="ownerAddPaking" element={<OwnerAddPaking />} />
-                <Route path="step2/:parkingId" element={<Step2UploadImages />} />
-                <Route path="how-it-works" element={<HowItworks />} />
-                <Route path="booking" element={<Booking />} />
-                <Route path="careers" element={<Careers />} />
-                <Route path="about" element={<About />} />
-                <Route path="job/detail" element={<JobDetail />} />
-                <Route path="blog" element={<Blog />} />
-                <Route path="blog/detail" element={<BlogDetail />} />
-                <Route path="contact" element={<Contact />} />
-                <Route path="privacy" element={<Privacy />} />
-                <Route path="terms" element={<Terms />} />
-                <Route path="faq" element={<Faq />} />
-                <Route path="login" element={<Login />} />
-                <Route path="sign-up" element={<SignUp />} />
-                <Route path="forgot-password" element={<ForgotPassword />} />
-                <Route path="reset-password/:token" element={<ResetPassword />} />
-                <Route path="google/callback" element={<GoogleCallback />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="parkings/:id" element={<ParkingDetails />} />
-                <Route path="login/face" element={<FaceAuth/>} />
-                <Route path="location" element={<SecLocation />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-            </Routes>
-          </AuthProvider>
+
+                   <FavoritesProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<DefaultLayout />}>
+              <Route index element={<Homepage />} />
+              <Route path="parkingPlan" element={<ParkingPlan />} />
+              <Route path="ownerAddPaking" element={<OwnerAddPaking />} />
+              <Route path="step2/:parkingId" element={<Step2UploadImages />} />
+              <Route path="how-it-works" element={<HowItworks />} />
+              <Route path="booking" element={<Booking />} />
+              <Route path="careers" element={<Careers />} />
+              <Route path="about" element={<About />} />
+              <Route path="job/detail" element={<JobDetail />} />
+              <Route path="blog" element={<Blog />} />
+              <Route path="blog/detail" element={<BlogDetail />} />
+              <Route path="contact" element={<Contact />} />
+              <Route path="privacy" element={<Privacy />} />
+              <Route path="terms" element={<Terms />} />
+              <Route path="faq" element={<Faq />} />
+              <Route path="login" element={<Login />} />
+              <Route path="sign-up" element={<SignUp />} />
+              <Route path="forgot-password" element={<ForgotPassword />} />
+              <Route path="reset-password/:token" element={<ResetPassword />} />
+              <Route path="google/callback" element={<GoogleCallback />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="parkings/:id" element={<ParkingDetails />} />
+              <Route path="login/face" element={<FaceAuth/>} />
+              <Route path="*" element={<NotFound />} />
+                                <Route path="location" element={<SecLocation />} />
+
+            </Route>
+          </Routes>
+        </AuthProvider>
         </FavoritesProvider>
+
       </SearchProvider>
     </GoogleMapsProvider>
   );

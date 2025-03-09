@@ -120,6 +120,9 @@ const updateUserProfile = async (userData, token, image, password) => {
     formData.append("phone", userData.phone);
     formData.append("role", userData.role);
 
+
+    
+
     // Vérifier si vehicleType est défini avant de l'ajouter
     if (userData.vehicleType) {
       formData.append("vehicleType", userData.vehicleType);
@@ -127,7 +130,7 @@ const updateUserProfile = async (userData, token, image, password) => {
 
     if (password) formData.append("password", password);
 
-    const response = await fetch("http://localhost:3001/User/update-profile", {
+    const response = await fetch("http://localhost:3001/User/profile", {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,

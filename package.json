@@ -19,6 +19,7 @@
     "axios": "^1.6.8",
     "bootstrap": "^5.3.0",
     "clsx": "^2.1.1",
+    "fabric": "^6.6.1",
     "face-api.js": "^0.22.2",
     "framer-motion": "^12.4.7",
     "jwt-decode": "^4.0.0",
