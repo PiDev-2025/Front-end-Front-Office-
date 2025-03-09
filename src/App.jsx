@@ -23,13 +23,15 @@ import { AuthProvider } from './AuthContext';
 import GoogleCallback from './Pages/googlecallbackk';
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import { SearchProvider } from './context/SearchContext';
+import { FavoritesProvider } from './context/FavoritesContext';
 import NotFound from './Pages/NotFound';
 
 import Profile from './Pages/profile';
 import OwnerAddPaking from '../src/Components/Pages/Step/Step1AddParking';
 import Step2UploadImages from '../src/Components/Pages/Step/Step2AddParking';
 import FaceAuth from "./Components/FaceAuth/FaceAuth";
-import ParkingDetails from "./Pages/parkingDetail";
+import ParkingDetails from "./Pages/ParkingDetails";
+import SecLocation from './Components/Pages/Step/Location';
 import ParkingPlan from "./Pages/viualisation3D"
 
 
@@ -51,6 +53,8 @@ const App = () => {
   return (
     <GoogleMapsProvider>
       <SearchProvider>
+
+                   <FavoritesProvider>
         <AuthProvider>
           <Routes>
             <Route path="/" element={<DefaultLayout />}>
@@ -78,9 +82,13 @@ const App = () => {
               <Route path="parkings/:id" element={<ParkingDetails />} />
               <Route path="login/face" element={<FaceAuth/>} />
               <Route path="*" element={<NotFound />} />
+                                <Route path="location" element={<SecLocation />} />
+
             </Route>
           </Routes>
         </AuthProvider>
+        </FavoritesProvider>
+
       </SearchProvider>
     </GoogleMapsProvider>
   );

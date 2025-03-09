@@ -37,6 +37,24 @@ const Homepage = () => {
     const [startTime, setStartTime] = useState(searchData.startTime || "14:41");
     const [endTime, setEndTime] = useState(searchData.endTime || "15:41");
 
+    const [errors, setErrors] = useState({});
+
+    // Validate form fields
+    const validateForm = () => {
+        const newErrors = {};
+        const now = new Date();
+        if (!address) newErrors.address = "Address is required";
+        if (!vehicleType) newErrors.vehicleType = "Vehicle type is required";
+        if (!startDate) newErrors.startDate = "Start date is required";
+        if (!endDate) newErrors.endDate = "End date is required";
+        if (!startTime) newErrors.startTime = "Start time is required";
+        if (!endTime) newErrors.endTime = "End time is required";
+        if (startDate && startDate < now) newErrors.startDate = "Start date cannot be in the past";
+        if (endDate && endDate < now) newErrors.endDate = "End date cannot be in the past";
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     // Google Maps Autocomplete handlers
     const onLoadAutocomplete = (autoC) => {
         setAutocomplete(autoC);
@@ -62,6 +80,8 @@ const Homepage = () => {
     
     // Handle search form submission
     const handleSearch = () => {
+        if (!validateForm()) return;
+
         // Save all form data to the context
         updateSearchData({
             toogleTab,
@@ -289,34 +309,40 @@ const Homepage = () => {
                                 toogleTab == "On time" ? 
                                 <div className="flex flex-col gap-4">
                                     <div className="flex flex-wrap md:flex-nowrap gap-4">
-                                        <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full md:w-[50%] transition-all hover:bg-[#ffffff26]">
-                                            <img src="./../images/icon.svg" alt="" />
-                                            {isLoaded ? (
-                                                <Autocomplete
-                                                    onLoad={onLoadAutocomplete}
-                                                    onPlaceChanged={onPlaceChanged}
-                                                >
+                                        <div className="flex flex-col w-full md:w-[50%]">
+                                            <div className={`flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full transition-all hover:bg-[#ffffff26]`}>
+                                                <img src="./../images/icon.svg" alt="" />
+                                                {isLoaded ? (
+                                                    <Autocomplete
+                                                        onLoad={onLoadAutocomplete}
+                                                        onPlaceChanged={onPlaceChanged}
+                                                    >
+                                                        <Form.Control 
+                                                            type="text" 
+                                                            className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
+                                                            placeholder="Enter your destination" 
+                                                            value={address}
+                                                            onChange={(e) => {
+                                                                setAddress(e.target.value);
+                                                                setErrors(prev => ({ ...prev, address: '' }));
+                                                            }}
+                                                        />
+                                                    </Autocomplete>
+                                                ) : (
                                                     <Form.Control 
                                                         type="text" 
                                                         className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
-                                                        placeholder="Enter your destination" 
-                                                        value={address}
-                                                        onChange={(e) => setAddress(e.target.value)}
+                                                        placeholder="Loading Google Maps..." 
+                                                        disabled
                                                     />
-                                                </Autocomplete>
-                                            ) : (
-                                                <Form.Control 
-                                                    type="text" 
-                                                    className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
-                                                    placeholder="Loading Google Maps..." 
-                                                    disabled
-                                                />
-                                            )}
+                                                )}
+                                            </div>
+                                            {errors.address && <div className="text-white text-xs mt-1">{errors.address}</div>}
                                         </div>
                                         
                                         <div className="relative w-full md:w-[50%]">
                                             <div 
-                                                className="vehicle-dropdown-toggle flex items-center justify-between bg-[#ffffff1a] px-3 py-3 h-[54px] rounded-[16px] cursor-pointer transition-all hover:bg-[#ffffff26]"
+                                                className={`vehicle-dropdown-toggle flex items-center justify-between bg-[#ffffff1a] px-3 py-3 h-[54px] rounded-[16px] cursor-pointer transition-all hover:bg-[#ffffff26]`}
                                                 onClick={() => setShowVehicleDropdown(!showVehicleDropdown)}
                                                 onKeyDown={handleVehicleKeyDown}
                                                 tabIndex={0}
@@ -327,7 +353,6 @@ const Homepage = () => {
                                             >
                                                 <div className="text-Mwhite text__14">{getSelectedVehicleName()}</div>
                                                 <div className="flex items-center">
-                                                    {/* Simplified: Keep only the down arrow button for dropdown navigation */}
                                                     <button 
                                                         className="p-1 mr-1 text-white opacity-60 hover:opacity-100 focus:opacity-100" 
                                                         onClick={(e) => {
@@ -349,32 +374,29 @@ const Homepage = () => {
                                                     </button>
                                                 </div>
                                             </div>
-                                            
                                             {showVehicleDropdown && (
-                                                <div 
+                                                <ul 
+                                                    className="absolute z-10 w-full bg-[#333333] rounded-[16px] mt-1 max-h-60 overflow-auto"
                                                     ref={dropdownRef}
-                                                    className="absolute left-0 right-0 mt-1 bg-[#1e1e1e] rounded-lg border border-[#333] shadow-lg z-10 max-h-[240px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-[#1e1e1e]"
                                                     role="listbox"
+                                                    aria-labelledby="vehicle-type-label"
                                                 >
                                                     {vehicleTypes.map((type, index) => (
-                                                        <div 
+                                                        <li 
                                                             key={type.id}
-                                                            id={`vehicle-option-${type.id}`}
+                                                            className={`px-3 py-2 cursor-pointer ${focusedVehicleIndex === index ? 'bg-[#555555]' : ''}`}
                                                             onClick={() => handleVehicleSelect(type.id)}
-                                                            className={`p-3 cursor-pointer hover:bg-[#333] ${
-                                                                vehicleType === type.id ? 'bg-Mblue text-white' : 
-                                                                focusedVehicleIndex === index ? 'bg-[#333] text-white border-l-2 border-Mgreen' : 'text-Mwhite'
-                                                            }`}
+                                                            onMouseEnter={() => setFocusedVehicleIndex(index)}
                                                             role="option"
-                                                            aria-selected={vehicleType === type.id}
-                                                            data-index={index}
+                                                            aria-selected={focusedVehicleIndex === index}
                                                         >
-                                                            <div className="font-medium">{type.name}</div>
-                                                            <div className="text-xs opacity-80">{type.description}</div>
-                                                        </div>
+                                                            <div className="text-Mwhite text__14">{type.name}</div>
+                                                            <div className="text-[#A3A3A3] text__12">{type.description}</div>
+                                                        </li>
                                                     ))}
-                                                </div>
+                                                </ul>
                                             )}
+                                            {errors.vehicleType && <div className="text-white text-xs mt-1">{errors.vehicleType}</div>}
                                         </div>
                                     </div>
                                     
@@ -382,55 +404,69 @@ const Homepage = () => {
                                         <div className="w-full md:w-1/2">
                                             <label className="text-Mwhite text__14 block mb-1">Beginning</label>
                                             <div className="flex w-full gap-2">
-                                                <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] flex-grow transition-all hover:bg-[#ffffff26]">
+                                                <div className={`flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] flex-grow transition-all hover:bg-[#ffffff26]`}>
                                                     <img src="./../images/icon-1.svg" alt="" />
                                                     <DatePicker
                                                         className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none w-full'
                                                         placeholderText="Sun March 2"
                                                         selected={startDate}
-                                                        onChange={(date) => setStartDate(date)}
-                                                        selectsStart
-                                                        startDate={startDate}
-                                                        endDate={endDate}
+                                                        onChange={(date) => {
+                                                            setStartDate(date);
+                                                            setErrors(prev => ({ ...prev, startDate: '' }));
+                                                        }}
+                                                        minDate={new Date()}
                                                     />
                                                 </div>
-                                                <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-[120px] transition-all hover:bg-[#ffffff26]">
+                                                {errors.startDate && <div className="text-white text-xs mt-1">{errors.startDate}</div>}
+                                                <div className={`flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-[120px] transition-all hover:bg-[#ffffff26]`}>
                                                     <img src="./../images/icon-2.svg" alt="" />
                                                     <Form.Control
                                                         type="time"
                                                         className='bg-transparent text-Mwhite text__14 font-normal outline-none border-none shadow-none'
                                                         value={startTime}
-                                                        onChange={(e) => setStartTime(e.target.value)}
+                                                        onChange={(e) => {
+                                                            setStartTime(e.target.value);
+                                                            setErrors(prev => ({ ...prev, startTime: '' }));
+                                                        }}
                                                     />
                                                 </div>
+                                                {errors.startTime && <div className="text-white text-xs mt-1">{errors.startTime}</div>}
                                             </div>
                                         </div>
                                         
                                         <div className="w-full md:w-1/2">
                                             <label className="text-Mwhite text__14 block mb-1">END</label>
                                             <div className="flex w-full gap-2">
-                                                <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] flex-grow transition-all hover:bg-[#ffffff26]">
+                                                <div className={`flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] flex-grow transition-all hover:bg-[#ffffff26]`}>
                                                     <img src="./../images/icon-1.svg" alt="" />
                                                     <DatePicker
                                                         className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none w-full'
                                                         placeholderText="end date"
                                                         selected={endDate}
-                                                        onChange={(date) => setEndDate(date)}
+                                                        onChange={(date) => {
+                                                            setEndDate(date);
+                                                            setErrors(prev => ({ ...prev, endDate: '' }));
+                                                        }}
                                                         selectsEnd
                                                         startDate={startDate}
                                                         endDate={endDate}
-                                                        minDate={startDate}
+                                                        minDate={startDate || new Date()}
                                                     />
                                                 </div>
-                                                <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-[120px] transition-all hover:bg-[#ffffff26]">
+                                                {errors.endDate && <div className="text-white text-xs mt-1">{errors.endDate}</div>}
+                                                <div className={`flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-[120px] transition-all hover:bg-[#ffffff26]`}>
                                                     <img src="./../images/icon-2.svg" alt="" />
                                                     <Form.Control
                                                         type="time"
                                                         className='bg-transparent text-Mwhite text__14 font-normal outline-none border-none shadow-none'
                                                         value={endTime}
-                                                        onChange={(e) => setEndTime(e.target.value)}
+                                                        onChange={(e) => {
+                                                            setEndTime(e.target.value);
+                                                            setErrors(prev => ({ ...prev, endTime: '' }));
+                                                        }}
                                                     />
                                                 </div>
+                                                {errors.endTime && <div className="text-white text-xs mt-1">{errors.endTime}</div>}
                                             </div>
                                         </div>
                                     </div>
@@ -448,40 +484,45 @@ const Homepage = () => {
                                         ) : (
                                             'Search'
                                         )}
-
                                     </button>
                                 </div> 
                                 : 
                                 <div className="flex flex-col gap-4">
                                     <div className="flex flex-wrap md:flex-nowrap gap-4">
-                                        <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full md:w-[50%] transition-all hover:bg-[#ffffff26]">
-                                            <img src="./../images/icon.svg" alt="" />
-                                            {isLoaded ? (
-                                                <Autocomplete
-                                                    onLoad={onLoadAutocomplete}
-                                                    onPlaceChanged={onPlaceChanged}
-                                                >
+                                        <div className="flex flex-col w-full md:w-[50%]">
+                                            <div className={`flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full transition-all hover:bg-[#ffffff26]`}>
+                                                <img src="./../images/icon.svg" alt="" />
+                                                {isLoaded ? (
+                                                    <Autocomplete
+                                                        onLoad={onLoadAutocomplete}
+                                                        onPlaceChanged={onPlaceChanged}
+                                                    >
+                                                        <Form.Control 
+                                                            type="text" 
+                                                            className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
+                                                            placeholder="Enter your destination" 
+                                                            value={address}
+                                                            onChange={(e) => {
+                                                                setAddress(e.target.value);
+                                                                setErrors(prev => ({ ...prev, address: '' }));
+                                                            }}
+                                                        />
+                                                    </Autocomplete>
+                                                ) : (
                                                     <Form.Control 
                                                         type="text" 
                                                         className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
-                                                        placeholder="Enter your destination" 
-                                                        value={address}
-                                                        onChange={(e) => setAddress(e.target.value)}
+                                                        placeholder="Loading Google Maps..." 
+                                                        disabled
                                                     />
-                                                </Autocomplete>
-                                            ) : (
-                                                <Form.Control 
-                                                    type="text" 
-                                                    className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
-                                                    placeholder="Loading Google Maps..." 
-                                                    disabled
-                                                />
-                                            )}
+                                                )}
+                                            </div>
+                                            {errors.address && <div className="text-white text-xs mt-1">{errors.address}</div>}
                                         </div>
                                         
                                         <div className="relative w-full md:w-[50%]">
                                             <div 
-                                                className="vehicle-dropdown-toggle flex items-center justify-between bg-[#ffffff1a] px-3 py-3 h-[54px] rounded-[16px] cursor-pointer transition-all hover:bg-[#ffffff26]"
+                                                className={`vehicle-dropdown-toggle flex items-center justify-between bg-[#ffffff1a] px-3 py-3 h-[54px] rounded-[16px] cursor-pointer transition-all hover:bg-[#ffffff26]`}
                                                 onClick={() => setShowVehicleDropdown(!showVehicleDropdown)}
                                                 onKeyDown={handleVehicleKeyDown}
                                                 tabIndex={0}
@@ -492,7 +533,6 @@ const Homepage = () => {
                                             >
                                                 <div className="text-Mwhite text__14">{getSelectedVehicleName()}</div>
                                                 <div className="flex items-center">
-                                                    {/* Simplified: Keep only the down arrow button for dropdown navigation */}
                                                     <button 
                                                         className="p-1 mr-1 text-white opacity-60 hover:opacity-100 focus:opacity-100" 
                                                         onClick={(e) => {
@@ -514,61 +554,67 @@ const Homepage = () => {
                                                     </button>
                                                 </div>
                                             </div>
-                                            
                                             {showVehicleDropdown && (
-                                                <div 
+                                                <ul 
+                                                    className="absolute z-10 w-full bg-[#333333] rounded-[16px] mt-1 max-h-60 overflow-auto"
                                                     ref={dropdownRef}
-                                                    className="absolute left-0 right-0 mt-1 bg-[#1e1e1e] rounded-lg border border-[#333] shadow-lg z-10 max-h-[240px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-[#1e1e1e]"
                                                     role="listbox"
+                                                    aria-labelledby="vehicle-type-label"
                                                 >
                                                     {vehicleTypes.map((type, index) => (
-                                                        <div 
+                                                        <li 
                                                             key={type.id}
-                                                            id={`vehicle-option-${type.id}`}
+                                                            className={`px-3 py-2 cursor-pointer ${focusedVehicleIndex === index ? 'bg-[#555555]' : ''}`}
                                                             onClick={() => handleVehicleSelect(type.id)}
-                                                            className={`p-3 cursor-pointer hover:bg-[#333] ${
-                                                                vehicleType === type.id ? 'bg-Mblue text-white' : 
-                                                                focusedVehicleIndex === index ? 'bg-[#333] text-white border-l-2 border-Mgreen' : 'text-Mwhite'
-                                                            }`}
+                                                            onMouseEnter={() => setFocusedVehicleIndex(index)}
                                                             role="option"
-                                                            aria-selected={vehicleType === type.id}
-                                                            data-index={index}
+                                                            aria-selected={focusedVehicleIndex === index}
                                                         >
-                                                            <div className="font-medium">{type.name}</div>
-                                                            <div className="text-xs opacity-80">{type.description}</div>
-                                                        </div>
+                                                            <div className="text-Mwhite text__14">{type.name}</div>
+                                                            <div className="text-[#A3A3A3] text__12">{type.description}</div>
+                                                        </li>
                                                     ))}
-                                                </div>
+                                                </ul>
                                             )}
+                                            {errors.vehicleType && <div className="text-white text-xs mt-1">{errors.vehicleType}</div>}
                                         </div>
                                     </div>
                                     
                                     <div className="flex flex-wrap md:flex-nowrap gap-4">
                                         <div className="w-full md:w-1/2">
                                             <label className="text-Mwhite text__14 block mb-1">Beginning</label>
-                                            <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full transition-all hover:bg-[#ffffff26]">
+                                            <div className={`flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full transition-all hover:bg-[#ffffff26]`}>
                                                 <img src="./../images/icon-1.svg" alt="" />
                                                 <DatePicker
                                                     className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none w-full'
                                                     placeholderText="Select start date"
                                                     selected={startDate}
-                                                    onChange={(date) => setStartDate(date)}
+                                                    onChange={(date) => {
+                                                        setStartDate(date);
+                                                        setErrors(prev => ({ ...prev, startDate: '' }));
+                                                    }}
+                                                    minDate={new Date()}
                                                 />
                                             </div>
+                                            {errors.startDate && <div className="text-white text-xs mt-1">{errors.startDate}</div>}
                                         </div>
                                         
                                         <div className="w-full md:w-1/2">
                                             <label className="text-Mwhite text__14 block mb-1">END</label>
-                                            <div className="flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full transition-all hover:bg-[#ffffff26]">
+                                            <div className={`flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full transition-all hover:bg-[#ffffff26]`}>
                                                 <img src="./../images/icon-1.svg" alt="" />
                                                 <DatePicker
                                                     className='bg-transparent text-Mwhite text__14 font-normal outline-none focus:outline-none w-full'
                                                     placeholderText="Select end date"
                                                     selected={endDate}
-                                                    onChange={(date) => setEndDate(date)}
-                                                    minDate={startDate}
+                                                    onChange={(date) => {
+                                                        setEndDate(date);
+                                                        setErrors(prev => ({ ...prev, endDate: '' }));
+                                                    }}
+                                                    minDate={startDate || new Date()}
                                                 />
                                             </div>
+                                            {errors.endDate && <div className="text-white text-xs mt-1">{errors.endDate}</div>}
                                         </div>
                                     </div>
                                     
@@ -585,7 +631,6 @@ const Homepage = () => {
                                         ) : (
                                             'Search'
                                         )}
-
                                     </button>
                                 </div>
                             }
@@ -714,8 +759,6 @@ const Homepage = () => {
                         </div>
                         <div className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass !py-[14px]">Subscribe</div>
                     </div>
-
-                    {/*<img src="./../images/gfjhfgjfgj.png" className='mx-auto' alt="" />*/}
                 </Container>
             </section>
         </Fragment >

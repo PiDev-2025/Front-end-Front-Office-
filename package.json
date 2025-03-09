@@ -43,6 +43,7 @@
     "reactstrap": "^9.2.3",
     "shadcn-ui": "^0.9.5",
     "slick-carousel": "^1.8.1",
+    "sweetalert2": "^11.17.2",
     "tailwind-merge": "^3.0.2",
     "web-vitals": "^2.1.4"
   },

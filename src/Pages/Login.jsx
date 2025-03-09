@@ -16,13 +16,7 @@ const Login = () => {
   const [otp, setOtp] = useState("");
   const navigate = useNavigate();
   const { login } = useContext(AuthContext); // Use useContext to access AuthContext
-  // Test si Toastify fonctionne
-  useEffect(() => {
-    toast.info("Toastify est bien chargé !", {
-      position: "top-right",
-      autoClose: 2000,
-    });
-  }, []);
+
 
   // Handle form submission for login
   const handleLogin = async (e) => {
