@@ -19,8 +19,8 @@
     "axios": "^1.6.8",
     "bootstrap": "^5.3.0",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.4.7",
     "face-api.js": "^0.22.2",
+    "framer-motion": "^12.4.7",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.475.0",
     "react": "^18.2.0",
@@ -42,6 +42,7 @@
     "reactstrap": "^9.2.3",
     "shadcn-ui": "^0.9.5",
     "slick-carousel": "^1.8.1",
+    "sweetalert2": "^11.17.2",
     "tailwind-merge": "^3.0.2",
     "web-vitals": "^2.1.4"
   },

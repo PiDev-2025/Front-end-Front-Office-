@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { GoogleMap, Marker, InfoWindow, Autocomplete } from "@react-google-maps/api";
+import { GoogleMap, Marker, InfoWindow, Autocomplete, DirectionsRenderer } from "@react-google-maps/api";
 import { useGoogleMaps } from "../../../context/GoogleMapsContext";
 import { useSearch } from "../../../context/SearchContext";
+import { useFavorites } from "../../../context/FavoritesContext";
 import { Form } from 'react-bootstrap';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -20,18 +21,24 @@ const userLocationIcon = {
     anchor: { x: 16, y: 16 }
 };
 
-// Available parking marker icon (green)
-const availableParkingIcon = {
-    url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='36' height='36'%3E%3Cpath fill='%2322C55E' d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z'/%3E%3Ctext x='12' y='9' font-size='10' text-anchor='middle' font-weight='bold' fill='white'>P</text>%3C/svg%3E",
-    scaledSize: { width: 36, height: 36 },
-    anchor: { x: 18, y: 36 }
+// Function to generate a custom price marker SVG
+const generatePriceMarkerSVG = (price, isLimited) => {
+    // Set colors based on availability
+    const bgColor = isLimited ? '%23F59E0B' : '%2322C55E'; // Orange or Green
+    
+    // Format price (remove € symbol if present and trim to reasonable length)
+    const formattedPrice = price.replace('€', '').trim();
+    
+    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 40' width='70' height='40'%3E%3Cpath fill='${bgColor}' d='M35 0c-9.4 0-17 7.6-17 17 0 10.5 17 23 17 23s17-12.5 17-23c0-9.4-7.6-17-17-17z'/%3E%3Ctext x='35' y='19' font-family='Arial' font-size='12' text-anchor='middle' font-weight='bold' fill='white'%3E€${formattedPrice}%3C/text%3E%3C/svg%3E`;
 };
 
-// Almost full parking marker icon (orange)
-const limitedParkingIcon = {
-    url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='36' height='36'%3E%3Cpath fill='%23F59E0B' d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z'/%3E%3Ctext x='12' y='9' font-size='10' text-anchor='middle' font-weight='bold' fill='white'>P</text>%3C/svg%3E",
-    scaledSize: { width: 36, height: 36 },
-    anchor: { x: 18, y: 36 }
+// Generate custom marker icons for each parking based on price
+const createPriceMarker = (price, isLimited) => {
+    return {
+        url: generatePriceMarkerSVG(price, isLimited),
+        scaledSize: { width: 70, height: 40 },
+        anchor: { x: 35, y: 40 }
+    };
 };
 
 // Popup component for parking details
@@ -69,9 +76,68 @@ const ParkingDetailsPopup = ({ parking, onClose }) => {
     );
 };
 
+// Login Reminder Popup component - Updated with better button visibility
+const LoginReminderPopup = ({ onClose }) => {
+    const navigate = useNavigate();
+    
+    // Close when clicking on the background overlay
+    const handleBackgroundClick = (e) => {
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
+    };
+    
+    return (
+        <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={handleBackgroundClick}
+        >
+            <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold">Sign in Required</h3>
+                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div className="mb-6">
+                    <p className="text-gray-700 mb-4 text-base">
+                        You need to be signed in to save favorite parkings. Would you like to sign in or create an account?
+                    </p>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3 mt-5">
+                        {/* Updated Sign In button with better contrast */}
+                        <button 
+                            onClick={() => navigate('/login')}
+                            className="flex-1 bg-blue-600 text-black font-medium py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+                        >
+                            Sign In
+                        </button>
+                        
+                        {/* Updated Create Account button with better visibility */}
+                        <button 
+                            onClick={() => navigate('/sign-up')}
+                            className="flex-1 bg-green-600 text-black font-medium py-3 px-4 rounded-lg hover:bg-green-700 transition-colors shadow-md"
+                        >
+                            Create Account
+                        </button>
+                    </div>
+                </div>
+                
+                <div className="text-center text-gray-600 text-sm">
+                    <p>Your favorites will be synced across devices when you sign in.</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const SecLocation = () => {
-    const { isLoaded } = useGoogleMaps();
+    const { isLoaded, userLocation, setUserLocation } = useGoogleMaps();
     const { searchData, updateSearchData } = useSearch();
+    const { isFavorite, toggleFavorite, isLoggedIn } = useFavorites();
     const navigate = useNavigate();
     const [mapRef, setMapRef] = useState(null);
     const [activeParking, setActiveParking] = useState(null);
@@ -81,7 +147,8 @@ const SecLocation = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [hasSearched, setHasSearched] = useState(false);
-    const [userLocation, setUserLocation] = useState(null);
+    const [showLoginReminder, setShowLoginReminder] = useState(false);
+    const [directions, setDirections] = useState(null); // Store directions
     
     // Set today as minimum date for date pickers
     const today = new Date();
@@ -136,6 +203,17 @@ const SecLocation = () => {
     
     // Fix 2: Add a ref to track if we should auto-search
     const shouldAutoSearchRef = useRef(false);
+
+    // Add new state for filters
+    const [showFilters, setShowFilters] = useState(false);
+    const [priceRange, setPriceRange] = useState([0, 50]); // Default price range €0-50
+    const [maxDistance, setMaxDistance] = useState(searchRadius); // Use searchRadius as initial value
+    const [filtersApplied, setFiltersApplied] = useState(false);
+    const filterPanelRef = useRef(null);
+
+    // Replace complex filter states with simple sort state
+    const [sortBy, setSortBy] = useState("distance"); // "distance" or "price"
+    const [showSortDropdown, setShowSortDropdown] = useState(false);
 
     // Function to calculate distance between two points using the Haversine formula
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -271,7 +349,7 @@ const SecLocation = () => {
             );
             
             // Add distance to each parking object for display
-            parking.distance = distance.toFixed(1);
+            parking.distance = distance.toFixed(1) + ' km';
             
             // Return true if the parking is within the max distance
             return distance <= maxDistance;
@@ -465,15 +543,19 @@ const SecLocation = () => {
             setIsSearching(false);
             
             // Filter by proximity
-            const locationResults = filterParkingsByLocation(searchLocation.lat, searchLocation.lng);
+            let locationResults = filterParkingsByLocation(searchLocation.lat, searchLocation.lng);
             
             // If no proximity results, try name-based matching as backup
             if (locationResults.length === 0) {
-                const nameResults = findNameMatches(address);
-                setFilteredParkings(nameResults.length > 0 ? nameResults : []);
-            } else {
-                setFilteredParkings(locationResults);
+                locationResults = findNameMatches(address);
             }
+            
+            // Apply current sort method
+            if (locationResults.length > 0) {
+                locationResults = sortParkings(locationResults, sortBy);
+            }
+            
+            setFilteredParkings(locationResults.length > 0 ? locationResults : []);
             
             // If we have filtered results, adjust the map to show them
             if (locationResults.length > 0 && mapRef) {
@@ -555,16 +637,34 @@ const SecLocation = () => {
     // Handle marker click to show info window
     const handleMarkerClick = (parking) => {
         setActiveParking(parking);
+        if (userLocation) {
+            const directionsService = new window.google.maps.DirectionsService();
+            directionsService.route(
+                {
+                    origin: userLocation,
+                    destination: { lat: parking.lat, lng: parking.lng },
+                    travelMode: window.google.maps.TravelMode.DRIVING,
+                },
+                (result, status) => {
+                    if (status === window.google.maps.DirectionsStatus.OK) {
+                        setDirections(result);
+                    } else {
+                        console.error(`error fetching directions ${result}`);
+                    }
+                }
+            );
+        }
     };
 
-    // Get marker icon based on parking availability
+    // Get marker icon based on parking availability and price
     const getParkingMarkerIcon = (parking) => {
+        // Extract just the numeric part from the price string for the marker
+        const priceForMarker = parking.price.replace('/hr', '');
+        
         // If parking is almost full (less than 20% spots available), use orange icon
-        if (parking.availabilityPercentage < 20) {
-            return limitedParkingIcon;
-        }
-        // Otherwise use green icon for good availability
-        return availableParkingIcon;
+        const isLimited = parking.availabilityPercentage < 20;
+        
+        return createPriceMarker(priceForMarker, isLimited);
     };
 
     // Vehicle types for dropdown
@@ -580,9 +680,14 @@ const SecLocation = () => {
     // Handle search radius change
     const handleRadiusChange = (value) => {
         setSearchRadius(value);
+        setMaxDistance(value); // Update max distance filter to match radius
+        
         if (location && hasSearched) {
-            // Re-run the search with the new radius
-            const locationResults = filterParkingsByLocation(location.lat, location.lng, value);
+            let locationResults = filterParkingsByLocation(location.lat, location.lng, value);
+            
+            // Apply current sort
+            locationResults = sortParkings(locationResults, sortBy);
+            
             setFilteredParkings(locationResults);
             
             // Adjust map bounds
@@ -620,6 +725,50 @@ const SecLocation = () => {
         setShowPopup(false);
     };
 
+    // New sort function for parkings
+    const sortParkings = (parkings, sortMethod) => {
+        if (sortMethod === "distance") {
+            // Sort by distance (ascending)
+            return [...parkings].sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+        } else if (sortMethod === "price") {
+            // Sort by price (ascending)
+            return [...parkings].sort((a, b) => {
+                const priceA = parseFloat(a.price.replace('€', '').replace('/hr', ''));
+                const priceB = parseFloat(b.price.replace('€', '').replace('/hr', ''));
+                return priceA - priceB;
+            });
+        }
+        return parkings; // Default case
+    };
+    
+    // Handle sort selection
+    const handleSort = (method) => {
+        setSortBy(method);
+        
+        if (filteredParkings.length > 0) {
+            const sortedParkings = sortParkings(filteredParkings, method);
+            setFilteredParkings(sortedParkings);
+        }
+    };
+
+    // Handle favorite toggle
+    const handleFavoriteToggle = async (parkingId, e) => {
+        if (e) {
+            e.stopPropagation(); // Prevent triggering parent click events
+        }
+        
+        const result = await toggleFavorite(parkingId);
+        
+        if (!result.success && result.requiresAuth) {
+            setShowLoginReminder(true);
+        } else if (result.success && result.usingFallback) {
+            // If we're using localStorage fallback, show a message
+            console.log("Using local storage for favorites. Server API not available.");
+        } else if (!result.success) {
+            console.error("Failed to toggle favorite:", result.details || result.error);
+        }
+    };
+
     if (!isLoaded) return (
         <div className="flex justify-center items-center h-[70vh]">
             <div className="text-center">
@@ -631,6 +780,11 @@ const SecLocation = () => {
 
     return (
         <div className="flex flex-col h-full">
+            {/* Show login reminder popup if needed */}
+            {showLoginReminder && (
+                <LoginReminderPopup onClose={() => setShowLoginReminder(false)} />
+            )}
+            
             {/* Show popup if visible */}
             {showPopup && selectedParking && (
                 <ParkingDetailsPopup
@@ -787,6 +941,45 @@ const SecLocation = () => {
                         </div>
                     </div>
                     
+                    {/* Sort By Dropdown (UPDATED) */}
+                    <div className="md:col-span-2 relative">
+                        <label className="text-gray-700 text-xs mb-1 block font-medium">Tri par</label>
+                        <div 
+                            className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border cursor-pointer transition-all hover:border-blue-500 h-10"
+                            onClick={() => setShowSortDropdown(!showSortDropdown)}
+                        >
+                            <div className="text-gray-800 text-xs truncate">{sortBy === "distance" ? "Distance" : sortBy === "price" ? "Prix" : "Favorite"}</div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" className="text-gray-500" viewBox="0 0 16 16">
+                                <path d="M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/>
+                            </svg>
+                        </div>
+                        
+                        {showSortDropdown && (
+                            <div 
+                                className="absolute left-0 right-0 mt-1 bg-white rounded-lg border border-gray-300 shadow-lg z-40 max-h-[240px] overflow-y-auto"
+                            >
+                                <div 
+                                    onClick={() => handleSort("distance")}
+                                    className={`p-2 cursor-pointer hover:bg-gray-100 ${sortBy === "distance" ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
+                                >
+                                    <div className="font-medium text-xs">Distance</div>
+                                </div>
+                                <div 
+                                    onClick={() => handleSort("price")}
+                                    className={`p-2 cursor-pointer hover:bg-gray-100 ${sortBy === "price" ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
+                                >
+                                    <div className="font-medium text-xs">Prix</div>
+                                </div>
+                                <div 
+                                    onClick={() => handleSort("favorite")}
+                                    className={`p-2 cursor-pointer hover:bg-gray-100 ${sortBy === "favorite" ? 'bg-blue-50 border-l-2 border-blue-500' : ''}`}
+                                >
+                                    <div className="font-medium text-xs">Favorite</div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
                     {/* Search Button */}
                     <div className="md:col-span-1">
                         <button 
@@ -808,19 +1001,21 @@ const SecLocation = () => {
                     </div>
                 </div>
                 
-                {/* Search radius slider - becomes visible after search */}
+                {/* Search radius slider only (remove sort buttons from here) */}
                 {hasSearched && (
                     <div className="mt-3 px-4 flex items-center">
-                        <div className="text-sm text-gray-600 mr-2">Search radius:</div>
-                        <input 
-                            type="range" 
-                            min="1" 
-                            max="30" 
-                            value={searchRadius} 
-                            onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
-                            className="w-40 mx-2"
-                        />
-                        <div className="text-sm font-medium text-blue-600">{searchRadius} km</div>
+                        <div className="flex items-center">
+                            <div className="text-sm text-gray-600 mr-2">Search radius:</div>
+                            <input 
+                                type="range" 
+                                min="1" 
+                                max="30" 
+                                value={searchRadius} 
+                                onChange={(e) => handleRadiusChange(parseInt(e.target.value))}
+                                className="w-40 mx-2"
+                            />
+                            <div className="text-sm font-medium text-blue-600">{searchRadius} km</div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -900,13 +1095,31 @@ const SecLocation = () => {
                             {filteredParkings.map(parking => (
                                 <div 
                                     key={parking.id} 
-                                    className={`p-4 rounded-lg shadow-md transition-all cursor-pointer ${
+                                    className={`p-4 rounded-lg shadow-md transition-all cursor-pointer relative ${
                                         hoveredParking === parking.id ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-white'
                                     }`}
                                     onMouseEnter={() => handleHover(parking)}
                                     onMouseLeave={() => setHoveredParking(null)}
                                     onClick={() => handleMarkerClick(parking)}
                                 >
+                                    {/* Favorite Button - Updated Here */}
+                                    <button 
+                                        className="absolute top-3 right-3 z-10"
+                                        onClick={(e) => handleFavoriteToggle(parking.id, e)}
+                                    >
+                                        {isFavorite(parking.id) ? (
+                                            // Filled heart for favorites
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                                            </svg>
+                                        ) : (
+                                            // Outlined heart for non-favorites (updated)
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400 hover:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                    
                                     <div className="flex justify-between items-center">
                                         <div>
                                             <h3 className="text-lg font-semibold">{parking.name}</h3>
@@ -914,7 +1127,7 @@ const SecLocation = () => {
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm font-medium text-blue-600">{parking.price}</p>
-                                            <p className="text-xs text-gray-500">{parking.distance} km away</p>
+                                            <p className="text-xs text-gray-500">{parking.distance}  away</p>
                                         </div>
                                     </div>
                                     <div className="mt-2 text-xs text-gray-500">
@@ -968,8 +1181,26 @@ const SecLocation = () => {
                                 position={{ lat: activeParking.lat, lng: activeParking.lng }}
                                 onCloseClick={() => setActiveParking(null)}
                             >
-                                <div>
-                                    <h3 className="text-lg font-semibold">{activeParking.name}</h3>
+                                <div className="relative">
+                                    {/* Favorite Button in InfoWindow - Updated Here */}
+                                    <button 
+                                        className="absolute top-0 right-0"
+                                        onClick={(e) => handleFavoriteToggle(activeParking.id, e)}
+                                    >
+                                        {isFavorite(activeParking.id) ? (
+                                            // Filled heart for favorites
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                                            </svg>
+                                        ) : (
+                                            // Outlined heart for non-favorites (updated)
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                    
+                                    <h3 className="text-lg font-semibold pr-6">{activeParking.name}</h3>
                                     <p className="text-sm text-gray-600">{activeParking.location}</p>
                                     <p className="text-sm font-medium text-blue-600">{activeParking.price}</p>
                                     <p className="text-xs text-gray-500">{activeParking.distance} km away</p>
@@ -991,6 +1222,11 @@ const SecLocation = () => {
                             <Marker 
                                 position={userLocation}
                                 icon={userLocationIcon}
+                            />
+                        )}
+                        {directions && (
+                            <DirectionsRenderer
+                                directions={directions}
                             />
                         )}
                     </GoogleMap>
