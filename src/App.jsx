@@ -24,6 +24,7 @@ import GoogleCallback from './Pages/googlecallbackk';
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import { SearchProvider } from './context/SearchContext';
 import NotFound from './Pages/NotFound';
+
 import Profile from './Pages/profile';
 import OwnerAddPaking from '../src/Components/Pages/Step/Step1AddParking';
 import Step2UploadImages from '../src/Components/Pages/Step/Step2AddParking';
@@ -49,8 +50,6 @@ const App = () => {
   }, []);
   return (
     <GoogleMapsProvider>
-
-
       <SearchProvider>
         <AuthProvider>
           <Routes>
@@ -75,11 +74,10 @@ const App = () => {
               <Route path="forgot-password" element={<ForgotPassword />} />
               <Route path="reset-password/:token" element={<ResetPassword />} />
               <Route path="google/callback" element={<GoogleCallback />} />
-                              <Route path="/parkings/:id" element={<ParkingDetails />} />
-
               <Route path="profile" element={<Profile />} />
+              <Route path="parkings/:id" element={<ParkingDetails />} />
+              <Route path="login/face" element={<FaceAuth/>} />
               <Route path="*" element={<NotFound />} />
-              <Route path="/login/face" element={<FaceAuth/>} />
             </Route>
           </Routes>
         </AuthProvider>
