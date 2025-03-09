@@ -120,6 +120,9 @@ const updateUserProfile = async (userData, token, image, password) => {
     formData.append("phone", userData.phone);
     formData.append("role", userData.role);
 
+
+    
+
     // Vérifier si vehicleType est défini avant de l'ajouter
     if (userData.vehicleType) {
       formData.append("vehicleType", userData.vehicleType);
