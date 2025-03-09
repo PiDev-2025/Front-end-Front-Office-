@@ -127,7 +127,7 @@ const updateUserProfile = async (userData, token, image, password) => {
 
     if (password) formData.append("password", password);
 
-    const response = await fetch("http://localhost:3001/User/update-profile", {
+    const response = await fetch("http://localhost:3001/User/profile", {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
