@@ -283,6 +283,66 @@ const SecLocation = () => {
                 const response = await axios.get('http://localhost:3001/api/parkings');
                 console.log("API response:", response.data);
                 
+                // Transform the API data format to match our needs based on the updated model
+                const formattedParkings = response.data.map(parking => ({
+                    id: parking._id,
+                    name: parking.name, // Update from nameP to name as per model
+                    description: parking.description,
+                    // Position structure is now { lat, lng } instead of { lat, lon }
+                    lat: parking.position.lat,
+                    lng: parking.position.lng,
+                    // Pricing is now an object with hourly, daily, weekly, monthly rates
+                    price: `€${parking.pricing.hourly}/hr`,
+                    pricingValue: parking.pricing.hourly, // Default to hourly rate
+                    dailyRate: parking.pricing.daily,
+                    weeklyRate: parking.pricing.weekly,
+                    monthlyRate: parking.pricing.monthly,
+                    totalSpots: parking.totalSpots,
+                    availableSpots: parking.availableSpots || 0, // Default to 0 if not provided
+                    features: parking.features,
+                    owner: parking.id_owner ? {
+                        id: parking.id_owner._id,
+                        name: parking.id_owner.name || 'Unknown Owner',
+                        email: parking.id_owner.email
+                    } : null,
+                    createdAt: parking.createdAt,
+                    availabilityPercentage: parking.availableSpots 
+                        ? Math.floor((parking.availableSpots / parking.totalSpots) * 100)
+                        : 0 // Default to 0% if availableSpots is not provided
+                }));
+                
+                console.log("Formatted parkings:", formattedParkings);
+                setParkings(formattedParkings);
+                
+                // Only auto-search if we have initial context location data
+                if (searchData.location && searchData.address && shouldAutoSearchRef.current) {
+                    setTimeout(() => {
+                        handleSearch(searchData.location);
+                    }, 300);
+                    shouldAutoSearchRef.current = false;
+                } else {
+                    setFilteredParkings([]); // Start with empty list until user searches
+                }
+                
+                setLoading(false);
+            } catch (err) {
+                setError("Failed to fetch parking data");
+                console.error("Error fetching parking data:", err);
+                setLoading(false);
+            }
+        };
+    
+        fetchParkings();
+    }, []);
+    /*useEffect(() => {
+        // Only run once on component mount
+        const fetchParkings = async () => {
+            try {
+                setLoading(true);
+                console.log("Fetching parkings from API...");
+                const response = await axios.get('http://localhost:3001/api/parkings');
+                console.log("API response:", response.data);
+                
                 // Transform the API data format to match our needs
                 const formattedParkings = response.data.map(parking => ({
                     id: parking._id,
@@ -321,7 +381,7 @@ const SecLocation = () => {
 
         fetchParkings();
     }, []); // Remove dependencies to run only once on mount
-    
+    */
     // Fix 4: Add a separate effect to track when to perform an auto-search
     useEffect(() => {
         // Skip first render

@@ -10,7 +10,7 @@ import {
 } from "react-bootstrap";
 import { Autocomplete } from "@react-google-maps/api";
 import { useGoogleMaps } from "../../../context/GoogleMapsContext";
-import axios from "axios"; // You can use axios or fetch for the API call
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
   FaMapMarkerAlt,
@@ -18,21 +18,28 @@ import {
   FaCar,
   FaBuilding,
   FaTrashAlt,
-} from "react-icons/fa"; // Import icons
+  FaFileAlt,
+} from "react-icons/fa";
 
 const OwnerAddPaking = () => {
   const { isLoaded } = useGoogleMaps();
-  const [location, setLocation] = useState({ lat: undefined, lng: undefined });
+  const [position, setPosition] = useState({ lat: undefined, lng: undefined });
   const [address, setAddress] = useState("");
   const [autocomplete, setAutocomplete] = useState(null);
   const [features, setFeatures] = useState([]);
-  const [pricing, setPricing] = useState([]);
-  const [tariffType, setTariffType] = useState(undefined);
+  const [pricing, setPricing] = useState({
+    hourly: "",
+    daily: "",
+    weekly: "",
+    monthly: "",
+  });
+  const [tariffType, setTariffType] = useState("hourly");
   const [vehicleType, setVehicleType] = useState([]);
-  const [hourlyRate, setHourlyRate] = useState(undefined);
+  const [currentRate, setCurrentRate] = useState("");
   const [totalSpots, setTotalSpots] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const navigate = useNavigate();
-
 
   const vehicleOptions = [
     {
@@ -80,27 +87,26 @@ const OwnerAddPaking = () => {
     );
   };
 
-  const handleAddRate = (type, rate) => {
-    // Vérifiez si le tarif pour le type existe déjà dans la liste
-    const existingRateIndex = pricing.findIndex(
-      (pricingRate) => pricingRate.duration === type
-    );
-
-    if (existingRateIndex !== -1) {
-      // Si le tarif existe déjà, modifiez-le
-      const updatedPricing = [...pricing];
-      updatedPricing[existingRateIndex] = { duration: type, rate }; // Mettez à jour le tarif existant
-      setPricing(updatedPricing);
-    } else {
-      // Si le tarif n'existe pas, ajoutez-le à la liste
-      setPricing((prev) => [...prev, { duration: type, rate }]);
+  const handleAddRate = () => {
+    if (!currentRate || isNaN(currentRate) || currentRate <= 0) {
+      alert("Please enter a valid rate");
+      return;
     }
-    setHourlyRate(undefined); // Réinitialiser le tarif après ajout ou modification
+
+    setPricing((prev) => ({
+      ...prev,
+      [tariffType]: parseFloat(currentRate),
+    }));
+    
+    setCurrentRate("");
   };
 
-  const handleRemoveRate = (index) => {
-    const updatedPricing = pricing.filter((_, i) => i !== index);
-    setPricing(updatedPricing);
+  const handleRemoveRate = (type) => {
+    setPricing((prev) => {
+      const updated = { ...prev };
+      delete updated[type];
+      return updated;
+    });
   };
 
   const onLoad = (autoComplete) => setAutocomplete(autoComplete);
@@ -109,7 +115,7 @@ const OwnerAddPaking = () => {
     if (autocomplete) {
       const place = autocomplete.getPlace();
       if (place.geometry) {
-        setLocation({
+        setPosition({
           lat: place.geometry.location.lat(),
           lng: place.geometry.location.lng(),
         });
@@ -118,33 +124,46 @@ const OwnerAddPaking = () => {
     }
   };
   
+  const getTariffLabel = (key) => {
+    switch(key) {
+      case "hourly": return "Hour";
+      case "daily": return "Day";
+      case "weekly": return "Week";
+      case "monthly": return "Month";
+      default: return key;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!address || !location.lat || !location.lng) {
+    if (!address || !position.lat || !position.lng) {
       alert("Please select a valid location.");
       return;
     }
-    if (pricing.length === 0) {
-      alert("At least one tariff is required.");
+    
+    if (!pricing.hourly) {
+      alert("Hourly rate is required.");
+      return;
+    }
+    
+    if (!name) {
+      alert("Parking name is required.");
       return;
     }
 
-    // Préparation des données du formulaire
+    if (vehicleType.length === 0) {
+      alert("Please select at least one vehicle type.");
+      return;
+    }
+
+    // Prepare form data
     const formData = new FormData();
-    formData.append("name", "Parking Name"); // Remplacez avec votre champ de saisie de nom
-    formData.append("location", JSON.stringify(location));
+    formData.append("name", name);
+    formData.append("description", description || "");
+    formData.append("position", JSON.stringify(position));
     formData.append("totalSpots", totalSpots);
-
-    const pricingData = {};
-    pricing.forEach((rate) => {
-      if (rate.duration === "Hour") pricingData.hourly = rate.rate;
-      else if (rate.duration === "Day") pricingData.daily = rate.rate;
-      else if (rate.duration === "Week") pricingData.weekly = rate.rate;
-      else if (rate.duration === "Month") pricingData.monthly = rate.rate;
-    });
-
-    formData.append("pricing", JSON.stringify(pricingData));
+    formData.append("pricing", JSON.stringify(pricing));
     formData.append("vehicleType", JSON.stringify(vehicleType));
     formData.append("features", JSON.stringify(features));
 
@@ -185,9 +204,38 @@ const OwnerAddPaking = () => {
       <Form onSubmit={handleSubmit}>
         <Form.Group className="mb-5">
           <Form.Label className="font-semibold d-flex align-items-center">
-            <FaMapMarkerAlt className="mr-2 text-blue-500" />{" "}
-            {/* L'icône à gauche */}
-            Pickup Location <span className="text-danger">*</span>
+            <FaFileAlt className="mr-2 text-blue-500" />
+            Parking Name <span className="text-danger">*</span>
+          </Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter parking name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-3/4"
+          />
+        </Form.Group>
+
+        <Form.Group className="mb-5">
+          <Form.Label className="font-semibold d-flex align-items-center">
+            <FaFileAlt className="mr-2 text-blue-500" />
+            Description
+          </Form.Label>
+          <Form.Control
+            as="textarea"
+            rows={3}
+            placeholder="Enter parking description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-3/4"
+          />
+        </Form.Group>
+
+        <Form.Group className="mb-5">
+          <Form.Label className="font-semibold d-flex align-items-center">
+            <FaMapMarkerAlt className="mr-2 text-blue-500" />
+            Parking Location <span className="text-danger">*</span>
           </Form.Label>
           <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
             <Form.Control
@@ -203,8 +251,7 @@ const OwnerAddPaking = () => {
 
         <Form.Group className="mb-5">
           <Form.Label className="font-semibold d-flex align-items-center">
-            <FaBuilding className="mr-2 text-green-500" />{" "}
-            {/* L'icône à gauche */}
+            <FaBuilding className="mr-2 text-green-500" />
             Total Number of Spots <span className="text-danger">*</span>
           </Form.Label>
           <Form.Control
@@ -219,7 +266,7 @@ const OwnerAddPaking = () => {
         <Form.Group className="mb-4">
           <Form.Label className="font-semibold d-flex align-items-center">
             <FaMoneyBillAlt className="mr-2 text-yellow-500" />
-            Rate for 1 {tariffType || "Hour"} (DT){" "}
+            Rate for 1 {getTariffLabel(tariffType)} (DT){" "}
             <span className="text-danger">*</span>
           </Form.Label>
           <Row className="align-items-center">
@@ -227,16 +274,16 @@ const OwnerAddPaking = () => {
               <Form.Control
                 type="number"
                 placeholder="Rate"
-                value={hourlyRate || ""}
-                onChange={(e) => setHourlyRate(e.target.value)}
-                required={pricing.length === 0}
+                value={currentRate}
+                onChange={(e) => setCurrentRate(e.target.value)}
+                required={Object.keys(pricing).length === 0}
                 className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </Col>
             <Col xs={2} className="d-flex justify-content-end">
               <Button
                 variant="primary"
-                onClick={() => handleAddRate(tariffType || "Hour", hourlyRate)}
+                onClick={handleAddRate}
                 className="w-100 p-2 rounded-md"
               >
                 Add Tariff
@@ -246,34 +293,32 @@ const OwnerAddPaking = () => {
         </Form.Group>
 
         <DropdownButton
-          title={`Add another tariff (${tariffType || "Hour"})`}
+          title={`Add another tariff (${getTariffLabel(tariffType)})`}
           onSelect={(eventKey) => setTariffType(eventKey)}
           className="mb-3 w-3/4"
         >
-          <Dropdown.Item eventKey="Hour">Tariff for an Hour</Dropdown.Item>
-          <Dropdown.Item eventKey="Day">Tariff for a Day</Dropdown.Item>
-          <Dropdown.Item eventKey="Week">Tariff for a Week</Dropdown.Item>
-          <Dropdown.Item eventKey="Month">Tariff for a Month</Dropdown.Item>
+          <Dropdown.Item eventKey="hourly">Tariff for an Hour</Dropdown.Item>
+          <Dropdown.Item eventKey="daily">Tariff for a Day</Dropdown.Item>
+          <Dropdown.Item eventKey="weekly">Tariff for a Week</Dropdown.Item>
+          <Dropdown.Item eventKey="monthly">Tariff for a Month</Dropdown.Item>
         </DropdownButton>
 
-        {pricing.length > 0 && (
+        {Object.keys(pricing).length > 0 && (
           <ListGroup className="mb-5" style={{ maxWidth: "500px" }}>
-            {" "}
-            {/* Limite la largeur de la liste */}
-            {pricing.map((rate, index) => (
+            {Object.entries(pricing).map(([type, rate]) => (
               <ListGroup.Item
-                key={index}
+                key={type}
                 className="d-flex justify-content-between align-items-center p-3 mb-2 bg-gray-100 rounded-md shadow-sm"
               >
                 <div className="flex items-center">
-                  <span className="font-semibold mr-2">{rate.duration}</span>:{" "}
-                  {rate.rate} DT
+                  <span className="font-semibold mr-2">{getTariffLabel(type)}</span>:{" "}
+                  {rate} DT
                 </div>
                 <Button
                   variant="danger"
-                  onClick={() => handleRemoveRate(index)}
+                  onClick={() => handleRemoveRate(type)}
                   className="p-1 rounded-circle"
-                  style={{ color: "red" }} // Couleur statique rouge pour l'icône
+                  style={{ color: "red" }}
                 >
                   <FaTrashAlt />
                 </Button>
@@ -284,7 +329,7 @@ const OwnerAddPaking = () => {
 
         <Form.Group className="mb-5">
           <Form.Label className="font-semibold d-flex align-items-center">
-            <FaCar className="mr-2 text-blue-500" /> {/* L'icône à gauche */}
+            <FaCar className="mr-2 text-blue-500" />
             Suitable Vehicle Types <span className="text-danger">*</span>
           </Form.Label>
           <Row>
@@ -307,7 +352,7 @@ const OwnerAddPaking = () => {
                   value={option.value}
                   checked={vehicleType.includes(option.value)}
                   onChange={handleVehicleChange}
-                  className="max-w-full" // Ensures it stays within the available width
+                  className="max-w-full"
                 />
               </Col>
             ))}
@@ -316,9 +361,8 @@ const OwnerAddPaking = () => {
 
         <Form.Group className="mb-5">
           <Form.Label className="font-semibold d-flex align-items-center">
-            <FaBuilding className="mr-2 text-green-500" />{" "}
-            {/* L'icône à gauche */}
-            Parking Features <span className="text-danger">*</span>
+            <FaBuilding className="mr-2 text-green-500" />
+            Parking Features
           </Form.Label>
           {[
             "Indoor Parking",
