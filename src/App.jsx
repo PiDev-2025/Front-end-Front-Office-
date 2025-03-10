@@ -27,7 +27,7 @@ import { FavoritesProvider } from './context/FavoritesContext';
 import NotFound from './Pages/NotFound';
 
 import Profile from './Pages/profile';
-import OwnerAddPaking from '../src/Components/Pages/Step/Step1AddParking';
+import ParkingRequestForm from '../src/Pages/ParkingForm';
 import Step2UploadImages from '../src/Components/Pages/Step/Step2AddParking';
 import FaceAuth from "./Components/FaceAuth/FaceAuth";
 import ParkingDetails from "./Pages/ParkingDetails";
@@ -60,7 +60,7 @@ const App = () => {
             <Route path="/" element={<DefaultLayout />}>
               <Route index element={<Homepage />} />
               <Route path="parkingPlan" element={<ParkingPlan />} />
-              <Route path="ownerAddPaking" element={<OwnerAddPaking />} />
+              <Route path="ParkingRequestForm" element={<ParkingRequestForm />} />
               <Route path="step2/:parkingId" element={<Step2UploadImages />} />
               <Route path="how-it-works" element={<HowItworks />} />
               <Route path="booking" element={<Booking />} />
