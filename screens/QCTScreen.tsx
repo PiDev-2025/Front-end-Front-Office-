@@ -124,10 +124,11 @@ function QCTScreen(): React.JSX.Element {
 					{/* <Section title="APIs" /> */}
 					{/* <Section title="States" /> */}
 					<Section title="User" />
-					<Section title="UserProfile" />
+					{/* <Section title="UserProfile" /> */}
 					<Section title="Pro" />
-					<Section title="ChatList" />
-					<Section title="MapStyle" />
+					{/* <Section title="ChatList" /> */}
+					{/* <Section title="Map" /> */}
+					{/* <Section title="ProfessionalProfile" /> */}
 					{/* <Section title="VideoChat" /> */}
 					{/* <Section title="Chats" /> */}
 					{/* <LearnMoreLinks /> */}

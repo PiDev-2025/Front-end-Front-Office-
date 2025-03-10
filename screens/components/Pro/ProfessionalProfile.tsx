@@ -3,6 +3,7 @@ import { useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import React, { useEffect } from "react";
 import { ScrollView, StyleSheet } from "react-native";
+import Surreal from "surrealdb";
 
 // Individual GlueStack UI imports
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
@@ -24,6 +25,9 @@ const professionalsAtom = atomWithStorage("professionals", []);
 const loadingAtom = atomWithStorage("loading", false);
 const errorAtom = atomWithStorage("error", null);
 
+// SurrealDB instance
+const db = new Surreal("http://localhost:8000/rpc"); // Adjust URL as needed
+
 // Professional types enum
 const ProfessionalTypes = {
 	DEVELOPER: "Developer",
@@ -32,15 +36,32 @@ const ProfessionalTypes = {
 	CONSULTANT: "Consultant",
 };
 
-// API fetch function
-const fetchProfessionals = async () => {
+// SurrealDB fetch function
+const fetchProfessionalsFromDB = async () => {
 	try {
-		// Replace with your actual API endpoint
-		const response = await fetch("https://api.example.com/professionals");
-		const data = await response.json();
-		return data;
+		// Connect to SurrealDB
+		await db.connect();
+
+		// Sign in (adjust credentials as needed)
+		await db.signin({
+			user: "root",
+			pass: "root",
+		});
+
+		// Select namespace and database
+		await db.use("sw", "core");
+
+		// Fetch all professionals
+		const professionals = await db.select("professional");
+
+		return professionals;
 	} catch (error) {
-		throw new Error("Failed to fetch professionals");
+		throw new Error(
+			"Failed to fetch professionals from SurrealDB: " + error.message
+		);
+	} finally {
+		// Optional: Close connection if needed
+		// await db.close();
 	}
 };
 
@@ -122,7 +143,7 @@ const ProfessionalProfile = () => {
 		const loadProfessionals = async () => {
 			setLoading(true);
 			try {
-				const data = await fetchProfessionals();
+				const data = await fetchProfessionalsFromDB();
 				setProfessionals(data);
 				setError(null);
 			} catch (err) {
@@ -214,3 +235,31 @@ const styles = StyleSheet.create({
 });
 
 export default ProfessionalProfile;
+
+// Optional: Function to seed initial data (run this separately or on first load)
+// const seedDatabase = async () => {
+// 	try {
+// 		await db.connect();
+// 		await db.signin({
+// 			user: "root",
+// 			pass: "root",
+// 		});
+// 		await db.use("namespace", "database");
+
+// 		const seedData = [
+// 			{
+// 				id: "professional:1",
+// 				name: "John Doe",
+// 				type: ProfessionalTypes.DEVELOPER,
+// 				location: "San Francisco, CA",
+// 				bio: "Senior Full-Stack Developer with 8+ years of experience",
+// 				avatar: "https://randomuser.me/api/portraits/men/1.jpg",
+// 			},
+// 			// Add more seed data as needed
+// 		];
+
+// 		await db.create("professional", seedData);
+// 	} catch (error) {
+// 		console.error("Failed to seed database:", error);
+// 	}
+// };
