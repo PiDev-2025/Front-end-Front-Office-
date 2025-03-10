@@ -28,29 +28,24 @@ export const FavoritesProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      // Try to use the correct endpoint - fix #1: changed endpoint path
-      const response = await axios.get('http://localhost:3001/User/favorites', {
+      const response = await axios.get('http://localhost:3001/favorites', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       if (response.data && Array.isArray(response.data.favorites)) {
         setFavorites(response.data.favorites);
       } else {
-        // Handle the case where data structure is different than expected
         console.log('Received favorites data:', response.data);
         if (response.data && response.data.success) {
-          // Try to extract favorites from different response structure
-          const favoritesList = response.data.data || [];
+          const favoritesList = response.data.favorites || [];
           setFavorites(favoritesList);
         }
       }
       setIsApiAvailable(true);
     } catch (error) {
       console.error('Error fetching favorites:', error);
-      // If API endpoint doesn't exist, fallback to local storage
       setIsApiAvailable(false);
       
-      // Try to load favorites from localStorage as fallback
       try {
         const localFavorites = localStorage.getItem('localFavorites');
         if (localFavorites) {
@@ -66,7 +61,7 @@ export const FavoritesProvider = ({ children }) => {
 
   // Check if a parking is in favorites
   const isFavorite = (parkingId) => {
-    return favorites.some(fav => fav === parkingId || fav._id === parkingId);
+    return favorites.some(fav => fav.parking && fav.parking._id === parkingId);
   };
 
   // Toggle favorite status of a parking
@@ -80,12 +75,10 @@ export const FavoritesProvider = ({ children }) => {
       const isFav = isFavorite(parkingId);
       
       if (isApiAvailable) {
-        // Try both possible API endpoint formats
         try {
-          // Fix #2: Use the proper endpoint URL format
           const endpoint = isFav 
-            ? `http://localhost:3001/User/favorites/remove/${parkingId}`
-            : `http://localhost:3001/User/favorites/add/${parkingId}`;
+            ? `http://localhost:3001/favorites/remove/${parkingId}`
+            : `http://localhost:3001/favorites/add/${parkingId}`;
           
           const method = isFav ? 'delete' : 'post';
           
@@ -100,30 +93,10 @@ export const FavoritesProvider = ({ children }) => {
             return { success: true };
           }
         } catch (apiError) {
-          console.error('Error with first endpoint format:', apiError);
-          
-          // Try alternative endpoint format as fallback
-          const altEndpoint = `http://localhost:3001/User/favorites/${parkingId}`;
-          const method = isFav ? 'delete' : 'post';
-          
-          try {
-            const response = await axios({
-              method,
-              url: altEndpoint,
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            
-            if (response.data.success) {
-              updateFavoritesList(parkingId, !isFav);
-              return { success: true };
-            }
-          } catch (altApiError) {
-            console.error('Error with alternative endpoint format:', altApiError);
-            throw altApiError;
-          }
+          console.error('Error with endpoint:', apiError);
+          throw apiError;
         }
       } else {
-        // Fallback to local storage if API is not available
         updateFavoritesList(parkingId, !isFav);
         return { success: true };
       }
@@ -132,19 +105,16 @@ export const FavoritesProvider = ({ children }) => {
     } catch (error) {
       console.error('Error toggling favorite:', error);
       
-      // If all API attempts fail, use localStorage as fallback
       if (!isApiAvailable) {
         const isFav = isFavorite(parkingId);
         updateFavoritesList(parkingId, !isFav);
         return { success: true, usingFallback: true };
       }
       
-      // Show toast message with specific error
       if (error.response) {
         if (error.response.status === 404) {
           toast.error("Favorite feature is not available on the server. Using local storage instead.");
           setIsApiAvailable(false);
-          // Use fallback localStorage method
           const isFav = isFavorite(parkingId);
           updateFavoritesList(parkingId, !isFav);
           return { success: true, usingFallback: true };
@@ -164,16 +134,13 @@ export const FavoritesProvider = ({ children }) => {
     let newFavorites;
     
     if (isAdding) {
-      newFavorites = [...favorites, parkingId];
+      newFavorites = [...favorites, { parking: { _id: parkingId } }];
     } else {
-      newFavorites = favorites.filter(id => 
-        id !== parkingId && (typeof id === 'object' ? id._id !== parkingId : true)
-      );
+      newFavorites = favorites.filter(fav => fav.parking._id !== parkingId);
     }
     
     setFavorites(newFavorites);
     
-    // If API is not available, save to localStorage as fallback
     if (!isApiAvailable) {
       localStorage.setItem('localFavorites', JSON.stringify(newFavorites));
     }
