@@ -1,14 +1,24 @@
-import React, { Fragment, useState } from 'react'
-import { Col, Container, Row } from 'react-bootstrap'
-import { CarIcon, DocumentIcon, LocationIcon, RightArrowIcon, SettingIcon } from '../Components/Icon/Icon'
+import React, { Fragment, useState, useEffect } from 'react';
+import { Col, Container, Row } from 'react-bootstrap';
+import { CarIcon, DocumentIcon, LocationIcon, RightArrowIcon, SettingIcon } from '../Components/Icon/Icon';
 
-import SecLocation from "./../Components/Pages/Step/Location"
-import ChooseCar from "./../Components/Pages/Step/ChooseCar"
-import Personalize from "./../Components/Pages/Step/Personalize"
-import Confirmation from "./../Components/Pages/Step/Confirmation"
+import SecLocation from "./../Components/Pages/Step/Location";
+import ParkingDetails from "../Components/Pages/Step/ChooseCar";
+import Personalize from "./../Components/Pages/Step/Personalize";
+import Confirmation from "./../Components/Pages/Step/Confirmation";
 
 const Booking = () => {
-    const [tabActiveId, settabActiveId] = useState(1)
+    const [tabActiveId, settabActiveId] = useState(1);
+    const [selectedParking, setSelectedParking] = useState(null);
+
+    // Récupérer les données du parking depuis localStorage lors du chargement
+    useEffect(() => {
+        const storedParking = localStorage.getItem('selectedParking');
+        if (storedParking) {
+            setSelectedParking(JSON.parse(storedParking));
+        }
+    }, []);
+
     const dataTab = [
         {
             id: 1,
@@ -18,7 +28,7 @@ const Booking = () => {
         {
             id: 2,
             icon: <CarIcon color={2 <= tabActiveId ? "#1E19D8" : "#737373"} />,
-            title: "Choose Your Best",
+            title: "Choose Parking",
         },
         {
             id: 3,
@@ -30,22 +40,24 @@ const Booking = () => {
             icon: <DocumentIcon color={4 <= tabActiveId ? "#1E19D8" : "#737373"} />,
             title: "Confirmation",
         },
-    ]
-
-    const [selectCar, setselectCar] = useState("")
+    ];
 
     const showContent = (e) => {
         switch (e) {
             case 1:
-                return <SecLocation />
+                return <SecLocation />;
             case 2:
-                return <ChooseCar selectCar={selectCar} setselectCar={(e) => setselectCar(e)} />
+                return <ParkingDetails 
+                    parkingData={selectedParking} 
+                    isPopup={false} 
+                    onContinue={() => settabActiveId(3)}
+                />;
             case 3:
-                return <Personalize />
+                return <Personalize />;
             default:
-                return <Confirmation />
+                return <Confirmation />;
         }
-    }
+    };
 
     return (
         <Fragment>
@@ -55,9 +67,9 @@ const Booking = () => {
                         <div className="flex items-center justify-center gap-3 w-[920px] lg:w-full">
                             {dataTab.map((obj, i) => (
                                 <Fragment key={obj.id}>
-                                    <div 
-                                        onClick={() => settabActiveId(obj.id)} 
-                                        className={"flex items-center gap-2 text__16 px-4 py-2 border border-solid rounded-full cursor-pointer " + 
+                                    <div
+                                        onClick={() => settabActiveId(obj.id)}
+                                        className={"flex items-center gap-2 text__16 px-4 py-2 border border-solid rounded-full cursor-pointer " +
                                             (obj.id <= tabActiveId ? "!border-Mblue text-Mblue bg-[#EDEDFC]" : '!border-[#E5E5E5] text-[#737373]')}
                                     >
                                         {obj.icon} <span>{obj.title}</span>
@@ -68,21 +80,25 @@ const Booking = () => {
                         </div>
                     </div>
 
-                    <div className="mb-6" >
-                        {
-                            showContent(tabActiveId)
-                        }
+                    <div className="mb-6">
+                        {showContent(tabActiveId)}
                     </div>
 
                     <div className={"items-center justify-end gap-3 " + (tabActiveId <= 3 ? "flex" : "hidden")}>
-                        <span className={'font-medium text__18 text-[#A3A3A3] ' + (tabActiveId == 4 ? "hidden" : "")}>Go to step {tabActiveId == 3 ? "finalize" : tabActiveId + 1}</span>
-                        <div onClick={() => tabActiveId <= 3 ? settabActiveId(tabActiveId + 1) : ''} className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass cursor-pointer">Continue</div>
+                        <span className={'font-medium text__18 text-[#A3A3A3] ' + (tabActiveId == 4 ? "hidden" : "")}>
+                            Go to step {tabActiveId == 3 ? "finalize" : tabActiveId + 1}
+                        </span>
+                        <div 
+                            onClick={() => tabActiveId <= 3 ? settabActiveId(tabActiveId + 1) : ''} 
+                            className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass cursor-pointer"
+                        >
+                            Continue
+                        </div>
                     </div>
-
                 </Container>
             </section>
-        </Fragment >
-    )
-}
+        </Fragment>
+    );
+};
 
-export default Booking
+export default Booking;

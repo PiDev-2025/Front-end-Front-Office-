@@ -440,6 +440,13 @@ const findNameMatches = (searchTerm) => {
         return nameMatches || locationMatches;
     });
 };
+// Fonction pour naviguer vers l'étape de réservation
+    const handleBookNow = (parking, e) => {
+        e.stopPropagation();
+        // Stocker les données du parking dans localStorage pour les récupérer dans le composant Booking
+        localStorage.setItem('selectedParking', JSON.stringify(parking));
+        navigate('/booking'); // Naviguer vers le processus de réservation
+    };
     
     // Google Maps Autocomplete handlers
     const onLoadAutocomplete = (autoC) => {
@@ -782,15 +789,23 @@ const findNameMatches = (searchTerm) => {
         }
     };
 
-    // Function to open popup with parking details
-    const handleShowDetails = (parking, e) => {
+    const handleShowDetails = async (parking, e) => {
         if (e) {
-            e.stopPropagation(); // Prevent triggering parent click events
+          e.stopPropagation();
         }
-        setSelectedParking(parking);
-        setShowPopup(true);
-    };
-    
+        
+        try {
+          // Fetch complete parking data from API
+          const response = await axios.get(`http://localhost:3001/parkings/parkings/${parking.id}`);
+          setSelectedParking(response.data);
+          setShowPopup(true);
+        } catch (error) {
+          console.error("Error fetching parking details:", error);
+          // Fallback to using the limited data we have
+          setSelectedParking(parking);
+          setShowPopup(true);
+        }
+      };
     // Function to close popup
     const handleClosePopup = () => {
         setShowPopup(false);
