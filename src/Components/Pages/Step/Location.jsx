@@ -274,66 +274,66 @@ const SecLocation = () => {
     };
 
     // Fetch parkings from API
-    useEffect(() => {
-        // Only run once on component mount
-        const fetchParkings = async () => {
-            try {
-                setLoading(true);
-                console.log("Fetching parkings from API...");
-                const response = await axios.get('http://localhost:3001/api/parkings');
-                console.log("API response:", response.data);
-                
-                // Transform the API data format to match our needs based on the updated model
-                const formattedParkings = response.data.map(parking => ({
-                    id: parking._id,
-                    name: parking.name, // Update from nameP to name as per model
-                    description: parking.description,
-                    // Position structure is now { lat, lng } instead of { lat, lon }
-                    lat: parking.position.lat,
-                    lng: parking.position.lng,
-                    // Pricing is now an object with hourly, daily, weekly, monthly rates
-                    price: `€${parking.pricing.hourly}/hr`,
-                    pricingValue: parking.pricing.hourly, // Default to hourly rate
-                    dailyRate: parking.pricing.daily,
-                    weeklyRate: parking.pricing.weekly,
-                    monthlyRate: parking.pricing.monthly,
-                    totalSpots: parking.totalSpots,
-                    availableSpots: parking.availableSpots || 0, // Default to 0 if not provided
-                    features: parking.features,
-                    owner: parking.id_owner ? {
-                        id: parking.id_owner._id,
-                        name: parking.id_owner.name || 'Unknown Owner',
-                        email: parking.id_owner.email
-                    } : null,
-                    createdAt: parking.createdAt,
-                    availabilityPercentage: parking.availableSpots 
-                        ? Math.floor((parking.availableSpots / parking.totalSpots) * 100)
-                        : 0 // Default to 0% if availableSpots is not provided
-                }));
-                
-                console.log("Formatted parkings:", formattedParkings);
-                setParkings(formattedParkings);
-                
-                // Only auto-search if we have initial context location data
-                if (searchData.location && searchData.address && shouldAutoSearchRef.current) {
-                    setTimeout(() => {
-                        handleSearch(searchData.location);
-                    }, 300);
-                    shouldAutoSearchRef.current = false;
-                } else {
-                    setFilteredParkings([]); // Start with empty list until user searches
-                }
-                
-                setLoading(false);
-            } catch (err) {
-                setError("Failed to fetch parking data");
-                console.error("Error fetching parking data:", err);
-                setLoading(false);
+  
+useEffect(() => {
+    // Only run once on component mount
+    const fetchParkings = async () => {
+        try {
+            setLoading(true);
+            console.log("Fetching parkings from API...");
+            const response = await axios.get('http://localhost:3001/parkings/parkings');
+            console.log("API response:", response.data);
+            
+            // Transform the API data format to match our needs based on the updated model
+            const formattedParkings = response.data.map(parking => ({
+                id: parking._id,
+                name: parking.name,
+                description: parking.description,
+                lat: parking.position.lat,
+                lng: parking.position.lng,
+                price: `€${parking.pricing.hourly}/hr`,
+                pricingValue: parking.pricing.hourly,
+                dailyRate: parking.pricing.daily,
+                weeklyRate: parking.pricing.weekly,
+                monthlyRate: parking.pricing.monthly,
+                totalSpots: parking.totalSpots,
+                availableSpots: parking.availableSpots || 0,
+                features: parking.features,
+                // Corriger l'accès au propriétaire (Owner au lieu de id_owner)
+                owner: parking.Owner ? {
+                    id: parking.Owner._id,
+                    name: parking.Owner.name || 'Unknown Owner',
+                    email: parking.Owner.email
+                } : null,
+                createdAt: parking.createdAt,
+                availabilityPercentage: parking.availableSpots 
+                    ? Math.floor((parking.availableSpots / parking.totalSpots) * 100)
+                    : 0
+            }));
+            
+            console.log("Formatted parkings:", formattedParkings);
+            setParkings(formattedParkings);
+            
+            // Only auto-search if we have initial context location data
+            if (searchData.location && searchData.address && shouldAutoSearchRef.current) {
+                setTimeout(() => {
+                    handleSearch(searchData.location);
+                }, 300);
+                shouldAutoSearchRef.current = false;
+            } else {
+                setFilteredParkings([]);
             }
-        };
-    
-        fetchParkings();
-    }, []);
+            
+            setLoading(false);
+        } catch (err) {
+            setError("Failed to fetch parking data");
+            console.error("Error fetching parking data:", err);
+            setLoading(false);
+        }
+    };
+
+    fetchParkings();
+}, []);
     /*useEffect(() => {
         // Only run once on component mount
         const fetchParkings = async () => {
@@ -418,17 +418,28 @@ const SecLocation = () => {
         return results;
     };
 
-    // Find name-based matches (as an alternative search method)
-    const findNameMatches = (searchTerm) => {
-        if (!searchTerm || searchTerm.trim() === '') return [];
+// Find name-based matches (as an alternative search method)
+const findNameMatches = (searchTerm) => {
+    if (!searchTerm || searchTerm.trim() === '') return [];
+    
+    const normalizedSearch = searchTerm.toLowerCase().trim();
+    return parkings.filter(parking => {
+        // Vérifier que parking est défini
+        if (!parking) return false;
         
-        const normalizedSearch = searchTerm.toLowerCase().trim();
-        return parkings.filter(parking => {
-            const nameMatches = parking.name.toLowerCase().includes(normalizedSearch);
-            const locationMatches = parking.location.toLowerCase().includes(normalizedSearch);
-            return nameMatches || locationMatches;
-        });
-    };
+        // Vérifier que name est défini avant d'appeler toLowerCase()
+        const nameMatches = parking.name && typeof parking.name === 'string' 
+            ? parking.name.toLowerCase().includes(normalizedSearch) 
+            : false;
+        
+        // Vérifier que location est défini avant d'appeler toLowerCase()
+        const locationMatches = parking.location && typeof parking.location === 'string'
+            ? parking.location.toLowerCase().includes(normalizedSearch)
+            : false;
+            
+        return nameMatches || locationMatches;
+    });
+};
     
     // Google Maps Autocomplete handlers
     const onLoadAutocomplete = (autoC) => {
