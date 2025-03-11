@@ -2,8 +2,9 @@
 import { useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import React, { useEffect } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, Pressable } from "react-native";
 import Surreal from "surrealdb";
+import LinearGradient from 'react-native-linear-gradient';
 
 // Individual GlueStack UI imports
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
@@ -13,12 +14,31 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
+import { Progress, ProgressFilledTrack } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 
 // Lucide icons
-import { Briefcase, Mail, MapPin } from "lucide-react-native";
+import { 
+	Briefcase, 
+	Code, 
+	Palette, 
+	UserCog, 
+	MapPin, 
+	Mail, 
+	Brain,
+	Heart,
+	Smile,
+	Users,
+	Clock,
+	Target,
+	Lightbulb,
+	Coffee,
+	Sparkles,
+	LucideIcon,
+	ChevronDown
+} from "lucide-react-native";
 
 // Jotai atoms
 const professionalsAtom = atomWithStorage("professionals", []);
@@ -34,7 +54,9 @@ const ProfessionalTypes = {
 	DESIGNER: "Designer",
 	MANAGER: "Manager",
 	CONSULTANT: "Consultant",
-};
+} as const;
+
+type ProfessionalType = typeof ProfessionalTypes[keyof typeof ProfessionalTypes];
 
 // SurrealDB fetch function
 const fetchProfessionalsFromDB = async () => {
@@ -65,9 +87,27 @@ const fetchProfessionalsFromDB = async () => {
 	}
 };
 
+interface Skill {
+	name: string;
+	icon: LucideIcon;
+	color: string;
+}
+
+interface SkillMap {
+	[key: string]: Skill[];
+}
+
 // Professional Card Component
-const ProfessionalCard = ({ professional }) => {
-	const getBadgeColor = (type) => {
+const ProfessionalCard = ({ 
+	professional, 
+	isExpanded, 
+	onToggle 
+}: { 
+	professional: any, 
+	isExpanded: boolean,
+	onToggle: (expanded: boolean) => void
+}) => {
+	const getBadgeColor = (type: ProfessionalType) => {
 		switch (type) {
 			case ProfessionalTypes.DEVELOPER:
 				return "success";
@@ -82,19 +122,71 @@ const ProfessionalCard = ({ professional }) => {
 		}
 	};
 
+	const getBadgeIcon = (type: ProfessionalType) => {
+		switch (type) {
+			case ProfessionalTypes.DEVELOPER:
+				return Code;
+			case ProfessionalTypes.DESIGNER:
+				return Palette;
+			case ProfessionalTypes.MANAGER:
+				return UserCog;
+			case ProfessionalTypes.CONSULTANT:
+				return Briefcase;
+			default:
+				return Briefcase;
+		}
+	};
+
+	const getSkillBadges = (): Skill[] => {
+		const skillsMap: SkillMap = {
+			DEVELOPER: [
+				{ name: "Problem Solving", icon: Brain, color: "#22C55E" },
+				{ name: "Anxiety", icon: Heart, color: "#EF4444" },
+				{ name: "Depression", icon: Smile, color: "#F59E0B" },
+				{ name: "Group Therapy", icon: Users, color: "#0EA5E9" },
+				{ name: "Crisis Management", icon: Target, color: "#EF4444" }
+			],
+			DESIGNER: [
+				{ name: "Emotional Design", icon: Heart, color: "#EF4444" },
+				{ name: "Mindfulness", icon: Brain, color: "#22C55E" },
+				{ name: "Stress Relief", icon: Coffee, color: "#F59E0B" },
+				{ name: "Creative Therapy", icon: Palette, color: "#0EA5E9" },
+				{ name: "Positive Thinking", icon: Sparkles, color: "#22C55E" }
+			],
+			MANAGER: [
+				{ name: "Leadership", icon: UserCog, color: "#F59E0B" },
+				{ name: "Team Building", icon: Users, color: "#0EA5E9" },
+				{ name: "Time Management", icon: Clock, color: "#22C55E" },
+				{ name: "Crisis Support", icon: Target, color: "#EF4444" },
+				{ name: "Innovation", icon: Lightbulb, color: "#F59E0B" }
+			],
+			CONSULTANT: [
+				{ name: "Strategy", icon: Target, color: "#EF4444" },
+				{ name: "Mentoring", icon: Users, color: "#0EA5E9" },
+				{ name: "Quick Response", icon: Clock, color: "#22C55E" },
+				{ name: "Solutions", icon: Lightbulb, color: "#F59E0B" },
+				{ name: "Empathy", icon: Heart, color: "#EF4444" }
+			]
+		};
+
+		return skillsMap[professional.type] || skillsMap.CONSULTANT;
+	};
+
 	return (
-		<Card className="p-5 rounded-lg m-3">
-			<HStack space="md">
-				<Avatar size="lg">
-					<AvatarImage
-						source={{
-							uri:
-								professional.avatar ||
-								"https://via.placeholder.com/150",
-						}}
-						alt={`${professional.name}'s avatar`}
-					/>
-				</Avatar>
+		<Card className="py-5 pr-5 rounded-lg my-3 relative">
+			<HStack space="xs">
+				<VStack space="sm" style={{ alignItems: 'center', width: 120 }}>
+					<Avatar size="2xl">
+						<AvatarImage
+							source={{
+								uri:
+									professional.avatar ||
+									"https://via.placeholder.com/150",
+							}}
+							alt={`${professional.name}'s avatar`}
+						/>
+					</Avatar>
+				</VStack>
 				<VStack flex={1}>
 					<Heading size="md">{professional.name}</Heading>
 					<HStack space="sm" className="mt-1">
@@ -103,32 +195,99 @@ const ProfessionalCard = ({ professional }) => {
 							variant="solid"
 							action={getBadgeColor(professional.type)}
 						>
-							<BadgeIcon as={Briefcase} className="mr-1" />
-							<BadgeText>{professional.type}</BadgeText>
+							<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+								<BadgeIcon as={getBadgeIcon(professional.type)} size="sm" />
+								<Box style={{ width: 4 }} />
+								<BadgeText>{professional.type}</BadgeText>
+							</Box>
 						</Badge>
 						<Badge size="sm" variant="outline" action="muted">
-							<BadgeIcon as={MapPin} className="mr-1" />
-							<BadgeText>{professional.location}</BadgeText>
+							<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+								<BadgeIcon as={MapPin} size="sm" />
+								<Box style={{ width: 4 }} />
+								<BadgeText>{professional.location}</BadgeText>
+							</Box>
 						</Badge>
 					</HStack>
-					<Text size="sm" className="mt-2" color="$text600">
-						{professional.bio}
-					</Text>
-					<HStack space="md" className="mt-3">
-						<Button size="sm" action="primary">
-							<ButtonText>Contact</ButtonText>
-							<Mail
-								size={16}
-								color="white"
-								style={{ marginLeft: 4 }}
-							/>
-						</Button>
-						<Button size="sm" variant="outline">
-							<ButtonText>View Profile</ButtonText>
-						</Button>
-					</HStack>
+					<Box className="px-3 bg-gray-50 rounded-lg mt-2">
+						<Text size="sm" italic>
+							{professional.bio}
+						</Text>
+					</Box>
+					<Box className="mt-3">
+						<HStack space="xs" className="mb-1">
+							<Text size="xs" bold>Compatibility:</Text>
+							<Text size="xs">{professional.compatibility || 85}%</Text>
+						</HStack>
+						<Progress size="sm" value={professional.compatibility || 85}>
+							<ProgressFilledTrack>
+								<LinearGradient
+									start={{x: 0, y: 0}}
+									end={{x: 1, y: 0}}
+									colors={['#22C55E', '#0EA5E9']}
+									style={StyleSheet.absoluteFill}
+								/>
+							</ProgressFilledTrack>
+						</Progress>
+					</Box>
+
+					{isExpanded && (
+						<Box className="mt-4 px-3 py-2 bg-gray-50 rounded-lg">
+							<VStack space="sm">
+								<HStack space="sm" className="mb-2">
+									<Text size="sm" bold>Experience:</Text>
+									<Text size="sm">{professional.experience || '5+ years'}</Text>
+								</HStack>
+								<HStack space="sm" className="mb-2">
+									<Text size="sm" bold>Specialties:</Text>
+									<Text size="sm">{professional.specialties || 'Full-stack Development'}</Text>
+								</HStack>
+								<HStack space="sm" className="mb-2">
+									<Text size="sm" bold>Languages:</Text>
+									<Text size="sm">{professional.languages || 'English, Spanish'}</Text>
+								</HStack>
+								<HStack space="sm" className="mb-2">
+									<Text size="sm" bold>Availability:</Text>
+									<Text size="sm">{professional.availability || 'Full-time'}</Text>
+								</HStack>
+							</VStack>
+						</Box>
+					)}
 				</VStack>
 			</HStack>
+			<Box style={{ 
+				position: 'absolute',
+				left: 0,
+				right: 0,
+				bottom: -12,
+				alignItems: 'center',
+				zIndex: 10
+			}}>
+				<Pressable 
+					onPress={() => onToggle(!isExpanded)}
+					style={{
+						backgroundColor: 'white',
+						borderRadius: 15,
+						padding: 2,
+						shadowColor: "#000",
+						shadowOffset: {
+							width: 0,
+							height: 2,
+						},
+						shadowOpacity: 0.15,
+						shadowRadius: 3,
+						elevation: 3,
+					}}
+				>
+					<ChevronDown
+						size={20}
+						color="#666"
+						style={{
+							transform: [{ rotate: isExpanded ? '180deg' : '0deg' }]
+						}}
+					/>
+				</Pressable>
+			</Box>
 		</Card>
 	);
 };
@@ -138,6 +297,7 @@ const ProfessionalProfile = () => {
 	const [professionals, setProfessionals] = useAtom(professionalsAtom);
 	const [loading, setLoading] = useAtom(loadingAtom);
 	const [error, setError] = useAtom(errorAtom);
+	const [expandedCards, setExpandedCards] = React.useState<Set<string>>(new Set());
 
 	useEffect(() => {
 		const loadProfessionals = async () => {
@@ -156,6 +316,9 @@ const ProfessionalProfile = () => {
 		if (!professionals.length) {
 			loadProfessionals();
 		}
+
+		setError(false);
+
 	}, [setProfessionals, setLoading, setError]);
 
 	// Mock data for development
@@ -194,23 +357,20 @@ const ProfessionalProfile = () => {
 		);
 	}
 
-	if (error) {
-		return (
-			<Box className="flex-1 justify-center items-center">
-				<Text color="$error600">{error}</Text>
-				<Button onPress={() => loadProfessionals()} className="mt-4">
-					<ButtonText>Retry</ButtonText>
-				</Button>
-			</Box>
-		);
-	}
+	// if (error) {
+	// 	return (
+	// 		<Box className="flex-1 justify-center items-center">
+	// 			<Text color="$error600">{error}</Text>
+	// 			<Button onPress={() => loadProfessionals()} className="mt-4">
+	// 				<ButtonText>Retry</ButtonText>
+	// 			</Button>
+	// 		</Box>
+	// 	);
+	// }
 
 	return (
 		<ScrollView style={styles.container}>
 			<Box className="p-4">
-				<Heading size="xl" className="mb-4">
-					Professional Directory
-				</Heading>
 				<VStack space="md">
 					{(professionals.length > 0
 						? professionals
@@ -219,6 +379,16 @@ const ProfessionalProfile = () => {
 						<ProfessionalCard
 							key={professional.id}
 							professional={professional}
+							isExpanded={expandedCards.has(professional.id)}
+							onToggle={(expanded) => {
+								const newSet = new Set(expandedCards);
+								if (expanded) {
+									newSet.add(professional.id);
+								} else {
+									newSet.delete(professional.id);
+								}
+								setExpandedCards(newSet);
+							}}
 						/>
 					))}
 				</VStack>
