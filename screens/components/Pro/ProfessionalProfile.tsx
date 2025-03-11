@@ -294,6 +294,46 @@ const ProfessionalCard = ({
 
 	return (
 		<Card className="py-5 pr-5 rounded-lg my-3 relative">
+			<Box
+				style={{
+					position: 'absolute',
+					left: 0,
+					bottom: 0,
+					width: 3,
+					top: 0,
+					overflow: 'hidden',
+				}}
+			>
+				<LinearGradient
+					start={{x: 0, y: 0}}
+					end={{x: 0, y: 1}}
+					colors={(() => {
+						const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+						return key ? [...professionalStyles[key as keyof typeof professionalStyles]?.gradient] : ['#22C55E', '#0EA5E9'];
+					})()}
+					style={StyleSheet.absoluteFill}
+				/>
+			</Box>
+			<Box
+				style={{
+					position: 'absolute',
+					left: 0,
+					bottom: 0,
+					right: 0,
+					height: 2,
+					overflow: 'hidden',
+				}}
+			>
+				{/* <LinearGradient
+					start={{x: 0, y: 0}}
+					end={{x: 1, y: 0}}
+					colors={(() => {
+						const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+						return key ? [...professionalStyles[key as keyof typeof professionalStyles]?.gradient] : ['#22C55E', '#0EA5E9'];
+					})()}
+					style={StyleSheet.absoluteFill}
+				/> */}
+			</Box>
 			{/* Top Section */}
 			<VStack space="md">
 				<HStack space="md" alignItems="flex-start">
@@ -307,7 +347,7 @@ const ProfessionalCard = ({
 					</Avatar>
 					<VStack space="xs" style={{ flex: 1 }}>
 						<Heading size="md">{professional.name}</Heading>
-						<HStack space="sm">
+						<VStack space="sm">
 							<Badge
 								size="sm"
 								variant="solid"
@@ -325,14 +365,37 @@ const ProfessionalCard = ({
 									<BadgeText style={{ color: 'white' }}>{professional.type}</BadgeText>
 								</Box>
 							</Badge>
-							<Badge size="sm" variant="outline" style={{ borderColor: '#666' }}>
-								<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
-									<BadgeIcon as={MapPin} size="sm" color="#666" />
-									<Box style={{ width: 4 }} />
-									<BadgeText style={{ color: '#666' }}>{professional.location}</BadgeText>
-								</Box>
-							</Badge>
-						</HStack>
+							<HStack space="xs" style={{ width: '100%' }}>
+								<Badge 
+									size="sm" 
+									variant="outline" 
+									style={{ 
+										borderColor: '#666',
+										flex: 4
+									}}
+								>
+									<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+										<BadgeIcon as={MapPin} size="sm" color="#666" />
+										<Box style={{ width: 4 }} />
+										<BadgeText style={{ color: '#666' }}>{professional.location}</BadgeText>
+									</Box>
+								</Badge>
+								<Badge 
+									size="sm" 
+									variant="outline" 
+									style={{ 
+										borderColor: '#666',
+										flex: 2
+									}}
+								>
+									<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+										<BadgeIcon as={Target} size="sm" color="#666" />
+										<Box style={{ width: 4 }} />
+										<BadgeText style={{ color: '#666' }}>{professional.distance} km</BadgeText>
+									</Box>
+								</Badge>
+							</HStack>
+						</VStack>
 						<Box className="bg-gray-50 rounded-lg p-2 mt-1">
 							<Text size="sm" italic>
 								{professional.bio}
@@ -348,7 +411,11 @@ const ProfessionalCard = ({
 									<LinearGradient
 										start={{x: 0, y: 0}}
 										end={{x: 1, y: 0}}
-										colors={professionalStyles[professional.type]?.gradient || ['#22C55E', '#0EA5E9']}
+										colors={(() => {
+											const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+											const gradient = key ? professionalStyles[key as keyof typeof professionalStyles]?.gradient : ['#22C55E', '#0EA5E9'];
+											return [...gradient];
+										})()}
 										style={StyleSheet.absoluteFill}
 									/>
 								</ProgressFilledTrack>
@@ -456,6 +523,7 @@ const ProfessionalProfile = () => {
 			name: "Marie Dubois",
 			type: ProfessionalTypes.DIETETICIEN,
 			location: "Paris, FR",
+			distance: "2.5",
 			bio: "Diététicienne spécialisée en rééquilibrage alimentaire et nutrition sportive",
 			avatar: "https://randomuser.me/api/portraits/women/1.jpg",
 			compatibility: 88,
@@ -469,6 +537,7 @@ const ProfessionalProfile = () => {
 			name: "Sophie Martin",
 			type: ProfessionalTypes.SOPHROLOGUE,
 			location: "Lyon, FR",
+			distance: "5.8",
 			bio: "Sophrologue certifiée, spécialisée en gestion du stress et sommeil",
 			avatar: "https://randomuser.me/api/portraits/women/2.jpg",
 			compatibility: 92,
@@ -482,6 +551,7 @@ const ProfessionalProfile = () => {
 			name: "Lucas Bernard",
 			type: ProfessionalTypes.AROMATHERAPEUTE,
 			location: "Nice, FR",
+			distance: "8.3",
 			bio: "Aromathérapeute passionné par les huiles essentielles et le bien-être naturel",
 			avatar: "https://randomuser.me/api/portraits/men/3.jpg",
 			compatibility: 75,
@@ -495,6 +565,7 @@ const ProfessionalProfile = () => {
 			name: "Emma Petit",
 			type: ProfessionalTypes.COACH_VIE,
 			location: "Bordeaux, FR",
+			distance: "12.1",
 			bio: "Coach de vie certifiée, spécialisée en développement personnel et professionnel",
 			avatar: "https://randomuser.me/api/portraits/women/4.jpg",
 			compatibility: 95,
@@ -508,6 +579,7 @@ const ProfessionalProfile = () => {
 			name: "Thomas Moreau",
 			type: ProfessionalTypes.COACH_SEDUCTION,
 			location: "Paris, FR",
+			distance: "3.2",
 			bio: "Expert en développement des relations et confiance en soi",
 			avatar: "https://randomuser.me/api/portraits/men/5.jpg",
 			compatibility: 70,
@@ -521,6 +593,7 @@ const ProfessionalProfile = () => {
 			name: "Julie Leroy",
 			type: ProfessionalTypes.COACH_SPORTIF,
 			location: "Marseille, FR",
+			distance: "15.7",
 			bio: "Coach sportive spécialisée en remise en forme et nutrition sportive",
 			avatar: "https://randomuser.me/api/portraits/women/6.jpg",
 			compatibility: 85,
@@ -534,6 +607,7 @@ const ProfessionalProfile = () => {
 			name: "Antoine Roux",
 			type: ProfessionalTypes.ASTROLOGUE,
 			location: "Toulouse, FR",
+			distance: "9.4",
 			bio: "Astrologue professionnel, expert en thèmes natals et synastries",
 			avatar: "https://randomuser.me/api/portraits/men/7.jpg",
 			compatibility: 78,
@@ -547,6 +621,7 @@ const ProfessionalProfile = () => {
 			name: "Claire Fontaine",
 			type: ProfessionalTypes.GRAPHOLOGUE,
 			location: "Nantes, FR",
+			distance: "7.6",
 			bio: "Graphologue experte en analyse d'écriture et développement personnel",
 			avatar: "https://randomuser.me/api/portraits/women/8.jpg",
 			compatibility: 72,
@@ -560,6 +635,7 @@ const ProfessionalProfile = () => {
 			name: "Pierre Dupont",
 			type: ProfessionalTypes.MAGNETISEUR,
 			location: "Strasbourg, FR",
+			distance: "11.2",
 			bio: "Magnétiseur expérimenté, pratique les soins énergétiques depuis 15 ans",
 			avatar: "https://randomuser.me/api/portraits/men/9.jpg",
 			compatibility: 82,
@@ -573,6 +649,7 @@ const ProfessionalProfile = () => {
 			name: "Sarah Lambert",
 			type: ProfessionalTypes.NATUROPATHE,
 			location: "Lille, FR",
+			distance: "6.9",
 			bio: "Naturopathe holistique, spécialisée en nutrition et plantes médicinales",
 			avatar: "https://randomuser.me/api/portraits/women/10.jpg",
 			compatibility: 89,
@@ -586,6 +663,7 @@ const ProfessionalProfile = () => {
 			name: "Marc Girard",
 			type: ProfessionalTypes.MUSICOTHERAPEUTE,
 			location: "Montpellier, FR",
+			distance: "13.5",
 			bio: "Musicothérapeute certifié, utilisant la musique comme outil thérapeutique",
 			avatar: "https://randomuser.me/api/portraits/men/11.jpg",
 			compatibility: 77,
@@ -599,6 +677,7 @@ const ProfessionalProfile = () => {
 			name: "Isabelle Blanc",
 			type: ProfessionalTypes.NUMEROLOGUE,
 			location: "Rennes, FR",
+			distance: "4.8",
 			bio: "Numérologue passionnée par les nombres et leur influence sur notre vie",
 			avatar: "https://randomuser.me/api/portraits/women/12.jpg",
 			compatibility: 68,
@@ -612,6 +691,7 @@ const ProfessionalProfile = () => {
 			name: "François Rousseau",
 			type: ProfessionalTypes.PSYCHANALYSTE,
 			location: "Grenoble, FR",
+			distance: "10.3",
 			bio: "Psychanalyste formé à l'approche freudienne et jungienne",
 			avatar: "https://randomuser.me/api/portraits/men/13.jpg",
 			compatibility: 91,
@@ -625,6 +705,7 @@ const ProfessionalProfile = () => {
 			name: "Aurélie Durand",
 			type: ProfessionalTypes.PSYCHOLOGUE,
 			location: "Tours, FR",
+			distance: "8.7",
 			bio: "Psychologue clinicienne spécialisée en thérapie cognitive et comportementale",
 			avatar: "https://randomuser.me/api/portraits/women/14.jpg",
 			compatibility: 93,
@@ -638,6 +719,7 @@ const ProfessionalProfile = () => {
 			name: "Laurent Martin",
 			type: ProfessionalTypes.PSYCHOPRATICIEN,
 			location: "Dijon, FR",
+			distance: "14.2",
 			bio: "Psychopraticien intégratif, combinant différentes approches thérapeutiques",
 			avatar: "https://randomuser.me/api/portraits/men/15.jpg",
 			compatibility: 87,
@@ -651,6 +733,7 @@ const ProfessionalProfile = () => {
 			name: "Céline Robert",
 			type: ProfessionalTypes.BIO_ENERGETICIEN,
 			location: "Angers, FR",
+			distance: "7.1",
 			bio: "Bio-énergéticienne expérimentée en rééquilibrage énergétique",
 			avatar: "https://randomuser.me/api/portraits/women/16.jpg",
 			compatibility: 79,
@@ -664,6 +747,7 @@ const ProfessionalProfile = () => {
 			name: "Nicolas Mercier",
 			type: ProfessionalTypes.REIKI,
 			location: "Le Mans, FR",
+			distance: "5.5",
 			bio: "Maître Reiki certifié, pratiquant les soins énergétiques traditionnels",
 			avatar: "https://randomuser.me/api/portraits/men/17.jpg",
 			compatibility: 83,
@@ -677,6 +761,7 @@ const ProfessionalProfile = () => {
 			name: "Émilie Fournier",
 			type: ProfessionalTypes.SHIATSU,
 			location: "Clermont-Ferrand, FR",
+			distance: "16.8",
 			bio: "Praticienne en Shiatsu certifiée, experte en médecine traditionnelle japonaise",
 			avatar: "https://randomuser.me/api/portraits/women/18.jpg",
 			compatibility: 86,
@@ -690,6 +775,7 @@ const ProfessionalProfile = () => {
 			name: "David Simon",
 			type: ProfessionalTypes.YOGA_THERAPEUTE,
 			location: "Aix-en-Provence, FR",
+			distance: "17.3",
 			bio: "Professeur de yoga thérapeutique, spécialisé dans la gestion du stress",
 			avatar: "https://randomuser.me/api/portraits/men/19.jpg",
 			compatibility: 90,
@@ -703,6 +789,7 @@ const ProfessionalProfile = () => {
 			name: "Mathilde Leroux",
 			type: ProfessionalTypes.HYPNOTISEUR,
 			location: "Reims, FR",
+			distance: "18.9",
 			bio: "Hypnothérapeute certifiée, spécialisée en gestion des phobies et addictions",
 			avatar: "https://randomuser.me/api/portraits/women/20.jpg",
 			compatibility: 84,
@@ -716,6 +803,7 @@ const ProfessionalProfile = () => {
 			name: "Philippe Gauthier",
 			type: ProfessionalTypes.PHYTOTHERAPEUTE,
 			location: "Orléans, FR",
+			distance: "9.8",
 			bio: "Phytothérapeute expert en plantes médicinales et remèdes naturels",
 			avatar: "https://randomuser.me/api/portraits/men/21.jpg",
 			compatibility: 81,
