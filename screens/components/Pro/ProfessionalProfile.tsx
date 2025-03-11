@@ -37,7 +37,21 @@ import {
 	Coffee,
 	Sparkles,
 	LucideIcon,
-	ChevronDown
+	ChevronDown,
+	Apple,
+	Flower,
+	Star,
+	PenTool,
+	Magnet,
+	Leaf,
+	Music,
+	Hash,
+	BrainCircuit,
+	Hand,
+	Activity,
+	Eye,
+	Zap,
+	Dumbbell
 } from "lucide-react-native";
 
 // Jotai atoms
@@ -50,13 +64,139 @@ const db = new Surreal("http://localhost:8000/rpc"); // Adjust URL as needed
 
 // Professional types enum
 const ProfessionalTypes = {
-	DEVELOPER: "Developer",
-	DESIGNER: "Designer",
-	MANAGER: "Manager",
-	CONSULTANT: "Consultant",
+	DIETETICIEN: "Diététicien",
+	SOPHROLOGUE: "Sophrologue",
+	AROMATHERAPEUTE: "Aromathérapeute",
+	COACH_VIE: "Coach de vie",
+	COACH_SEDUCTION: "Coach en séduction",
+	COACH_SPORTIF: "Coach sportif",
+	ASTROLOGUE: "Astrologue",
+	GRAPHOLOGUE: "Graphologue",
+	MAGNETISEUR: "Magnétiseur",
+	NATUROPATHE: "Naturopathe",
+	MUSICOTHERAPEUTE: "Musicothérapeute",
+	NUMEROLOGUE: "Numérologue",
+	PSYCHANALYSTE: "Psychanalyste",
+	PSYCHOLOGUE: "Psychologue",
+	PSYCHOPRATICIEN: "Psycho praticien",
+	BIO_ENERGETICIEN: "Bio énergéticien",
+	REIKI: "Reiki",
+	SHIATSU: "Shiatsu",
+	YOGA_THERAPEUTE: "Yoga thérapeute",
+	HYPNOTISEUR: "Hypnotiseur",
+	PHYTOTHERAPEUTE: "Phytothérapeute",
 } as const;
 
 type ProfessionalType = typeof ProfessionalTypes[keyof typeof ProfessionalTypes];
+
+// Color and icon mappings for each professional type
+const professionalStyles = {
+	DIETETICIEN: {
+		icon: Apple,
+		color: "#4CAF50", // Green
+		gradient: ["#4CAF50", "#81C784"]
+	},
+	SOPHROLOGUE: {
+		icon: Brain,
+		color: "#2196F3", // Blue
+		gradient: ["#2196F3", "#64B5F6"]
+	},
+	AROMATHERAPEUTE: {
+		icon: Flower,
+		color: "#9C27B0", // Purple
+		gradient: ["#9C27B0", "#BA68C8"]
+	},
+	COACH_VIE: {
+		icon: Heart,
+		color: "#E91E63", // Pink
+		gradient: ["#E91E63", "#F48FB1"]
+	},
+	COACH_SEDUCTION: {
+		icon: Sparkles,
+		color: "#FF9800", // Orange
+		gradient: ["#FF9800", "#FFB74D"]
+	},
+	COACH_SPORTIF: {
+		icon: Dumbbell,
+		color: "#F44336", // Red
+		gradient: ["#F44336", "#EF5350"]
+	},
+	ASTROLOGUE: {
+		icon: Star,
+		color: "#673AB7", // Deep Purple
+		gradient: ["#673AB7", "#9575CD"]
+	},
+	GRAPHOLOGUE: {
+		icon: PenTool,
+		color: "#795548", // Brown
+		gradient: ["#795548", "#A1887F"]
+	},
+	MAGNETISEUR: {
+		icon: Magnet,
+		color: "#3F51B5", // Indigo
+		gradient: ["#3F51B5", "#7986CB"]
+	},
+	NATUROPATHE: {
+		icon: Leaf,
+		color: "#8BC34A", // Light Green
+		gradient: ["#8BC34A", "#AED581"]
+	},
+	MUSICOTHERAPEUTE: {
+		icon: Music,
+		color: "#FF5722", // Deep Orange
+		gradient: ["#FF5722", "#FF8A65"]
+	},
+	NUMEROLOGUE: {
+		icon: Hash,
+		color: "#607D8B", // Blue Grey
+		gradient: ["#607D8B", "#90A4AE"]
+	},
+	PSYCHANALYSTE: {
+		icon: BrainCircuit,
+		color: "#9C27B0", // Purple
+		gradient: ["#9C27B0", "#BA68C8"]
+	},
+	PSYCHOLOGUE: {
+		icon: Brain,
+		color: "#2196F3", // Blue
+		gradient: ["#2196F3", "#64B5F6"]
+	},
+	PSYCHOPRATICIEN: {
+		icon: Brain,
+		color: "#2196F3", // Blue
+		gradient: ["#2196F3", "#64B5F6"]
+	},
+	BIO_ENERGETICIEN: {
+		icon: Zap,
+		color: "#FFC107", // Amber
+		gradient: ["#FFC107", "#FFD54F"]
+	},
+	REIKI: {
+		icon: Sparkles,
+		color: "#00BCD4", // Cyan
+		gradient: ["#00BCD4", "#4DD0E1"]
+	},
+	SHIATSU: {
+		icon: Hand,
+		color: "#795548", // Brown
+		gradient: ["#795548", "#A1887F"]
+	},
+	YOGA_THERAPEUTE: {
+		icon: Activity,
+		color: "#4CAF50", // Green
+		gradient: ["#4CAF50", "#81C784"]
+	},
+	HYPNOTISEUR: {
+		icon: Eye,
+		color: "#3F51B5", // Indigo
+		gradient: ["#3F51B5", "#7986CB"]
+	},
+	PHYTOTHERAPEUTE: {
+		icon: Leaf,
+		color: "#8BC34A", // Light Green
+		gradient: ["#8BC34A", "#AED581"]
+	}
+} as const;
 
 // SurrealDB fetch function
 const fetchProfessionalsFromDB = async () => {
@@ -108,33 +248,13 @@ const ProfessionalCard = ({
 	onToggle: (expanded: boolean) => void
 }) => {
 	const getBadgeColor = (type: ProfessionalType) => {
-		switch (type) {
-			case ProfessionalTypes.DEVELOPER:
-				return "success";
-			case ProfessionalTypes.DESIGNER:
-				return "info";
-			case ProfessionalTypes.MANAGER:
-				return "warning";
-			case ProfessionalTypes.CONSULTANT:
-				return "error";
-			default:
-				return "muted";
-		}
+		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === type)?.[0];
+		return key ? professionalStyles[key as keyof typeof professionalStyles]?.color : "#666";
 	};
 
 	const getBadgeIcon = (type: ProfessionalType) => {
-		switch (type) {
-			case ProfessionalTypes.DEVELOPER:
-				return Code;
-			case ProfessionalTypes.DESIGNER:
-				return Palette;
-			case ProfessionalTypes.MANAGER:
-				return UserCog;
-			case ProfessionalTypes.CONSULTANT:
-				return Briefcase;
-			default:
-				return Briefcase;
-		}
+		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === type)?.[0];
+		return key ? professionalStyles[key as keyof typeof professionalStyles]?.icon : Briefcase;
 	};
 
 	const getSkillBadges = (): Skill[] => {
@@ -174,87 +294,95 @@ const ProfessionalCard = ({
 
 	return (
 		<Card className="py-5 pr-5 rounded-lg my-3 relative">
-			<HStack space="xs">
-				<VStack space="sm" style={{ alignItems: 'center', width: 120 }}>
+			{/* Top Section */}
+			<VStack space="md">
+				<HStack space="md" alignItems="flex-start">
 					<Avatar size="2xl">
 						<AvatarImage
 							source={{
-								uri:
-									professional.avatar ||
-									"https://via.placeholder.com/150",
+								uri: professional.avatar || "https://via.placeholder.com/150",
 							}}
 							alt={`${professional.name}'s avatar`}
 						/>
 					</Avatar>
-				</VStack>
-				<VStack flex={1}>
-					<Heading size="md">{professional.name}</Heading>
-					<HStack space="sm" className="mt-1">
-						<Badge
-							size="sm"
-							variant="solid"
-							action={getBadgeColor(professional.type)}
-						>
-							<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
-								<BadgeIcon as={getBadgeIcon(professional.type)} size="sm" />
-								<Box style={{ width: 4 }} />
-								<BadgeText>{professional.type}</BadgeText>
-							</Box>
-						</Badge>
-						<Badge size="sm" variant="outline" action="muted">
-							<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
-								<BadgeIcon as={MapPin} size="sm" />
-								<Box style={{ width: 4 }} />
-								<BadgeText>{professional.location}</BadgeText>
-							</Box>
-						</Badge>
-					</HStack>
-					<Box className="px-3 bg-gray-50 rounded-lg mt-2">
-						<Text size="sm" italic>
-							{professional.bio}
-						</Text>
-					</Box>
-					<Box className="mt-3">
-						<HStack space="xs" className="mb-1">
-							<Text size="xs" bold>Compatibility:</Text>
-							<Text size="xs">{professional.compatibility || 85}%</Text>
+					<VStack space="xs" style={{ flex: 1 }}>
+						<Heading size="md">{professional.name}</Heading>
+						<HStack space="sm">
+							<Badge
+								size="sm"
+								variant="solid"
+								style={{
+									backgroundColor: getBadgeColor(professional.type)
+								}}
+							>
+								<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+									<BadgeIcon 
+										as={getBadgeIcon(professional.type)} 
+										size="sm"
+										color="white"
+									/>
+									<Box style={{ width: 4 }} />
+									<BadgeText style={{ color: 'white' }}>{professional.type}</BadgeText>
+								</Box>
+							</Badge>
+							<Badge size="sm" variant="outline" style={{ borderColor: '#666' }}>
+								<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+									<BadgeIcon as={MapPin} size="sm" color="#666" />
+									<Box style={{ width: 4 }} />
+									<BadgeText style={{ color: '#666' }}>{professional.location}</BadgeText>
+								</Box>
+							</Badge>
 						</HStack>
-						<Progress size="sm" value={professional.compatibility || 85}>
-							<ProgressFilledTrack>
-								<LinearGradient
-									start={{x: 0, y: 0}}
-									end={{x: 1, y: 0}}
-									colors={['#22C55E', '#0EA5E9']}
-									style={StyleSheet.absoluteFill}
-								/>
-							</ProgressFilledTrack>
-						</Progress>
-					</Box>
-
-					{isExpanded && (
-						<Box className="mt-4 px-3 py-2 bg-gray-50 rounded-lg">
-							<VStack space="sm">
-								<HStack space="sm" className="mb-2">
-									<Text size="sm" bold>Experience:</Text>
-									<Text size="sm">{professional.experience || '5+ years'}</Text>
-								</HStack>
-								<HStack space="sm" className="mb-2">
-									<Text size="sm" bold>Specialties:</Text>
-									<Text size="sm">{professional.specialties || 'Full-stack Development'}</Text>
-								</HStack>
-								<HStack space="sm" className="mb-2">
-									<Text size="sm" bold>Languages:</Text>
-									<Text size="sm">{professional.languages || 'English, Spanish'}</Text>
-								</HStack>
-								<HStack space="sm" className="mb-2">
-									<Text size="sm" bold>Availability:</Text>
-									<Text size="sm">{professional.availability || 'Full-time'}</Text>
-								</HStack>
-							</VStack>
+						<Box className="bg-gray-50 rounded-lg p-2 mt-1">
+							<Text size="sm" italic>
+								{professional.bio}
+							</Text>
 						</Box>
-					)}
-				</VStack>
-			</HStack>
+						<Box className="mt-2">
+							<HStack space="xs" className="mb-1">
+								<Text size="xs" bold>Compatibility:</Text>
+								<Text size="xs">{professional.compatibility || 85}%</Text>
+							</HStack>
+							<Progress size="sm" value={professional.compatibility || 85}>
+								<ProgressFilledTrack>
+									<LinearGradient
+										start={{x: 0, y: 0}}
+										end={{x: 1, y: 0}}
+										colors={professionalStyles[professional.type]?.gradient || ['#22C55E', '#0EA5E9']}
+										style={StyleSheet.absoluteFill}
+									/>
+								</ProgressFilledTrack>
+							</Progress>
+						</Box>
+					</VStack>
+				</HStack>
+
+				{/* Expandable Section */}
+				{isExpanded && (
+					<Box className="bg-gray-50 rounded-lg p-4 mt-2">
+						<VStack space="md">
+							<HStack space="md">
+								<Text size="sm" bold style={{ width: 100 }}>Experience:</Text>
+								<Text size="sm">{professional.experience}</Text>
+							</HStack>
+							<HStack space="md" alignItems="flex-start">
+								<Text size="sm" bold style={{ width: 100 }}>Specialties:</Text>
+								<Text size="sm" style={{ flex: 1 }}>{professional.specialties}</Text>
+							</HStack>
+							<HStack space="md">
+								<Text size="sm" bold style={{ width: 100 }}>Languages:</Text>
+								<Text size="sm">{professional.languages}</Text>
+							</HStack>
+							<HStack space="md">
+								<Text size="sm" bold style={{ width: 100 }}>Availability:</Text>
+								<Text size="sm">{professional.availability}</Text>
+							</HStack>
+						</VStack>
+					</Box>
+				)}
+			</VStack>
+
+			{/* Expand/Collapse Button */}
 			<Box style={{ 
 				position: 'absolute',
 				left: 0,
@@ -325,28 +453,277 @@ const ProfessionalProfile = () => {
 	const mockProfessionals = [
 		{
 			id: "1",
-			name: "John Doe",
-			type: ProfessionalTypes.DEVELOPER,
-			location: "San Francisco, CA",
-			bio: "Senior Full-Stack Developer with 8+ years of experience",
-			avatar: "https://randomuser.me/api/portraits/men/1.jpg",
+			name: "Marie Dubois",
+			type: ProfessionalTypes.DIETETICIEN,
+			location: "Paris, FR",
+			bio: "Diététicienne spécialisée en rééquilibrage alimentaire et nutrition sportive",
+			avatar: "https://randomuser.me/api/portraits/women/1.jpg",
+			compatibility: 88,
+			experience: "8 ans",
+			specialties: "Nutrition sportive, Rééquilibrage alimentaire, Allergies alimentaires",
+			languages: "Français, Anglais",
+			availability: "Lundi-Vendredi, 9h-19h"
 		},
 		{
 			id: "2",
-			name: "Jane Smith",
-			type: ProfessionalTypes.DESIGNER,
-			location: "New York, NY",
-			bio: "Creative UI/UX Designer specializing in mobile apps",
+			name: "Sophie Martin",
+			type: ProfessionalTypes.SOPHROLOGUE,
+			location: "Lyon, FR",
+			bio: "Sophrologue certifiée, spécialisée en gestion du stress et sommeil",
 			avatar: "https://randomuser.me/api/portraits/women/2.jpg",
+			compatibility: 92,
+			experience: "12 ans",
+			specialties: "Gestion du stress, Troubles du sommeil, Préparation mentale",
+			languages: "Français, Espagnol",
+			availability: "Lundi-Samedi, 8h-20h"
 		},
 		{
 			id: "3",
-			name: "Mike Johnson",
-			type: ProfessionalTypes.MANAGER,
-			location: "Chicago, IL",
-			bio: "Project Manager with expertise in Agile methodologies",
+			name: "Lucas Bernard",
+			type: ProfessionalTypes.AROMATHERAPEUTE,
+			location: "Nice, FR",
+			bio: "Aromathérapeute passionné par les huiles essentielles et le bien-être naturel",
 			avatar: "https://randomuser.me/api/portraits/men/3.jpg",
+			compatibility: 75,
+			experience: "6 ans",
+			specialties: "Huiles essentielles, Phytothérapie, Massages aromatiques",
+			languages: "Français, Italien",
+			availability: "Mardi-Samedi, 10h-18h"
 		},
+		{
+			id: "4",
+			name: "Emma Petit",
+			type: ProfessionalTypes.COACH_VIE,
+			location: "Bordeaux, FR",
+			bio: "Coach de vie certifiée, spécialisée en développement personnel et professionnel",
+			avatar: "https://randomuser.me/api/portraits/women/4.jpg",
+			compatibility: 95,
+			experience: "10 ans",
+			specialties: "Développement personnel, Coaching professionnel, Gestion des transitions",
+			languages: "Français, Anglais, Espagnol",
+			availability: "Lundi-Vendredi, 9h-18h"
+		},
+		{
+			id: "5",
+			name: "Thomas Moreau",
+			type: ProfessionalTypes.COACH_SEDUCTION,
+			location: "Paris, FR",
+			bio: "Expert en développement des relations et confiance en soi",
+			avatar: "https://randomuser.me/api/portraits/men/5.jpg",
+			compatibility: 70,
+			experience: "7 ans",
+			specialties: "Confiance en soi, Communication, Relations interpersonnelles",
+			languages: "Français, Anglais",
+			availability: "Lundi-Samedi, 10h-22h"
+		},
+		{
+			id: "6",
+			name: "Julie Leroy",
+			type: ProfessionalTypes.COACH_SPORTIF,
+			location: "Marseille, FR",
+			bio: "Coach sportive spécialisée en remise en forme et nutrition sportive",
+			avatar: "https://randomuser.me/api/portraits/women/6.jpg",
+			compatibility: 85,
+			experience: "9 ans",
+			specialties: "Remise en forme, Musculation, Course à pied",
+			languages: "Français, Anglais",
+			availability: "Lundi-Samedi, 7h-20h"
+		},
+		{
+			id: "7",
+			name: "Antoine Roux",
+			type: ProfessionalTypes.ASTROLOGUE,
+			location: "Toulouse, FR",
+			bio: "Astrologue professionnel, expert en thèmes natals et synastries",
+			avatar: "https://randomuser.me/api/portraits/men/7.jpg",
+			compatibility: 78,
+			experience: "15 ans",
+			specialties: "Thème natal, Synastrie, Transits planétaires",
+			languages: "Français, Anglais",
+			availability: "Mardi-Dimanche, 10h-22h"
+		},
+		{
+			id: "8",
+			name: "Claire Fontaine",
+			type: ProfessionalTypes.GRAPHOLOGUE,
+			location: "Nantes, FR",
+			bio: "Graphologue experte en analyse d'écriture et développement personnel",
+			avatar: "https://randomuser.me/api/portraits/women/8.jpg",
+			compatibility: 72,
+			experience: "11 ans",
+			specialties: "Analyse d'écriture, Orientation professionnelle, Développement personnel",
+			languages: "Français, Allemand",
+			availability: "Lundi-Vendredi, 9h-17h"
+		},
+		{
+			id: "9",
+			name: "Pierre Dupont",
+			type: ProfessionalTypes.MAGNETISEUR,
+			location: "Strasbourg, FR",
+			bio: "Magnétiseur expérimenté, pratique les soins énergétiques depuis 15 ans",
+			avatar: "https://randomuser.me/api/portraits/men/9.jpg",
+			compatibility: 82,
+			experience: "15 ans",
+			specialties: "Soins énergétiques, Magnétisme curatif, Rééquilibrage",
+			languages: "Français, Allemand",
+			availability: "Lundi-Samedi, 9h-19h"
+		},
+		{
+			id: "10",
+			name: "Sarah Lambert",
+			type: ProfessionalTypes.NATUROPATHE,
+			location: "Lille, FR",
+			bio: "Naturopathe holistique, spécialisée en nutrition et plantes médicinales",
+			avatar: "https://randomuser.me/api/portraits/women/10.jpg",
+			compatibility: 89,
+			experience: "13 ans",
+			specialties: "Nutrition naturelle, Phytothérapie, Iridologie",
+			languages: "Français, Anglais",
+			availability: "Lundi-Vendredi, 9h-18h"
+		},
+		{
+			id: "11",
+			name: "Marc Girard",
+			type: ProfessionalTypes.MUSICOTHERAPEUTE,
+			location: "Montpellier, FR",
+			bio: "Musicothérapeute certifié, utilisant la musique comme outil thérapeutique",
+			avatar: "https://randomuser.me/api/portraits/men/11.jpg",
+			compatibility: 77,
+			experience: "8 ans",
+			specialties: "Thérapie par la musique, Relaxation sonore, Expression musicale",
+			languages: "Français, Espagnol",
+			availability: "Lundi-Samedi, 10h-19h"
+		},
+		{
+			id: "12",
+			name: "Isabelle Blanc",
+			type: ProfessionalTypes.NUMEROLOGUE,
+			location: "Rennes, FR",
+			bio: "Numérologue passionnée par les nombres et leur influence sur notre vie",
+			avatar: "https://randomuser.me/api/portraits/women/12.jpg",
+			compatibility: 68,
+			experience: "6 ans",
+			specialties: "Numérologie karmique, Analyse des cycles, Prédictions",
+			languages: "Français, Anglais",
+			availability: "Mardi-Samedi, 11h-20h"
+		},
+		{
+			id: "13",
+			name: "François Rousseau",
+			type: ProfessionalTypes.PSYCHANALYSTE,
+			location: "Grenoble, FR",
+			bio: "Psychanalyste formé à l'approche freudienne et jungienne",
+			avatar: "https://randomuser.me/api/portraits/men/13.jpg",
+			compatibility: 91,
+			experience: "20 ans",
+			specialties: "Psychanalyse freudienne, Psychanalyse jungienne, Thérapie analytique",
+			languages: "Français, Anglais, Allemand",
+			availability: "Lundi-Vendredi, 9h-19h"
+		},
+		{
+			id: "14",
+			name: "Aurélie Durand",
+			type: ProfessionalTypes.PSYCHOLOGUE,
+			location: "Tours, FR",
+			bio: "Psychologue clinicienne spécialisée en thérapie cognitive et comportementale",
+			avatar: "https://randomuser.me/api/portraits/women/14.jpg",
+			compatibility: 93,
+			experience: "14 ans",
+			specialties: "TCC, Thérapie des traumatismes, Thérapie de couple",
+			languages: "Français, Anglais",
+			availability: "Lundi-Vendredi, 9h-18h"
+		},
+		{
+			id: "15",
+			name: "Laurent Martin",
+			type: ProfessionalTypes.PSYCHOPRATICIEN,
+			location: "Dijon, FR",
+			bio: "Psychopraticien intégratif, combinant différentes approches thérapeutiques",
+			avatar: "https://randomuser.me/api/portraits/men/15.jpg",
+			compatibility: 87,
+			experience: "12 ans",
+			specialties: "Thérapie intégrative, Gestalt-thérapie, Psychothérapie humaniste",
+			languages: "Français, Anglais",
+			availability: "Lundi-Samedi, 9h-19h"
+		},
+		{
+			id: "16",
+			name: "Céline Robert",
+			type: ProfessionalTypes.BIO_ENERGETICIEN,
+			location: "Angers, FR",
+			bio: "Bio-énergéticienne expérimentée en rééquilibrage énergétique",
+			avatar: "https://randomuser.me/api/portraits/women/16.jpg",
+			compatibility: 79,
+			experience: "10 ans",
+			specialties: "Bioénergie, Rééquilibrage énergétique, Thérapie vibratoire",
+			languages: "Français, Espagnol",
+			availability: "Mardi-Samedi, 10h-19h"
+		},
+		{
+			id: "17",
+			name: "Nicolas Mercier",
+			type: ProfessionalTypes.REIKI,
+			location: "Le Mans, FR",
+			bio: "Maître Reiki certifié, pratiquant les soins énergétiques traditionnels",
+			avatar: "https://randomuser.me/api/portraits/men/17.jpg",
+			compatibility: 83,
+			experience: "16 ans",
+			specialties: "Reiki Usui, Reiki Karuna, Soins énergétiques",
+			languages: "Français, Anglais",
+			availability: "Lundi-Samedi, 9h-20h"
+		},
+		{
+			id: "18",
+			name: "Émilie Fournier",
+			type: ProfessionalTypes.SHIATSU,
+			location: "Clermont-Ferrand, FR",
+			bio: "Praticienne en Shiatsu certifiée, experte en médecine traditionnelle japonaise",
+			avatar: "https://randomuser.me/api/portraits/women/18.jpg",
+			compatibility: 86,
+			experience: "13 ans",
+			specialties: "Shiatsu thérapeutique, Médecine traditionnelle japonaise, Acupression",
+			languages: "Français, Japonais",
+			availability: "Lundi-Vendredi, 9h-19h"
+		},
+		{
+			id: "19",
+			name: "David Simon",
+			type: ProfessionalTypes.YOGA_THERAPEUTE,
+			location: "Aix-en-Provence, FR",
+			bio: "Professeur de yoga thérapeutique, spécialisé dans la gestion du stress",
+			avatar: "https://randomuser.me/api/portraits/men/19.jpg",
+			compatibility: 90,
+			experience: "11 ans",
+			specialties: "Yoga thérapeutique, Méditation, Gestion du stress",
+			languages: "Français, Anglais, Sanskrit",
+			availability: "Lundi-Samedi, 7h-20h"
+		},
+		{
+			id: "20",
+			name: "Mathilde Leroux",
+			type: ProfessionalTypes.HYPNOTISEUR,
+			location: "Reims, FR",
+			bio: "Hypnothérapeute certifiée, spécialisée en gestion des phobies et addictions",
+			avatar: "https://randomuser.me/api/portraits/women/20.jpg",
+			compatibility: 84,
+			experience: "9 ans",
+			specialties: "Hypnose ericksonienne, Gestion des phobies, Arrêt du tabac",
+			languages: "Français, Anglais",
+			availability: "Lundi-Vendredi, 9h-19h"
+		},
+		{
+			id: "21",
+			name: "Philippe Gauthier",
+			type: ProfessionalTypes.PHYTOTHERAPEUTE,
+			location: "Orléans, FR",
+			bio: "Phytothérapeute expert en plantes médicinales et remèdes naturels",
+			avatar: "https://randomuser.me/api/portraits/men/21.jpg",
+			compatibility: 81,
+			experience: "17 ans",
+			specialties: "Plantes médicinales, Herboristerie, Aromathérapie",
+			languages: "Français, Latin",
+			availability: "Lundi-Samedi, 9h-18h"
+		}
 	];
 
 	if (loading) {
