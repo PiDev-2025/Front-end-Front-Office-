@@ -299,7 +299,7 @@ const ProfessionalCard = ({
 					position: 'absolute',
 					left: 0,
 					bottom: 0,
-					width: 3,
+					width: 3 ,
 					top: 0,
 					overflow: 'hidden',
 				}}
@@ -337,14 +337,46 @@ const ProfessionalCard = ({
 			{/* Top Section */}
 			<VStack space="md">
 				<HStack space="md" alignItems="flex-start">
-					<Avatar size="2xl">
-						<AvatarImage
-							source={{
-								uri: professional.avatar || "https://via.placeholder.com/150",
-							}}
-							alt={`${professional.name}'s avatar`}
-						/>
-					</Avatar>
+					<VStack space="xs" style={{ width: 110 }}>
+						<Avatar size="2xl">
+							<AvatarImage
+								source={{
+									uri: professional.avatar || "https://via.placeholder.com/150",
+								}}
+								alt={`${professional.name}'s avatar`}
+							/>
+						</Avatar>
+						<VStack space="xs">
+							<Button
+								size="sm"
+								variant="link"
+								style={{
+									borderColor: getBadgeColor(professional.type),
+									width: '100%'
+								}}
+							>
+								<Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+									<Target size={14} color={getBadgeColor(professional.type)} />
+									<Box style={{ width: 4 }} />
+									<ButtonText style={{ color: getBadgeColor(professional.type) }}>Programs</ButtonText>
+								</Box>
+							</Button>
+							<Button
+								size="sm"
+								variant="link"
+								style={{
+									borderColor: getBadgeColor(professional.type),
+									width: '100%'
+								}}
+							>
+								<Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+									<Mail size={14} color={getBadgeColor(professional.type)} />
+									<Box style={{ width: 4 }} />
+									<ButtonText style={{ color: getBadgeColor(professional.type) }}>Contact</ButtonText>
+								</Box>
+							</Button>
+						</VStack>
+					</VStack>
 					<VStack space="xs" style={{ flex: 1 }}>
 						<Heading size="md">{professional.name}</Heading>
 						<VStack space="sm">
@@ -402,24 +434,72 @@ const ProfessionalCard = ({
 							</Text>
 						</Box>
 						<Box className="mt-2">
-							<HStack space="xs" className="mb-1">
-								<Text size="xs" bold>Compatibility:</Text>
-								<Text size="xs">{professional.compatibility || 85}%</Text>
-							</HStack>
-							<Progress size="sm" value={professional.compatibility || 85}>
-								<ProgressFilledTrack>
-									<LinearGradient
-										start={{x: 0, y: 0}}
-										end={{x: 1, y: 0}}
-										colors={(() => {
-											const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
-											const gradient = key ? professionalStyles[key as keyof typeof professionalStyles]?.gradient : ['#22C55E', '#0EA5E9'];
-											return [...gradient];
-										})()}
-										style={StyleSheet.absoluteFill}
-									/>
-								</ProgressFilledTrack>
-							</Progress>
+							<VStack space="xs">
+								<Box>
+									<HStack space="xs" className="mb-1">
+										<Text size="xs" bold>Compatibility:</Text>
+										<Text size="xs">{professional.compatibility || 85}%</Text>
+									</HStack>
+									<Box style={{ position: 'relative' }}>
+										<Progress size="sm" value={100}>
+											<ProgressFilledTrack>
+												<LinearGradient
+													start={{x: 0, y: 0}}
+													end={{x: 1, y: 0}}
+													colors={['#E5E7EB', '#D1D5DB']}
+													style={StyleSheet.absoluteFill}
+												/>
+											</ProgressFilledTrack>
+										</Progress>
+										<Box style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+											<Progress size="sm" value={professional.compatibility || 85}>
+												<ProgressFilledTrack>
+													<LinearGradient
+														start={{x: 0, y: 0}}
+														end={{x: 1, y: 0}}
+														colors={(() => {
+															const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+															const gradient = key ? professionalStyles[key as keyof typeof professionalStyles]?.gradient : ['#22C55E', '#0EA5E9'];
+															return [...gradient];
+														})()}
+														style={StyleSheet.absoluteFill}
+													/>
+												</ProgressFilledTrack>
+											</Progress>
+										</Box>
+									</Box>
+								</Box>
+								<Box>
+									<HStack space="xs" className="mb-1">
+										<Text size="xs" bold>Satisfaction:</Text>
+										<Text size="xs">{professional.satisfaction || 90}%</Text>
+									</HStack>
+									<Box style={{ position: 'relative' }}>
+										<Progress size="sm" value={100}>
+											<ProgressFilledTrack>
+												<LinearGradient
+													start={{x: 0, y: 0}}
+													end={{x: 1, y: 0}}
+													colors={['#E5E7EB', '#D1D5DB']}
+													style={StyleSheet.absoluteFill}
+												/>
+											</ProgressFilledTrack>
+										</Progress>
+										<Box style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+											<Progress size="sm" value={professional.satisfaction || 90}>
+												<ProgressFilledTrack>
+													<LinearGradient
+														start={{x: 0, y: 0}}
+														end={{x: 1, y: 0}}
+														colors={['#F59E0B', '#FCD34D']}
+														style={StyleSheet.absoluteFill}
+													/>
+												</ProgressFilledTrack>
+											</Progress>
+										</Box>
+									</Box>
+								</Box>
+							</VStack>
 						</Box>
 					</VStack>
 				</HStack>
@@ -440,10 +520,10 @@ const ProfessionalCard = ({
 								<Text size="sm" bold style={{ width: 100 }}>Languages:</Text>
 								<Text size="sm">{professional.languages}</Text>
 							</HStack>
-							<HStack space="md">
+							{/* <HStack space="md">
 								<Text size="sm" bold style={{ width: 100 }}>Availability:</Text>
 								<Text size="sm">{professional.availability}</Text>
-							</HStack>
+							</HStack> */}
 						</VStack>
 					</Box>
 				)}
