@@ -193,6 +193,8 @@ const SecLocation = () => {
     const [location, setLocation] = useState(searchData.location || defaultCenter);
     const [isSearching, setIsSearching] = useState(false);
     const [searchRadius, setSearchRadius] = useState(MAX_DISTANCE_KM);
+    const [tabActiveId, setTabActiveId] = useState(1);
+
 
     // Add state for popup visibility
     const [showPopup, setShowPopup] = useState(false);
@@ -272,6 +274,34 @@ const SecLocation = () => {
             alert("Geolocation is not supported by your browser.");
         }
     };
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const step = parseInt(params.get('step')) || 1;
+        setTabActiveId(step);
+    }, [location]);
+    const handleBooking = async (parking, e) => {
+        if (e) {
+          e.stopPropagation();
+        }
+      
+        try {
+          // Récupération des données complètes du parking
+          const response = await axios.get(`http://localhost:3001/parkings/parkings/${parking.id}`);
+          const fullParkingData = response.data;
+      
+          // Vérifier les données avant de naviguer
+          console.log("Selected Parking for Booking:", fullParkingData);
+      
+          // Naviguer vers la page de réservation avec les données complètes
+          navigate('/booking?step=2', { state: { selectedParking: fullParkingData } });
+        } catch (error) {
+          console.error("Error fetching parking details for booking:", error);
+      
+          // Si erreur, utiliser les données limitées disponibles
+          navigate('/booking?step=2', { state: { selectedParking: parking } });
+        }
+      };
+      
 
     // Fetch parkings from API
   
@@ -1223,24 +1253,25 @@ const findNameMatches = (searchTerm) => {
                                     
                                     {/* Add Details button */}
                                     <div className="mt-3 flex justify-between">
-                                        <button 
-                                            className="bg-blue-600 text-blue py-1 px-3 rounded-md hover:bg-blue-700 transition text-sm"
-                                            onClick={(e) => handleShowDetails(parking, e)}
-                                        >
-                                            View Details
-                                        </button>
-                                        
-                                        <button 
-                                            className="bg-green-600 text-blue py-1 px-3 rounded-md hover:bg-green-700 transition text-sm"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigate(`/parkings/${parking.id}`);
-                                            }}
-                                        >
-                                            Book Now
-                                        </button>
+  <button 
+    className="bg-blue-600 text-black py-1 px-3 rounded-md hover:bg-blue-700 transition text-sm"
+    onClick={(e) => handleShowDetails(parking, e)}
+  >
+    View Details
+  </button>
+
+  <button
+    className="bg-green-600 text-black py-2 px-4 rounded-md hover:bg-green-700 transition text-sm"
+    onClick={(e) => handleBooking(parking, e)}
+  >
+    Book Now
+  </button>
+</div>
+
+
+
                                     </div>
-                                </div>
+                              
                             ))}
                         </div>
                     )}

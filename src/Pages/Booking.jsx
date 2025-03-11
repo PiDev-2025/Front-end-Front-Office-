@@ -3,21 +3,34 @@ import { Col, Container, Row } from 'react-bootstrap';
 import { CarIcon, DocumentIcon, LocationIcon, RightArrowIcon, SettingIcon } from '../Components/Icon/Icon';
 
 import SecLocation from "./../Components/Pages/Step/Location";
-import ParkingDetails from "../Components/Pages/Step/ChooseCar";
+import BookNow from "./../Components/Pages/Step/BookNow";
 import Personalize from "./../Components/Pages/Step/Personalize";
 import Confirmation from "./../Components/Pages/Step/Confirmation";
+import { useLocation } from 'react-router-dom';
+
 
 const Booking = () => {
-    const [tabActiveId, settabActiveId] = useState(1);
+    // Initialiser avec 1 par défaut
+    const [tabActiveId, setTabActiveId] = useState(1);
     const [selectedParking, setSelectedParking] = useState(null);
+    const location = useLocation();
 
-    // Récupérer les données du parking depuis localStorage lors du chargement
+
+    // Récupérer les données au chargement
     useEffect(() => {
-        const storedParking = localStorage.getItem('selectedParking');
-        if (storedParking) {
-            setSelectedParking(JSON.parse(storedParking));
+        const params = new URLSearchParams(location.search);
+        const step = params.get('step');
+        if (step) {
+            setTabActiveId(parseInt(step));
         }
-    }, []);
+    
+        // Vérifier si selectedParking est passé via location.state
+        if (location.state?.selectedParking) {
+            setSelectedParking(location.state.selectedParking);
+            console.log("Parking sélectionné :", location.state.selectedParking);
+        }
+    }, [location]);
+    
 
     const dataTab = [
         {
@@ -28,7 +41,7 @@ const Booking = () => {
         {
             id: 2,
             icon: <CarIcon color={2 <= tabActiveId ? "#1E19D8" : "#737373"} />,
-            title: "Choose Parking",
+            title: "Booking ",
         },
         {
             id: 3,
@@ -47,10 +60,10 @@ const Booking = () => {
             case 1:
                 return <SecLocation />;
             case 2:
-                return <ParkingDetails 
+                return <BookNow 
                     parkingData={selectedParking} 
                     isPopup={false} 
-                    onContinue={() => settabActiveId(3)}
+                    onContinue={() => setTabActiveId(3)}
                 />;
             case 3:
                 return <Personalize />;
@@ -68,7 +81,7 @@ const Booking = () => {
                             {dataTab.map((obj, i) => (
                                 <Fragment key={obj.id}>
                                     <div
-                                        onClick={() => settabActiveId(obj.id)}
+                                        onClick={() => setTabActiveId(obj.id)}
                                         className={"flex items-center gap-2 text__16 px-4 py-2 border border-solid rounded-full cursor-pointer " +
                                             (obj.id <= tabActiveId ? "!border-Mblue text-Mblue bg-[#EDEDFC]" : '!border-[#E5E5E5] text-[#737373]')}
                                     >
@@ -89,7 +102,7 @@ const Booking = () => {
                             Go to step {tabActiveId == 3 ? "finalize" : tabActiveId + 1}
                         </span>
                         <div 
-                            onClick={() => tabActiveId <= 3 ? settabActiveId(tabActiveId + 1) : ''} 
+                            onClick={() => tabActiveId <= 3 ? setTabActiveId(tabActiveId + 1) : ''} 
                             className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass cursor-pointer"
                         >
                             Continue

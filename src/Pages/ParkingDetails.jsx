@@ -130,11 +130,7 @@ const ParkingDetails = ({ parkingData, isPopup }) => {
     );
   };
 
-  // Function to handle reservation
-  const handleReservation = () => {
-    // Navigate to reservation page with parking ID
-    navigate(`/reservation/${id || parking._id}`);
-  };
+
 
   if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>;
   if (error) return <div className="bg-red-50 text-red-600 p-4 rounded-lg text-center">{error}</div>;
@@ -227,96 +223,8 @@ const ParkingDetails = ({ parkingData, isPopup }) => {
         {/* Right column - Details */}
         <div className="space-y-6">
              {/* Pricing */}
-             <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-            <TitleBox icon="💰">Pricing</TitleBox>
-            <div className="p-5 space-y-4">
-              <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                <div className="flex items-center">
-                  <span className="text-blue-500 mr-2">⏱️</span>
-                  <span>Per Hour</span>
-                </div>
-                <span className="text-xl font-bold">{parking.pricing?.hourly || parking.pricing?.perHour || 0} €</span>
-              </div>
-              
-              {(parking.pricing?.daily > 0 || parking.pricing?.perDay > 0) && (
-                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                  <div className="flex items-center">
-                    <span className="text-blue-500 mr-2">📅</span>
-                    <span>Per Day</span>
-                  </div>
-                  <span className="text-xl font-bold">{parking.pricing?.daily || parking.pricing?.perDay} €</span>
-                </div>
-              )}
-              
-              {(parking.pricing?.weekly > 0 || parking.pricing?.perWeek > 0) && (
-                <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                  <div className="flex items-center">
-                    <span className="text-blue-500 mr-2">🗓️</span>
-                    <span>Per Week</span>
-                  </div>
-                  <span className="text-xl font-bold">{parking.pricing?.weekly || parking.pricing?.perWeek} €</span>
-                </div>
-              )}
-              
-              {parking.pricing?.monthly > 0 && (
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <span className="text-blue-500 mr-2">📆</span>
-                    <span>Per Month</span>
-                  </div>
-                  <span className="text-xl font-bold">{parking.pricing?.monthly} €</span>
-                </div>
-              )}
-                {/* Reservation Button - Modified */}
-                <button 
-                onClick={handleReservation}
-                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-black font-medium rounded-lg transition-colors text-center"
-              >
-                Réserver
-              </button>
-            </div>
-          </div>
+    
        {/* Availability */}
-<div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-  <TitleBox icon="🅿️">Availability</TitleBox>
-  <div className="p-5">
-    <div className="mb-6">
-      <div className="flex justify-between items-center mb-3">
-        <span className="text-gray-700 font-medium text-lg">Current Capacity</span>
-        <div className="flex items-center gap-2">
-          <span className={`inline-block w-3 h-3 rounded-full ${availabilityColor}`}></span>
-          <span className="font-bold text-lg">{parking.availableSpots}/{parking.totalSpots} spots</span>
-        </div>
-      </div>
-      
-      <div className="w-full h-6 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-        <div
-          className={`h-full ${availabilityColor} transition-all duration-500 flex items-center justify-end pr-2`}
-          style={{ width: `${availabilityPercentage}%` }}
-        >
-          {availabilityPercentage > 15 && (
-            <span className="text-white text-xs font-bold">{availabilityPercentage.toFixed(0)}%</span>
-          )}
-        </div>
-      </div>
-      
-      <div className="mt-3 flex justify-between items-center">
-        <span className="text-sm text-gray-500">
-          {availabilityPercentage < 20 ? "Almost Full" : 
-           availabilityPercentage < 50 ? "Moderately Occupied" : 
-           "Good Availability"}
-        </span>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-          availabilityPercentage < 20 ? "bg-red-100 text-red-800" : 
-          availabilityPercentage < 50 ? "bg-yellow-100 text-yellow-800" : 
-          "bg-green-100 text-green-800"
-        }`}>
-          {availabilityPercentage.toFixed(0)}% Available
-        </span>
-      </div>
-    </div>
-  </div>
-</div>
 
        
 
@@ -361,23 +269,7 @@ const ParkingDetails = ({ parkingData, isPopup }) => {
         </div>
       </div>
 
-      {/* Action buttons */}
-      {!isPopup && (
-        <div className="flex gap-4 mt-6">
-          <button
-            className="bg-gray-500 text-black py-3 px-6 rounded-lg hover:bg-gray-600 transition w-1/2"
-            onClick={() => navigate('/booking')}
-          >
-            Back to List
-          </button>
-          <button 
-            className="bg-blue-600 text-black py-3 px-6 rounded-lg hover:bg-blue-700 transition w-1/2 font-medium"
-            onClick={handleReservation}
-          >
-            Réserver
-          </button>
-        </div>
-      )}
+     
 
       {/* Image modal */}
       {selectedImage && <ImageModal />}
