@@ -239,7 +239,7 @@ const FaceAuth = () => {
           // Only redirect after toast is closed and webcam is stopped
           console.log("Toast closed, proceeding with redirect");
           if (decodedToken.role === "Admin") {
-            window.location.href = "http://localhost:3000/";
+            window.location.href = "http://localhost:5173/";
           } else {
             // Navigate to home/profile page for regular users
             navigate("/");

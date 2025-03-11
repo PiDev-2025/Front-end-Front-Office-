@@ -33,6 +33,7 @@ import FaceAuth from "./Components/FaceAuth/FaceAuth";
 import ParkingDetails from "./Pages/ParkingDetails";
 import SecLocation from './Components/Pages/Step/Location';
 import ParkingPlan from "./Pages/viualisation3D"
+import EmployeeProfile from "./Pages/EmployeeProfile"
 
 
 const App = () => {
@@ -82,7 +83,8 @@ const App = () => {
               <Route path="parkings/:id" element={<ParkingDetails />} />
               <Route path="login/face" element={<FaceAuth/>} />
               <Route path="*" element={<NotFound />} />
-                                <Route path="location" element={<SecLocation />} />
+              <Route path="location" element={<SecLocation />} />
+              <Route path="ScanQr" element={<EmployeeProfile />} />
 
             </Route>
           </Routes>
