@@ -346,36 +346,28 @@ const ProfessionalCard = ({
 								alt={`${professional.name}'s avatar`}
 							/>
 						</Avatar>
-						<VStack space="xs">
+						<HStack space="xs" style={{ justifyContent: 'center' }}>
 							<Button
 								size="sm"
 								variant="link"
 								style={{
 									borderColor: getBadgeColor(professional.type),
-									width: '100%'
+									padding: 8
 								}}
 							>
-								<Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-									<Target size={14} color={getBadgeColor(professional.type)} />
-									<Box style={{ width: 4 }} />
-									<ButtonText style={{ color: getBadgeColor(professional.type) }}>Programs</ButtonText>
-								</Box>
+								<Target size={16} color={getBadgeColor(professional.type)} />
 							</Button>
 							<Button
 								size="sm"
 								variant="link"
 								style={{
 									borderColor: getBadgeColor(professional.type),
-									width: '100%'
+									padding: 8
 								}}
 							>
-								<Box style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-									<Mail size={14} color={getBadgeColor(professional.type)} />
-									<Box style={{ width: 4 }} />
-									<ButtonText style={{ color: getBadgeColor(professional.type) }}>Contact</ButtonText>
-								</Box>
+								<Mail size={16} color={getBadgeColor(professional.type)} />
 							</Button>
-						</VStack>
+						</HStack>
 					</VStack>
 					<VStack space="xs" style={{ flex: 1 }}>
 						<Heading size="md">{professional.name}</Heading>
