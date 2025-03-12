@@ -564,9 +564,10 @@ const validateForm = () => {
                 </Col>
                 <Col xs={2} className="d-flex justify-content-end">
                   <Button
-                    variant="primary"
+                    className="w-100"
+                        variant="outline-primary"
                     onClick={handleAddRate}
-                    className="w-100 p-2 rounded-md"
+                    
                   >
                     Add Tariff
                   </Button>
@@ -574,40 +575,44 @@ const validateForm = () => {
               </Row>
             </Form.Group>
 
-            <DropdownButton
-              title={`Add another tariff (${getTariffLabel(tariffType)})`}
-              onSelect={(eventKey) => setTariffType(eventKey)}
-              className="mb-3 w-3/4"
-            >
-              <Dropdown.Item eventKey="hourly">Tariff for an Hour</Dropdown.Item>
-              <Dropdown.Item eventKey="daily">Tariff for a Day</Dropdown.Item>
-              <Dropdown.Item eventKey="weekly">Tariff for a Week</Dropdown.Item>
-              <Dropdown.Item eventKey="monthly">Tariff for a Month</Dropdown.Item>
-            </DropdownButton>
+            <Col xs={12} className="d-flex justify-content-start mb-3">
+  <DropdownButton
+    title={`Add another tariff (${getTariffLabel(tariffType)})`}
+    onSelect={(eventKey) => setTariffType(eventKey)}
+    variant="outline-primary"
+    className="w-75"
+  >
+    <Dropdown.Item eventKey="hourly">Tariff for an Hour</Dropdown.Item>
+    <Dropdown.Item eventKey="daily">Tariff for a Day</Dropdown.Item>
+    <Dropdown.Item eventKey="weekly">Tariff for a Week</Dropdown.Item>
+    <Dropdown.Item eventKey="monthly">Tariff for a Month</Dropdown.Item>
+  </DropdownButton>
+</Col>
 
-            {Object.keys(pricing).length > 0 && (
-              <ListGroup className="mb-5" style={{ maxWidth: "500px" }}>
-                {Object.entries(pricing).map(([type, rate]) => (
-                  <ListGroup.Item
-                    key={type}
-                    className="d-flex justify-content-between align-items-center p-3 mb-2 bg-gray-100 rounded-md shadow-sm"
-                  >
-                    <div className="flex items-center">
-                      <span className="font-semibold mr-2">{getTariffLabel(type)}</span>:{" "}
-                      {rate} DT
-                    </div>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleRemoveRate(type)}
-                      className="p-1 rounded-circle"
-                      style={{ color: "red" }}
-                    >
-                      <FaTrashAlt />
-                    </Button>
-                  </ListGroup.Item>
-                ))}
-              </ListGroup>
-            )}
+{/* Update the ListGroup styling */}
+{Object.keys(pricing).length > 0 && (
+  <ListGroup className="mb-5" style={{ maxWidth: "500px" }}>
+    {Object.entries(pricing).map(([type, rate]) => (
+      <ListGroup.Item
+        key={type}
+        className="d-flex justify-content-between align-items-center p-3 mb-2 bg-gray-100 rounded-md shadow-sm"
+      >
+        <div className="flex items-center">
+          <span className="font-semibold mr-2">{getTariffLabel(type)}</span>: {rate} DT
+        </div>
+        <Col xs={2} className="d-flex justify-content-end">
+          <Button
+            variant="outline-danger"
+            onClick={() => handleRemoveRate(type)}
+            className="w-100"
+          >
+            <FaTrashAlt />
+          </Button>
+        </Col>
+      </ListGroup.Item>
+    ))}
+  </ListGroup>
+)}
 
             <Form.Group className="mb-5">
               <Form.Label className="font-semibold d-flex align-items-center">

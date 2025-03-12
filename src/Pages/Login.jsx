@@ -239,7 +239,8 @@ const Login = () => {
                   />
                 </Form.Group>
 
-                <button type="submit" className="btn btn-success w-100">
+                <button type="submit" className="w-100"
+                    variant="outline-success">
                   Verify OTP !
                 </button>
               </Form>
