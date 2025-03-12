@@ -24,8 +24,7 @@ import GoogleCallback from './Pages/googlecallbackk';
 import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import { SearchProvider } from './context/SearchContext';
 import { FavoritesProvider } from './context/FavoritesContext';
-import NotFound from './Pages/NotFound';
-
+import ImageUpload from "./Pages/3DVisualisation";
 import Profile from './Pages/profile';
 import OwnerAddPaking from '../src/Components/Pages/Step/Step1AddParking';
 import Step2UploadImages from '../src/Components/Pages/Step/Step2AddParking';
@@ -33,6 +32,8 @@ import FaceAuth from "./Components/FaceAuth/FaceAuth";
 import ParkingDetails from "./Pages/ParkingDetails";
 import SecLocation from './Components/Pages/Step/Location';
 import ParkingPlan from "./Pages/viualisation3D"
+import NotFound from './Pages/NotFound';
+
 
 
 const App = () => {
@@ -60,6 +61,7 @@ const App = () => {
             <Route path="/" element={<DefaultLayout />}>
               <Route index element={<Homepage />} />
               <Route path="parkingPlan" element={<ParkingPlan />} />
+              <Route path="imageUpload" element={<ImageUpload />} />
               <Route path="ownerAddPaking" element={<OwnerAddPaking />} />
               <Route path="step2/:parkingId" element={<Step2UploadImages />} />
               <Route path="how-it-works" element={<HowItworks />} />
