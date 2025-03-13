@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import {
   Form,
@@ -15,7 +14,8 @@ import {
 import { Autocomplete } from "@react-google-maps/api";
 import { useGoogleMaps } from "../context/GoogleMapsContext";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { showToast } from "../utils/toast";
 
 import {
@@ -33,9 +33,8 @@ import {
   FaPlus
 } from "react-icons/fa";
 
-const ParkingRequestForm = () => {
+const ParkingEditForm = ({ editingParking, setEditingParking, refreshParkings }) => {
   const { isLoaded } = useGoogleMaps();
-  const navigate = useNavigate();
   
   // State for managing steps
   const [currentStep, setCurrentStep] = useState(1);
@@ -59,6 +58,25 @@ const ParkingRequestForm = () => {
   const [availableSpots, setAvailableSpots] = useState("");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  function App() {
+  return (
+    <>
+      {/* Votre application */}
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+    </>
+  );
+}
   
   // Image state
   const [images, setImages] = useState({
@@ -118,55 +136,42 @@ const ParkingRequestForm = () => {
     }
   ];
 
-  // Load saved form data from localStorage if available
   useEffect(() => {
-    const savedForm = JSON.parse(localStorage.getItem("parkingFormData"));
-    if (savedForm) {
-      setName(savedForm.name || "");
-      setDescription(savedForm.description || "");
-      setPosition(savedForm.position || { lat: undefined, lng: undefined });
-      setAddress(savedForm.address || "");
-      setTotalSpots(savedForm.totalSpots || "");
-      setAvailableSpots(savedForm.availableSpots || "");
-      setPricing(savedForm.pricing || { hourly: "", daily: "", weekly: "", monthly: "" });
-      setVehicleTypes(savedForm.vehicleTypes || []);
-      setFeatures(savedForm.features || []);
+    if (editingParking) {
+      setName(editingParking.name || "");
+      setDescription(editingParking.description || "");
+      setPosition(editingParking.position || { lat: undefined, lng: undefined });
+      setAddress(editingParking.address || "");
+      setTotalSpots(editingParking.totalSpots || "");
+      setAvailableSpots(editingParking.availableSpots || "");
+      setPricing(editingParking.pricing || {});
+      setVehicleTypes(editingParking.vehicleTypes || []);
+      setFeatures(editingParking.features || []);
+
+      // Load existing images
+      const imagesData = { face1: null, face2: null, face3: null, face4: null };
+      if (editingParking.images && Array.isArray(editingParking.images)) {
+        editingParking.images.forEach((img, index) => {
+          if (index < 4) imagesData[`face${index + 1}`] = img;
+        });
+      }
+      setImages(imagesData);
     }
-    
-    // Load saved images if available
-    const savedImages = JSON.parse(localStorage.getItem("parkingFormImages"));
-    if (savedImages) {
-      setImages(savedImages);
-    }
+  }, [editingParking]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowMessage(false);
+    }, 5000);
+    return () => clearTimeout(timer);
   }, []);
-
-  // Save form data to localStorage when it changes
-  useEffect(() => {
-    const formData = {
-      name,
-      description,
-      position,
-      address,
-      totalSpots,
-      availableSpots,
-      pricing,
-      vehicleTypes,
-      features
-    };
-    localStorage.setItem("parkingFormData", JSON.stringify(formData));
-  }, [name, description, position, address, totalSpots, availableSpots, pricing, vehicleTypes, features]);
-
-  // Save images to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem("parkingFormImages", JSON.stringify(images));
-  }, [images]);
 
   // Handle total spots change
   const handleTotalSpotsChange = (e) => {
     const value = e.target.value;
     setTotalSpots(value);
-    // Default available spots to total spots if not set
-    if (!availableSpots) {
+    // Only update available spots if it's not set or exceeds the new total
+    if (!availableSpots || parseInt(availableSpots) > parseInt(value)) {
       setAvailableSpots(value);
     }
   };
@@ -239,13 +244,6 @@ const ParkingRequestForm = () => {
     }
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowMessage(false);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
-
   // Camera functions
   const startCamera = async (face) => {
     setCurrentFace(face);
@@ -301,52 +299,53 @@ const ParkingRequestForm = () => {
       setLoading((prev) => ({ ...prev, [face]: false }));
     }
   };
-// Modify the validateForm function to handle different validations for each step
+
+  // Validation for each step
 const validateForm = () => {
-    if (currentStep === 1) {
-      if (!name) {
-        setValidationError("Parking name is required");
-        return false;
-      }
-      
-      if (!address || !position.lat || !position.lng) {
-        setValidationError("Please select a valid location");
-        return false;
-      }
-      
-      if (!totalSpots || totalSpots <= 0) {
-        setValidationError("Total spots must be a positive number");
-        return false;
-      }
-      
-      if (!availableSpots || availableSpots <= 0 || availableSpots > totalSpots) {
-        setValidationError("Available spots must be a positive number not exceeding total spots");
-        return false;
-      }
-      
-      if (!pricing.hourly) {
-        setValidationError("Hourly rate is required");
-        return false;
-      }
-  
-      if (vehicleTypes.length === 0) {
-        setValidationError("Please select at least one vehicle type");
-        return false;
-      }
-      
-      return true;
+    // Validation pour tous les cas (ajout et édition)
+    
+    // Name validation
+    if (!name || name.trim() === "") {
+      setValidationError("Parking name is required");
+      return false;
     }
-  
-    if (currentStep === 2) {
-      // Check if we have at least one image only when submitting the form
-      const imageCount = Object.values(images).filter(img => img !== null).length;
-      if (imageCount === 0) {
-        setValidationError("Please upload at least one image of your parking");
-        return false;
-      }
-      return true;
+    
+    // Location validation
+    if ((!position || !position.lat || !position.lng)) {
+      setValidationError("Please select a valid location");
+      return false;
     }
-  
+    
+    // Address validation
+    if (!address || address.trim() === "") {
+      setValidationError("Address is required");
+      return false;
+    }
+    
+    // Total spots validation
+    if (!totalSpots || isNaN(parseInt(totalSpots)) || parseInt(totalSpots) <= 0) {
+      setValidationError("Total spots must be a positive number");
+      return false;
+    }
+    
+    // Available spots validation
+    if (availableSpots === undefined || isNaN(parseInt(availableSpots)) || parseInt(availableSpots) < 0 || parseInt(availableSpots) > parseInt(totalSpots)) {
+      setValidationError("Available spots must be a number between 0 and total spots");
+      return false;
+    }
+    
+    // Pricing validation
+    if (!pricing || Object.keys(pricing).length === 0 || !Object.values(pricing).some(value => value && !isNaN(parseFloat(value)) && parseFloat(value) > 0)) {
+      setValidationError("At least one valid rate is required");
+      return false;
+    }
+    
+    // Vehicle types validation
+    if (!vehicleTypes || !Array.isArray(vehicleTypes) || vehicleTypes.length === 0) {
+      setValidationError("Please select at least one vehicle type");
+      return false;
+    }
+    
     return true;
   };
 
@@ -357,8 +356,9 @@ const validateForm = () => {
     if (validateForm()) {
       setCurrentStep(2);
       window.scrollTo(0, 0);
+      setValidationError(""); // Clear any validation errors
     } else {
-      setTimeout(() => setValidationError(""), 3000);
+      setTimeout(() => setValidationError(""), 5000);
     }
   };
 
@@ -366,79 +366,58 @@ const validateForm = () => {
   const handlePrevStep = () => {
     setCurrentStep(1);
     window.scrollTo(0, 0);
+    setValidationError(""); // Clear any validation errors
   };
 
-  // Submit the form
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      setTimeout(() => setValidationError(""), 3000);
-      showToast.error("Please fill in all required fields correctly.");
-      return;
-    }
-  
+  // Cancel editing
+  const handleCancel = () => {
+    setEditingParking(null);
+  };
+ // Submit update request
+ const handleSubmit = async () => {
     setIsSubmitting(true);
   
     try {
-      // Prepare form data
-      const formData = new FormData();
-      formData.append("name", name);
-      formData.append("description", description || "");
-      formData.append("position", JSON.stringify(position));
-      formData.append("totalSpots", totalSpots);
-      formData.append("availableSpots", availableSpots);
-      formData.append("pricing", JSON.stringify(pricing));
-      formData.append("vehicleTypes", JSON.stringify(vehicleTypes));
-      formData.append("features", JSON.stringify(features));
-  
-      // Add images
-      Object.entries(images).forEach(([face, imgData]) => {
-        if (imgData) {
-          if (imgData.startsWith("data:image")) {
-            const byteString = atob(imgData.split(",")[1]);
-            const mimeString = imgData.split(",")[0].split(":")[1].split(";")[0];
-            const arrayBuffer = new Uint8Array(byteString.length);
-            for (let i = 0; i < byteString.length; i++) {
-              arrayBuffer[i] = byteString.charCodeAt(i);
-            }
-            const imageFile = new Blob([arrayBuffer], { type: mimeString });
-            formData.append("images", imageFile, `${face}.png`);
-          }
-        }
-      });
-  
-      // Submit to API
-      const response = await axios.post(
-        "http://localhost:3001/parkings/submit",
-        formData,
+      const data = {
+        name,
+        description,
+        position,
+        address,
+        totalSpots,
+        availableSpots,
+        pricing,
+        vehicleTypes,
+        features,
+        images: Object.values(images).filter(img => img) // Only send existing images
+      };
+
+      console.log("📌 Données envoyées :", data);
+
+      const response = await axios.put(
+        `http://localhost:3001/parkings/parkings/${editingParking._id}`,
+        data,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`
           }
         }
       );
-  
-      console.log("Parking request submitted:", response.data);
-  
-      // Clear localStorage
-      localStorage.removeItem("parkingFormData");
-      localStorage.removeItem("parkingFormImages");
-  
-      // Show success message and redirect
-      showToast.success("Your parking request has been submitted successfully!");
-      setIsSubmitting(false);
-      navigate("/");
+
+      console.log("✅ Parking mis à jour :", response.data);
+      showToast.success("Demande De mise a Jour de Parking passé avec Success !");
+      setEditingParking(null);
+      refreshParkings();
     } catch (error) {
-      console.error("Error submitting parking request:", error);
-      setIsSubmitting(false);
-      setValidationError(error.response?.data?.message || "Error submitting request. Please try again.");
-      
-      // Afficher une erreur avec `showToast`
-      showToast.error(error.response?.data?.message || "Error submitting request. Please try again.");
-      
-      setTimeout(() => setValidationError(""), 5000);
+        showToast.error("❌ Erreur lors de la modification :", error);
+      setValidationError(error.response?.data?.message || "Erreur lors de la mise à jour.");
     }
+
+    setIsSubmitting(false);
   };
+
+  
+  
   
 
   if (!isLoaded) return <div className="text-center p-5"><Spinner animation="border" variant="primary" /></div>;
@@ -453,7 +432,7 @@ const validateForm = () => {
           <div className={`step-circle ${currentStep >= 2 ? 'active' : ''}`}></div>
         </div>
         <div className="flex justify-between mt-2">
-        
+      
         </div>
       </div>
       
@@ -467,10 +446,10 @@ const validateForm = () => {
       {currentStep === 1 && (
         <div>
           <h2 className="text-center text-2xl font-bold mb-6 text-blue-600">
-            Add Your Parking Spot Request
+            Edit Your Parking Spot
           </h2>
           <p className="text-center mb-6 text-gray-600">
-            Submit your parking request here!
+            Update your parking information here!
           </p>
           
           <Form onSubmit={handleNextStep}>
@@ -488,7 +467,7 @@ const validateForm = () => {
                 className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-3/4"
               />
             </Form.Group>
-  
+
             <Form.Group className="mb-5">
               <Form.Label className="font-semibold d-flex align-items-center">
                 <FaFileAlt className="mr-2 text-blue-500" />
@@ -503,7 +482,7 @@ const validateForm = () => {
                 className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-3/4"
               />
             </Form.Group>
-  
+
             <Form.Group className="mb-5">
               <Form.Label className="font-semibold d-flex align-items-center">
                 <FaMapMarkerAlt className="mr-2 text-blue-500" />
@@ -519,8 +498,13 @@ const validateForm = () => {
                   className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-3/4"
                 />
               </Autocomplete>
+              {position.lat && position.lng && (
+                <div className="text-success mt-2">
+                  <FaCheckCircle className="mr-1" /> Location selected
+                </div>
+              )}
             </Form.Group>
-  
+
             <Row className="mb-5">
               <Col md={6}>
                 <Form.Group>
@@ -533,6 +517,7 @@ const validateForm = () => {
                     value={totalSpots}
                     onChange={handleTotalSpotsChange}
                     required
+                    min="1"
                     className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </Form.Group>
@@ -548,99 +533,101 @@ const validateForm = () => {
                     value={availableSpots}
                     onChange={handleAvailableSpotsChange}
                     required
+                    min="0"
+                    max={totalSpots || 0}
                     className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </Form.Group>
               </Col>
             </Row>
-  
-            {/* Improved Tariff Section */}
-            <Form.Group className="mb-4">
-              <Form.Label className="font-semibold d-flex align-items-center">
-                <FaMoneyBillAlt className="mr-2 text-yellow-500" />
-                Rate for 1 {getTariffLabel(tariffType)} (DT){" "}
-                <span className="text-danger">*</span>
-              </Form.Label>
-              <Row className="align-items-center">
-                <Col md={5} sm={12} className="mb-2 mb-md-0">
-                  <Form.Control
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Enter rate"
-                    value={currentRate}
-                    onChange={(e) => setCurrentRate(e.target.value)}
-                    required={Object.keys(pricing).length === 0}
-                    className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </Col>
-                <Col md={4} sm={12} className="mb-2 mb-md-0">
-                  <Dropdown>
-                    <Dropdown.Toggle 
-                      variant="outline-secondary" 
-                      className="w-100 text-left d-flex justify-content-between align-items-center p-2 border-2 border-gray-300 rounded-md shadow-sm"
-                    >
-                      <span>Tariff for a {getTariffLabel(tariffType)}</span>
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="w-100">
-                      <Dropdown.Item eventKey="hourly" active={tariffType === 'hourly'} onClick={() => setTariffType('hourly')}>
-                        Tariff for an Hour
-                      </Dropdown.Item>
-                      <Dropdown.Item eventKey="daily" active={tariffType === 'daily'} onClick={() => setTariffType('daily')}>
-                        Tariff for a Day
-                      </Dropdown.Item>
-                      <Dropdown.Item eventKey="weekly" active={tariffType === 'weekly'} onClick={() => setTariffType('weekly')}>
-                        Tariff for a Week
-                      </Dropdown.Item>
-                      <Dropdown.Item eventKey="monthly" active={tariffType === 'monthly'} onClick={() => setTariffType('monthly')}>
-                        Tariff for a Month
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </Col>
-                <Col md={3} sm={12}>
-                  <Button
-                    variant="primary"
-                    onClick={handleAddRate}
-                    className="w-100 p-2 rounded-md bg-blue-500 hover:bg-blue-600 transition-all flex items-center justify-center"
-                    disabled={!currentRate || isNaN(currentRate) || Number(currentRate) <= 0}
-                  >
-                    <FaPlus className="mr-2" /> Add Tariff
-                  </Button>
-                </Col>
-              </Row>
-            </Form.Group>
-  
-            {Object.keys(pricing).length > 0 && (
-              <div className="mb-5">
-                <h5 className="mb-3 font-weight-medium text-gray-700">Configured Tariffs</h5>
-                <ListGroup style={{ maxWidth: "100%" }}>
-                  {Object.entries(pricing).map(([type, rate]) => (
-                    <ListGroup.Item
-                      key={type}
-                      className="d-flex justify-content-between align-items-center p-3 mb-2 bg-gray-100 rounded-md shadow-sm border border-gray-200"
-                    >
-                      <div className="d-flex align-items-center">
-                        <FaMoneyBillAlt className="text-yellow-500 mr-3" />
-                        <div>
-                          <span className="font-semibold">{getTariffLabel(type)}</span>
-                          <span className="mx-2">-</span>
-                          <span className="text-blue-600 font-semibold">{rate} DT</span>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline-danger"
-                        onClick={() => handleRemoveRate(type)}
-                        className="rounded-full p-2 hover:bg-red-50 transition-all border-0"
-                      >
-                        <FaTrashAlt className="text-red-500" />
-                      </Button>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              </div>
-            )}
-  
+
+               {/* Improved Tariff Section */}
+                       <Form.Group className="mb-4">
+                         <Form.Label className="font-semibold d-flex align-items-center">
+                           <FaMoneyBillAlt className="mr-2 text-yellow-500" />
+                           Rate for 1 {getTariffLabel(tariffType)} (DT){" "}
+                           <span className="text-danger">*</span>
+                         </Form.Label>
+                         <Row className="align-items-center">
+                           <Col md={5} sm={12} className="mb-2 mb-md-0">
+                             <Form.Control
+                               type="number"
+                               min="0"
+                               step="0.01"
+                               placeholder="Enter rate"
+                               value={currentRate}
+                               onChange={(e) => setCurrentRate(e.target.value)}
+                               required={Object.keys(pricing).length === 0}
+                               className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                             />
+                           </Col>
+                           <Col md={4} sm={12} className="mb-2 mb-md-0">
+                             <Dropdown>
+                               <Dropdown.Toggle 
+                                 variant="outline-secondary" 
+                                 className="w-100 text-left d-flex justify-content-between align-items-center p-2 border-2 border-gray-300 rounded-md shadow-sm"
+                               >
+                                 <span>Tariff for a {getTariffLabel(tariffType)}</span>
+                               </Dropdown.Toggle>
+                               <Dropdown.Menu className="w-100">
+                                 <Dropdown.Item eventKey="hourly" active={tariffType === 'hourly'} onClick={() => setTariffType('hourly')}>
+                                   Tariff for an Hour
+                                 </Dropdown.Item>
+                                 <Dropdown.Item eventKey="daily" active={tariffType === 'daily'} onClick={() => setTariffType('daily')}>
+                                   Tariff for a Day
+                                 </Dropdown.Item>
+                                 <Dropdown.Item eventKey="weekly" active={tariffType === 'weekly'} onClick={() => setTariffType('weekly')}>
+                                   Tariff for a Week
+                                 </Dropdown.Item>
+                                 <Dropdown.Item eventKey="monthly" active={tariffType === 'monthly'} onClick={() => setTariffType('monthly')}>
+                                   Tariff for a Month
+                                 </Dropdown.Item>
+                               </Dropdown.Menu>
+                             </Dropdown>
+                           </Col>
+                           <Col md={3} sm={12}>
+                             <Button
+                               variant="primary"
+                               onClick={handleAddRate}
+                               className="w-100 p-2 rounded-md bg-blue-500 hover:bg-blue-600 transition-all flex items-center justify-center"
+                               disabled={!currentRate || isNaN(currentRate) || Number(currentRate) <= 0}
+                             >
+                               <FaPlus className="mr-2" /> Add Tariff
+                             </Button>
+                           </Col>
+                         </Row>
+                       </Form.Group>
+             
+                       {Object.keys(pricing).length > 0 && (
+                         <div className="mb-5">
+                           <h5 className="mb-3 font-weight-medium text-gray-700">Configured Tariffs</h5>
+                           <ListGroup style={{ maxWidth: "100%" }}>
+                             {Object.entries(pricing).map(([type, rate]) => (
+                               <ListGroup.Item
+                                 key={type}
+                                 className="d-flex justify-content-between align-items-center p-3 mb-2 bg-gray-100 rounded-md shadow-sm border border-gray-200"
+                               >
+                                 <div className="d-flex align-items-center">
+                                   <FaMoneyBillAlt className="text-yellow-500 mr-3" />
+                                   <div>
+                                     <span className="font-semibold">{getTariffLabel(type)}</span>
+                                     <span className="mx-2">-</span>
+                                     <span className="text-blue-600 font-semibold">{rate} DT</span>
+                                   </div>
+                                 </div>
+                                 <Button
+                                   variant="outline-danger"
+                                   onClick={() => handleRemoveRate(type)}
+                                   className="rounded-full p-2 hover:bg-red-50 transition-all border-0"
+                                 >
+                                   <FaTrashAlt className="text-red-500" />
+                                 </Button>
+                               </ListGroup.Item>
+                             ))}
+                           </ListGroup>
+                         </div>
+                       )}
+
             <Form.Group className="mb-5">
               <Form.Label className="font-semibold d-flex align-items-center">
                 <FaCar className="mr-2 text-blue-500" />
@@ -672,59 +659,59 @@ const validateForm = () => {
                 ))}
               </Row>
             </Form.Group>
-  
-            <Form.Group className="mb-5">
-  <Form.Label className="font-semibold d-flex align-items-center">
-    <FaBuilding className="mr-2 text-green-500" />
-    Parking Features
-  </Form.Label>
 
-  {/* ✅ Affichage en ligne avec flexbox */}
-  <div className="d-flex flex-wrap gap-3">
-    {[
-      "Indoor Parking",
-      "Underground Parking",
-      "Unlimited Entrances & Exits",
-      "Extension Available",
-    ].map((feature, index) => (
-      <Form.Check
-        key={index}
-        type="checkbox"
-        label={feature}
-        value={feature}
-        checked={features.includes(feature)}
-        onChange={(e) => {
-          const { checked, value } = e.target;
-          setFeatures((prev) =>
-            checked ? [...prev, value] : prev.filter((item) => item !== value)
-          );
-        }}
-        className="mb-2"
-      />
-    ))}
-  </div>
-</Form.Group>
+                 <Form.Group className="mb-5">
+           <Form.Label className="font-semibold d-flex align-items-center">
+             <FaBuilding className="mr-2 text-green-500" />
+             Parking Features
+           </Form.Label>
+         
+           {/* ✅ Affichage en ligne avec flexbox */}
+           <div className="d-flex flex-wrap gap-3">
+             {[
+               "Indoor Parking",
+               "Underground Parking",
+               "Unlimited Entrances & Exits",
+               "Extension Available",
+             ].map((feature, index) => (
+               <Form.Check
+                 key={index}
+                 type="checkbox"
+                 label={feature}
+                 value={feature}
+                 checked={features.includes(feature)}
+                 onChange={(e) => {
+                   const { checked, value } = e.target;
+                   setFeatures((prev) =>
+                     checked ? [...prev, value] : prev.filter((item) => item !== value)
+                   );
+                 }}
+                 className="mb-2"
+               />
+             ))}
+           </div>
+         </Form.Group>
 
-  
-            <div className="flex justify-end items-center space-x-3">
-              <span className="text-gray-500 opacity-70">Go to Step 2</span>
-               
-            {/* Bouton Cancel */}
-            <button
-                onClick={() => navigate("/my-parkings")}
-                className="px-6 py-3 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all flex items-center"
-            >
-                Cancel
-            </button>
-
-            {/* Bouton Continue */}
-            <button
-                type="submit"
-                className="px-6 py-3 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all flex items-center"
-            >
-                Continue <FaArrowRight className="ml-2" />
-            </button>
-        </div>
+            <div className="flex justify-between items-center space-x-3">
+              <Button
+                variant="secondary"
+                onClick={handleCancel}
+                className="px-6 py-3 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all"
+              >
+                Cancel <FaArrowLeft className="mr-2" />
+              </Button>
+              
+              <div>
+                <span className="text-gray-500 opacity-70 mr-3">Go to Step 2</span>
+                <Button
+                  variant="success"
+                  type="submit"
+                  className="px-6 py-3 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all"
+                >
+                  Continue <FaArrowRight className="ml-2" />
+                </Button>
+              </div>
+            </div>
           </Form>
         </div>
       )}
@@ -733,7 +720,7 @@ const validateForm = () => {
         <div className="step2-upload-container">
           <div className="message-container">
             <h2 className="animated-message">
-              Share your parking with your customers!
+              Update your parking photos!
             </h2>
           </div>
           
@@ -785,7 +772,14 @@ const validateForm = () => {
             ))}
           </Row>
       
-          <div className="mt-6 text-center">
+          <div className="mt-6 d-flex justify-content-between">
+            <Button
+              onClick={handlePrevStep}
+              className="px-6 py-3 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all"
+            >
+              Back <FaArrowLeft className="mr-2" />
+            </Button>
+            
             <Button
               onClick={handleSubmit}
               className="px-6 py-3 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all"
@@ -794,10 +788,10 @@ const validateForm = () => {
               {isSubmitting ? (
                 <>
                   <Spinner animation="border" size="sm" className="mr-2" />
-                  Uploading...
+                  Updating...
                 </>
               ) : (
-                'Save Parking'
+                'Update Parking'
               )}
             </Button>
           </div>
@@ -859,4 +853,4 @@ const validateForm = () => {
   );
 };
 
-export default ParkingRequestForm;
+export default ParkingEditForm;

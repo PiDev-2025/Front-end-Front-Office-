@@ -129,7 +129,7 @@ const Navbar = () => {
             {shouldShowParking() && (
               <li className="w-full">
                 <NavLink
-                  to="/ParkingRequestForm"
+                  to="/my-parkings"
                   onClick={() => setToogleMenuResponsive(false)}
                   className="font-medium text-black"
                 >
@@ -264,7 +264,7 @@ const Navbar = () => {
             {shouldShowParking() && (
               <li>
                 <NavLink
-                  to="/ParkingRequestForm"
+                  to="/my-parkings"
                   className={
                     navabarScroll && !ToogleMenuResponsive
                       ? "text-Mwhite"
