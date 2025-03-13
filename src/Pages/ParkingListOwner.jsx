@@ -100,7 +100,7 @@ const ParkingListOwner = () => {
     setIsAdding(true); // ✅ Activer le mode ajout
   };
 
-  // 🔹 Fonction pour supprimer un parking
+
   const handleDelete = async (id) => {
     if (window.confirm("Voulez-vous vraiment supprimer ce parking ?")) {
       try {
@@ -108,14 +108,19 @@ const ParkingListOwner = () => {
         await axios.delete(`http://localhost:3001/parkings/parkings/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
+  
         // Mise à jour de la liste des parkings après suppression
         setMyParkings((prevParkings) => prevParkings.filter((parking) => parking._id !== id));
+  
+        // ✅ Affichage du toast de succès
+        showToast.success("🚀 Parking supprimé avec succès !");
       } catch (err) {
-        showToast.alert("Erreur lors de la suppression !");
+        // ❌ Affichage du toast d'erreur
+        showToast.error("❌ Erreur lors de la suppression !");
       }
     }
   };
+  
   
   const handleShowDetails = (parking, e) => {
     if (e) e.stopPropagation();

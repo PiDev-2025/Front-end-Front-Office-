@@ -500,7 +500,6 @@ const validateForm = () => {
               </Autocomplete>
               {position.lat && position.lng && (
                 <div className="text-success mt-2">
-                  <FaCheckCircle className="mr-1" /> Location selected
                 </div>
               )}
             </Form.Group>
@@ -693,20 +692,21 @@ const validateForm = () => {
          </Form.Group>
 
             <div className="flex justify-between items-center space-x-3">
-              <Button
-                variant="secondary"
-                onClick={handleCancel}
-                className="px-6 py-3 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all"
-              >
-                Cancel <FaArrowLeft className="mr-2" />
-              </Button>
+            <Button
+  variant="secondary"
+  onClick={handleCancel}
+  className="px-6 py-3 flex items-center justify-center gap-2 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all"
+>
+  <FaArrowLeft /> Cancel
+</Button>
+
               
               <div>
                 <span className="text-gray-500 opacity-70 mr-3">Go to Step 2</span>
                 <Button
                   variant="success"
                   type="submit"
-                  className="px-6 py-3 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all"
+                  className="px-6 py-3 flex items-center justify-center gap-2 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all"
                 >
                   Continue <FaArrowRight className="ml-2" />
                 </Button>
@@ -775,9 +775,9 @@ const validateForm = () => {
           <div className="mt-6 d-flex justify-content-between">
             <Button
               onClick={handlePrevStep}
-              className="px-6 py-3 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all"
+              className="px-6 py-3 flex items-center justify-center gap-2 rounded-lg bg-dark text-white font-medium border-0 hover:bg-gray-800 transition-all"
             >
-              Back <FaArrowLeft className="mr-2" />
+              <FaArrowLeft className="mr-2" />  Back
             </Button>
             
             <Button
