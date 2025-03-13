@@ -25,6 +25,8 @@ import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import { SearchProvider } from './context/SearchContext';
 import { FavoritesProvider } from './context/FavoritesContext';
 import NotFound from './Pages/NotFound';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import Profile from './Pages/profile';
 import ParkingRequestForm from '../src/Pages/ParkingForm';
@@ -34,6 +36,8 @@ import ParkingDetails from "./Pages/ParkingDetails";
 import SecLocation from './Components/Pages/Step/Location';
 import ParkingPlan from "./Pages/viualisation3D"
 import EmployeeProfile from "./Pages/EmployeeProfile"
+import ParkingListOwner from "./Pages/ParkingListOwner"; // Assurez-vous du bon chemin d'importation
+
 
 
 const App = () => {
@@ -51,17 +55,19 @@ const App = () => {
       localStorage.setItem("token", token);
     }
   }, []);
+  
   return (
     <GoogleMapsProvider>
       <SearchProvider>
 
                    <FavoritesProvider>
         <AuthProvider>
+        <ToastContainer />
           <Routes>
             <Route path="/" element={<DefaultLayout />}>
               <Route index element={<Homepage />} />
               <Route path="parkingPlan" element={<ParkingPlan />} />
-              <Route path="ParkingRequestForm" element={<ParkingRequestForm />} />
+        
               <Route path="step2/:parkingId" element={<Step2UploadImages />} />
               <Route path="how-it-works" element={<HowItworks />} />
               <Route path="booking" element={<Booking />} />
@@ -85,7 +91,8 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
               <Route path="location" element={<SecLocation />} />
               <Route path="ScanQr" element={<EmployeeProfile />} />
-
+              <Route path="my-parkings" element={<ParkingListOwner />} />
+              <Route path="ParkingRequestForm" element={<ParkingRequestForm />} />
             </Route>
           </Routes>
         </AuthProvider>
