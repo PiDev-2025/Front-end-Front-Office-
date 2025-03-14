@@ -288,8 +288,8 @@ const Homepage = () => {
             />
 
             {/* start:hero */}
-            <section className='relative overflow-hidden min-h-[calc(100vh_-_88px)] lg:min-h-[calc(100vh_-_98px)] bg-[#010101] flex flex-wrap pb-0'>
-                <img src="./../images/img (1).png" className='absolute left-0 top-0 w-full h-full object-cover object-top hidden md:block' alt="" />
+            <section className='relative overflow-hidden min-h-screen bg-[#010101] flex flex-wrap pb-0 mt-0 pt-0'>
+            <img src="./../images/img (1).png" className='absolute left-0 top-0 w-full h-full object-cover object-top hidden md:block' alt="" />
                 <Container className='relative z-[2] w-full flex flex-col h-full'>
                     <Row className='flex-grow items-center'>
                         <Col md={5} lg={6} className="mt-8 md:mt-0 mb-6 md:mb-0">

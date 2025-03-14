@@ -19,6 +19,10 @@ const ParkingListOwner = () => {
   const [selectedParking, setSelectedParking] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [hoveredParking, setHoveredParking] = useState(null);
+  const [employees, setEmployees] = useState([]);
+  const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [assigningParkingId, setAssigningParkingId] = useState(null);
+
   
 
   // 🔹 Fonction pour récupérer les parkings de l'Owner
@@ -74,7 +78,56 @@ const ParkingListOwner = () => {
   // 🔹 Récupération des parkings au montage du composant
   useEffect(() => {
     fetchMyParkings();
+    fetchEmployees();
   }, []);
+
+
+  const fetchEmployees = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      console.log("🔑 Token récupéré :", token); // Debugging
+  
+      if (!token) {
+        console.error("❌ Aucun token trouvé");
+        return;
+      }
+  
+      const response = await axios.get("http://localhost:3001/User/employees", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  
+      console.log("✅ Employés récupérés :", response.data);
+      setEmployees(response.data);
+    } catch (error) {
+      console.error("💥 Erreur lors de la récupération des employés", error);
+      if (error.response) {
+        console.error("🛑 Réponse du serveur :", error.response.data);
+      }
+    }
+  };
+  
+
+  const handleAssignEmployee = async (parkingId) => {
+    if (!selectedEmployee) {
+      alert("Veuillez sélectionner un employé !");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `http://localhost:3001/parkings/assign-employee/${parkingId}/${selectedEmployee}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      showToast.success(" Employé assigné avec succès !");
+      setAssigningParkingId(null);
+      fetchMyParkings(); // Rafraîchir la liste des parkings
+    } catch (error) {
+      showToast.error("Erreur lors de l'assignation de l'employé");
+      
+    }
+  };
 
   const handleEdit = async (parking) => {
     try {
@@ -358,35 +411,29 @@ const ParkingListOwner = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Show popup if visible */}
+    <div className="flex flex-col h-full bg-gray-50">
       {showPopup && selectedParking && (
-        <ParkingDetailsPopup
-          parking={selectedParking}
-          onClose={handleClosePopup}
-        />
+        <ParkingDetailsPopup parking={selectedParking} onClose={handleClosePopup} />
       )}
-      
+  
       <div className="container mx-auto px-4 py-6">
-      <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">🚗 Gérer mes Parkings</h2>
-
-          {/* ✅ Nouveau bouton qui redirige vers /ParkingRequestForm */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+          <h2 className="text-2xl font-bold text-gray-800">🚗 Parking Management</h2>
+  
           <button
-            onClick={() => navigate("/ParkingRequestForm")} // ✅ Redirection
-            className="bg-green-600 text-black rounded-lg py-2 px-4 hover:bg-green-700 transition-colors flex items-center justify-center"
+            onClick={() => navigate("/ParkingRequestForm")}
+            className="bg-green-600 hover:bg-green-700 text-black font-medium rounded-lg py-2 px-4 transition-colors flex items-center justify-center shadow-sm"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="mr-2" viewBox="0 0 16 16">
               <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
             </svg>
-            Ajouter un parking
+            Add new Parking
           </button>
         </div>
-        
-        {/* Form Section */}
+         {/* Form Section */}
         {isAdding && (
           <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-            <h3 className="text-lg font-semibold mb-4">Ajouter un nouveau parking</h3>
+            <h3 className="text-lg font-semibold mb-4">Add new Parking</h3>
             <ParkingRequestForm
               onSuccess={() => {
                 setIsAdding(false);
@@ -398,7 +445,7 @@ const ParkingListOwner = () => {
         
         {editingParking && !isAdding && (
           <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-            <h3 className="text-lg font-semibold mb-4">Modifier le parking</h3>
+            <h3 className="text-lg font-semibold mb-4">Update Parking</h3>
             <ParkingEditForm
               editingParking={editingParking}
               setEditingParking={setEditingParking}
@@ -406,100 +453,144 @@ const ParkingListOwner = () => {
             />
           </div>
         )}
-        
-        {/* Parking List */}
+  
         <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-xl font-bold mb-4">Mes Parkings</h3>
-          
+          <h3 className="text-xl font-bold mb-4 border-b pb-2">My Parkings</h3>
+  
           {loading ? (
             <div className="flex justify-center items-center p-10">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
             </div>
           ) : error ? (
-            <div className="text-red-500 p-4 text-center">{error}</div>
-          ) : myParkings.length === 0 ? (
-            <div className="text-gray-500 p-6 text-center bg-gray-50 rounded-lg">
-              <div className="mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" className="mx-auto text-gray-400" viewBox="0 0 16 16">
-                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                  <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium">Aucun parking ajouté</h3>
-              <p className="mt-2">
-                Vous n'avez pas encore ajouté de parking. 
-                <br />Cliquez sur "Ajouter un parking" pour commencer.
-              </p>
+            <div className="text-red-500 p-4 text-center bg-red-50 rounded-lg border border-red-200">
+              <p className="font-medium">Erreur</p>
+              <p>{error}</p>
             </div>
+          ) : myParkings.length === 0 ? (
+            <div className="text-gray-500 p-6 text-center bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-medium">No parking added</h3>
+<p className="mt-2">Click on "Add a parking" to get started.</p>
+ </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {myParkings.map(parking => (
-                <div 
-                  key={parking._id} 
-                  className={`p-4 rounded-lg shadow-md transition-all cursor-pointer relative ${
-                    hoveredParking === parking._id ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-white border'
-                  }`}
-                  onMouseEnter={() => handleHover(parking)}
-                  onMouseLeave={() => setHoveredParking(null)}
-                  onClick={() => handleShowDetails(parking)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-semibold">{parking.name}</h3>
-                      <p className="text-sm text-gray-600">{parking.location}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {myParkings.map(parking => (
+              <div key={parking._id} className="rounded-lg shadow-md bg-white border border-gray-200 hover:shadow-lg transition-all overflow-hidden flex flex-col">
+                {/* Header section */}
+                <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">{parking.name}</h3>
+          <p className="text-sm text-gray-600 mt-1">{parking.location}</p>
+        </div>
+        <button 
+          className="bg-gray-600 text-black py-1 px-3 rounded-md hover:bg-gray-700 transition text-sm font-medium whitespace-nowrap"
+          onClick={(e) => handleShowDetails(parking, e)}
+        >
+          View details
+        </button>
+      </div>
+                
+                {/* Main content section */}
+                <div className="p-4 flex-grow flex flex-col">
+                  {/* Spots information */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+                      <p className="text-xs text-gray-600 font-medium">Total Spots</p>
+                      <p className="font-bold text-blue-700 text-lg">{parking.totalSpots}</p>
                     </div>
-                   
+                    <div className="bg-green-50 p-3 rounded-md border border-green-100">
+                      <p className="text-xs text-gray-600 font-medium">Available Spots</p>
+                      <p className="font-bold text-green-700 text-lg">{parking.availableSpots}</p>
+                    </div>
                   </div>
                   
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div className="bg-gray-50 p-2 rounded">
-                      <p className="text-xs text-gray-500">Total places</p>
-                      <p className="font-semibold">{parking.totalSpots}</p>
-                    </div>
-                    <div className="bg-gray-50 p-2 rounded">
-                      <p className="text-xs text-gray-500">Disponibles</p>
-                      <p className="font-semibold">{parking.availableSpots}</p>
+                  {/* Employee information */}
+                  <div className="bg-yellow-50 p-3 rounded-md border border-yellow-100 mb-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs text-gray-600 font-medium">Assigned Employee:</p>
+                      <p className="font-semibold text-gray-800">
+                        {parking.id_employee ? parking.id_employee.name : "No Employee assigned"}
+                      </p>
                     </div>
                   </div>
                   
-                  <div className="mt-3 flex justify-between">
+                
+                  
+                  {/* Action buttons */}
+                  <div className="flex justify-between items-center gap-2 mb-4">
                     {!pendingRequestParkings[parking._id] && (
                       <button 
-                        className="bg-blue-600 text-black py-1 px-3 rounded-md hover:bg-blue-700 transition text-sm"
+                        className="bg-blue-600 text-black py-2 px-4 rounded-md hover:bg-blue-700 transition text-sm font-medium flex-1"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEdit(parking);
                         }}
                       >
-                        Modifier
+                        Update
                       </button>
                     )}
-                    
+          
                     <button
-                      className="bg-red-600 text-black py-1 px-3 rounded-md hover:bg-red-700 transition text-sm"
+                      className="bg-red-600 text-black py-2 px-4 rounded-md hover:bg-red-700 transition text-sm font-medium flex-1"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(parking._id);
                       }}
                     >
-                      Supprimer
-                    </button>
-                    
-                    <button 
-                      className="bg-gray-600 text-black py-1 px-3 rounded-md hover:bg-gray-700 transition text-sm"
-                      onClick={(e) => handleShowDetails(parking, e)}
-                    >
-                      Détails
+                      Delete
                     </button>
                   </div>
+                  
+                  {/* Assign employee section */}
+                  <div className="mt-auto">
+                    <button 
+                      className="w-full bg-yellow-500 text-black py-2 px-3 rounded-md hover:bg-yellow-600 transition text-sm font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAssigningParkingId(parking._id);
+                      }}
+                    >
+                      Assign an Employee
+                    </button>
+                    
+                    {assigningParkingId === parking._id && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded-md border">
+                        <select 
+                          className="w-full border rounded-md p-2 mb-2 bg-white"
+                          onChange={(e) => setSelectedEmployee(e.target.value)}
+                        >
+                          <option value="">Select an Employee</option>
+                          {employees.map((employee) => (
+                            <option key={employee._id} value={employee._id}>{employee.name}</option>
+                          ))}
+                        </select>
+                        <div className="flex justify-between gap-2">
+                          <button 
+                            className="flex-1 bg-green-500 text-black py-2 px-3 rounded-md hover:bg-green-600 transition text-sm font-medium" 
+                            onClick={() => handleAssignEmployee(parking._id)}
+                          >
+                            Confirm
+                          </button>
+                          <button 
+                            className="flex-1 bg-gray-400 text-black py-2 px-3 rounded-md hover:bg-gray-500 transition text-sm font-medium" 
+                            onClick={() => setAssigningParkingId(null)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
           )}
         </div>
       </div>
     </div>
   );
+
 };
+
 
 export default ParkingListOwner;
