@@ -1,52 +1,320 @@
 import { Icon } from "@/components/ui/icon";
 import { BriefcaseMedicalIcon, LeafIcon, UserIcon } from "lucide-react-native";
 import React, { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, Modal, ScrollView, Pressable, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import View from "react-native/Libraries/Components/View/View";
+import { ProfessionalTypes, professionalStyles } from "@/constants/professional-types";
+import { Box } from "@/components/ui/box";
+import { VStack } from "@/components/ui/vstack";
+import { HStack } from "@/components/ui/hstack";
+import { Text } from "@/components/ui/text";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { Badge, BadgeIcon, BadgeText } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Heading } from "@/components/ui/heading";
+import { Progress, ProgressFilledTrack } from "@/components/ui/progress";
+import LinearGradient from 'react-native-linear-gradient';
+import { Target, Mail, MapPin, ChevronDown, Clapperboard } from "lucide-react-native";
+
+// Professional Card Component from ProfessionalProfile
+const ProfessionalCard = ({ 
+	professional, 
+	isExpanded, 
+	onToggle,
+	onClose 
+}: { 
+	professional: any, 
+	isExpanded: boolean,
+	onToggle: (expanded: boolean) => void,
+	onClose: () => void
+}) => {
+	const getBadgeColor = (type: string) => {
+		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === type)?.[0];
+		return key ? professionalStyles[key as keyof typeof professionalStyles]?.color : "#666";
+	};
+
+	const getBadgeIcon = (type: string) => {
+		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === type)?.[0];
+		return key ? professionalStyles[key as keyof typeof professionalStyles]?.icon : BriefcaseMedicalIcon;
+	};
+
+	return (
+		<Modal
+			animationType="slide"
+			transparent={true}
+			visible={true}
+			onRequestClose={onClose}
+		>
+			<Box style={styles.modalContainer}>
+				<ScrollView style={styles.modalContent}>
+					<Card className="py-5 pr-5 rounded-lg my-3 relative">
+						<Box style={{
+							position: 'absolute',
+							right: 10,
+							top: 10,
+							zIndex: 10
+						}}>
+							<Button
+								size="sm"
+								variant="link"
+								onPress={onClose}
+								style={{
+									padding: 4,
+									backgroundColor: 'rgba(0,0,0,0.1)',
+									borderRadius: 20
+								}}
+							>
+								<Text>✕</Text>
+							</Button>
+						</Box>
+						<Box
+							style={{
+								position: 'absolute',
+								left: 0,
+								bottom: 0,
+								width: 3,
+								top: 0,
+								overflow: 'hidden',
+							}}
+						>
+							<LinearGradient
+								start={{x: 0, y: 0}}
+								end={{x: 0, y: 1}}
+								colors={(() => {
+									const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+									return key ? [...professionalStyles[key as keyof typeof professionalStyles]?.gradient] : ['#22C55E', '#0EA5E9'];
+								})()}
+								style={StyleSheet.absoluteFill}
+							/>
+						</Box>
+						<VStack space="md">
+							<HStack space="md" style={{ alignItems: 'flex-start' }}>
+								<VStack space="xs" style={{ width: 110 }}>
+									<Avatar size="2xl">
+										<AvatarImage
+											source={{
+												uri: professional.avatar || "https://via.placeholder.com/150",
+											}}
+											alt={`${professional.name}'s avatar`}
+										/>
+									</Avatar>
+									<VStack space="xs" style={{ width: '100%', gap: 2 }}>
+										<HStack 
+											space="xs" 
+											style={{ 
+												alignItems: 'center',
+												justifyContent: 'flex-start',
+												width: '100%',
+												gap: 5
+											}}
+										>
+											<Button
+												size="sm"
+												variant="link"
+												style={{
+													borderColor: getBadgeColor(professional.type),
+													padding: 2
+												}}
+											>
+												<Target size={14} color={getBadgeColor(professional.type)} />
+											</Button>
+											<Text size="xs" italic>see my programs</Text>
+										</HStack>
+										<HStack 
+											space="xs" 
+											style={{ 
+												alignItems: 'center',
+												justifyContent: 'flex-start',
+												width: '100%',
+												gap: 4
+											}}
+										>
+											<Button
+												size="sm"
+												variant="link"
+												style={{
+													borderColor: getBadgeColor(professional.type),
+													padding: 2
+												}}
+											>
+												<Clapperboard size={14} color={getBadgeColor(professional.type)} />
+											</Button>
+											<Text size="xs" italic>see my content</Text>
+										</HStack>
+										<HStack 
+											space="xs" 
+											style={{ 
+												alignItems: 'center',
+												justifyContent: 'flex-start',
+												width: '100%',
+												gap: 4
+											}}
+										>
+											<Button
+												size="sm"
+												variant="link"
+												style={{
+													borderColor: getBadgeColor(professional.type),
+													padding: 2
+												}}
+											>
+												<Mail size={14} color={getBadgeColor(professional.type)} />
+											</Button>
+											<Text size="xs" italic>chat with me</Text>
+										</HStack>
+									</VStack>
+								</VStack>
+								<VStack space="xs" style={{ flex: 1 }}>
+									<Heading size="md">{professional.name}</Heading>
+									<VStack space="sm">
+										<Badge
+											size="sm"
+											variant="solid"
+											style={{
+												backgroundColor: getBadgeColor(professional.type)
+											}}
+										>
+											<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+												<BadgeIcon 
+													as={getBadgeIcon(professional.type)} 
+													size="sm"
+													color={(() => {
+														const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+														return key ? professionalStyles[key as keyof typeof professionalStyles]?.text : '#FFFFFF';
+													})()}
+												/>
+												<Box style={{ width: 4 }} />
+												<BadgeText style={{ 
+													color: (() => {
+														const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+														return key ? professionalStyles[key as keyof typeof professionalStyles]?.text : '#FFFFFF';
+													})()
+												}}>{professional.type}</BadgeText>
+											</Box>
+										</Badge>
+										<HStack space="xs" style={{ width: '100%' }}>
+											<Badge 
+												size="sm" 
+												variant="outline" 
+												style={{ 
+													borderColor: '#666',
+													flex: 4
+												}}
+											>
+												<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+													<BadgeIcon as={MapPin} size="sm" color="#666" />
+													<Box style={{ width: 4 }} />
+													<BadgeText style={{ color: '#666' }}>{professional.location}</BadgeText>
+												</Box>
+											</Badge>
+											<Badge 
+												size="sm" 
+												variant="outline" 
+												style={{ 
+													borderColor: '#666',
+													flex: 2
+												}}
+											>
+												<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
+													<BadgeIcon as={Target} size="sm" color="#666" />
+													<Box style={{ width: 4 }} />
+													<BadgeText style={{ color: '#666' }}>{professional.distance} km</BadgeText>
+												</Box>
+											</Badge>
+										</HStack>
+									</VStack>
+									<Box className="bg-gray-50 rounded-lg p-2 mt-1">
+										<Text size="sm" italic>
+											{professional.bio}
+										</Text>
+									</Box>
+									<Box className="mt-2">
+										<VStack space="xs">
+											<Box>
+												<HStack space="xs" className="mb-1">
+													<Text size="xs" bold>Compatibility:</Text>
+													<Text size="xs">{professional.compatibility || 85}%</Text>
+												</HStack>
+												<Box style={{ position: 'relative' }}>
+													<Progress size="sm" value={100}>
+														<ProgressFilledTrack>
+															<LinearGradient
+																start={{x: 0, y: 0}}
+																end={{x: 1, y: 0}}
+																colors={['#E5E7EB', '#D1D5DB']}
+																style={StyleSheet.absoluteFill}
+															/>
+														</ProgressFilledTrack>
+													</Progress>
+													<Box style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+														<Progress size="sm" value={professional.compatibility || 85}>
+															<ProgressFilledTrack>
+																<LinearGradient
+																	start={{x: 0, y: 0}}
+																	end={{x: 1, y: 0}}
+																	colors={(() => {
+																		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+																		const gradient = key ? professionalStyles[key as keyof typeof professionalStyles]?.gradient : ['#22C55E', '#0EA5E9'];
+																		return [...gradient];
+																	})()}
+																	style={StyleSheet.absoluteFill}
+																/>
+															</ProgressFilledTrack>
+														</Progress>
+													</Box>
+												</Box>
+											</Box>
+										</VStack>
+									</Box>
+								</VStack>
+							</HStack>
+						</VStack>
+					</Card>
+				</ScrollView>
+			</Box>
+		</Modal>
+	);
+};
+
 // Custom Marker Component
 const CustomMarker = ({
-	name,
-	coordinate,
-	logo,
+	professional,
+	onPress,
 }: {
-	name: string;
-	coordinate: { latitude: number; longitude: number };
-	logo: string;
+	professional: any;
+	onPress: () => void;
 }) => {
-	const [count, setCount] = useState(0);
-	console.log(logo);
+	const getBadgeIcon = (type: string) => {
+		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === type)?.[0];
+		return key ? professionalStyles[key as keyof typeof professionalStyles]?.icon : BriefcaseMedicalIcon;
+	};
+
+	const IconComponent = getBadgeIcon(professional.type);
+
 	return (
-		<Marker coordinate={coordinate}>
-			<TouchableOpacity
+		<Marker 
+			coordinate={{
+				latitude: professional.coordinate.latitude,
+				longitude: professional.coordinate.longitude
+			}}
+			onPress={onPress}
+		>
+			<Pressable
 				style={styles.markerContainer}
-				onPress={() => setCount(count + 1)}
 			>
-				{/* <Text style={styles.markerCount}>{count}</Text> */}
-				{logo === "leaf" ? (
-					<>
-						<Icon as={LeafIcon} size="md" />
-						<Text style={styles.markerText}>{name}</Text>
-					</>
-				) : logo === "briefcase-medical" ? (
-					<>
-						<Icon as={BriefcaseMedicalIcon} size="md" />
-						<Text style={styles.markerText}>{name}</Text>
-					</>
-				) : logo === "user" ? (
-					<>
-						<Icon as={UserIcon} size="md" />
-						<Text style={styles.markerText}>{name}</Text>
-					</>
-				) : null}
-				{/* <Icon as={LeafIcon} size="md" /> */}
-			</TouchableOpacity>
+				<Icon as={IconComponent} size="md" />
+				<Text style={styles.markerText}>{professional.name}</Text>
+			</Pressable>
 		</Marker>
 	);
 };
 
 // Main App Component
 export default function App() {
+	const [selectedProfessional, setSelectedProfessional] = useState<any>(null);
+	const [expandedCards, setExpandedCards] = React.useState<Set<string>>(new Set());
+
 	const initialRegion = {
 		latitude: 43.6119,
 		longitude: 3.8772,
@@ -54,41 +322,80 @@ export default function App() {
 		longitudeDelta: 0.0421,
 	};
 
-	const markers = [
+	const professionals = [
 		{
-			name: "Alycia",
+			id: "1",
+			name: "Marie Dubois",
+			type: ProfessionalTypes.DIETETICIEN,
 			coordinate: { latitude: 43.605, longitude: 3.8793 },
-			logo: "user",
+			location: "Montpellier, FR",
+			distance: "2.5",
+			bio: "Diététicienne spécialisée en rééquilibrage alimentaire et nutrition sportive",
+			avatar: "https://randomuser.me/api/portraits/women/1.jpg",
+			compatibility: 88,
 		},
 		{
-			name: "Albert",
+			id: "2",
+			name: "Sophie Martin",
+			type: ProfessionalTypes.SOPHROLOGUE,
 			coordinate: { latitude: 43.6119, longitude: 3.8772 },
-			logo: "user",
+			location: "Montpellier, FR",
+			distance: "1.8",
+			bio: "Sophrologue certifiée, spécialisée en gestion du stress et sommeil",
+			avatar: "https://randomuser.me/api/portraits/women/2.jpg",
+			compatibility: 92,
 		},
 		{
-			name: "Docteur Ferrand",
+			id: "3",
+			name: "Lucas Bernard",
+			type: ProfessionalTypes.AROMATHERAPEUTE,
 			coordinate: { latitude: 43.6152, longitude: 3.8823 },
-			logo: "briefcase-medical",
+			location: "Montpellier, FR",
+			distance: "3.2",
+			bio: "Aromathérapeute passionné par les huiles essentielles et le bien-être naturel",
+			avatar: "https://randomuser.me/api/portraits/men/3.jpg",
+			compatibility: 75,
 		},
 		{
-			name: "Naturopathe Léa",
+			id: "4",
+			name: "Emma Petit",
+			type: ProfessionalTypes.NATUROPATHE,
 			coordinate: { latitude: 43.6193, longitude: 3.8772 },
-			logo: "leaf",
+			location: "Montpellier, FR",
+			distance: "4.1",
+			bio: "Naturopathe holistique, spécialisée en nutrition et plantes médicinales",
+			avatar: "https://randomuser.me/api/portraits/women/4.jpg",
+			compatibility: 95,
 		},
 	];
 
 	return (
 		<View style={styles.container}>
 			<MapView style={styles.map} initialRegion={initialRegion}>
-				{markers.map((marker, index) => (
+				{professionals.map((professional) => (
 					<CustomMarker
-						key={index}
-						name={marker.name}
-						coordinate={marker.coordinate}
-						logo={marker.logo}
+						key={professional.id}
+						professional={professional}
+						onPress={() => setSelectedProfessional(professional)}
 					/>
 				))}
 			</MapView>
+			{selectedProfessional && (
+				<ProfessionalCard
+					professional={selectedProfessional}
+					isExpanded={expandedCards.has(selectedProfessional.id)}
+					onToggle={(expanded) => {
+						const newSet = new Set(expandedCards);
+						if (expanded) {
+							newSet.add(selectedProfessional.id);
+						} else {
+							newSet.delete(selectedProfessional.id);
+						}
+						setExpandedCards(newSet);
+					}}
+					onClose={() => setSelectedProfessional(null)}
+				/>
+			)}
 		</View>
 	);
 }
@@ -113,8 +420,16 @@ const styles = StyleSheet.create({
 		fontWeight: "bold",
 		color: "#333",
 	},
-	markerCount: {
-		fontSize: 12,
-		color: "#666",
+	modalContainer: {
+		flex: 1,
+		justifyContent: 'flex-end',
+		backgroundColor: 'rgba(0, 0, 0, 0.5)',
+	},
+	modalContent: {
+		backgroundColor: '#f5f5f5',
+		borderTopLeftRadius: 20,
+		borderTopRightRadius: 20,
+		padding: 16,
+		maxHeight: '80%',
 	},
 });
