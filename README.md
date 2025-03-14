@@ -11,6 +11,9 @@
 - formations (school or whatever)
 - programs interaction
 - chat interaction
+### Professional Styles
+- gradient 3 colors
+- text dark when colors are light
 
 ## Chats
 -

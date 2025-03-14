@@ -108,112 +108,132 @@ type ProfessionalType = typeof ProfessionalTypes[keyof typeof ProfessionalTypes]
 // Color and icon mappings for each professional type
 const professionalStyles = {
 	DIETETICIEN: {
-		icon: Apple,
-		color: "#4CAF50", // Green
-		gradient: ["#4CAF50", "#81C784"]
+	  icon: Apple,
+	  color: "#0ca4a5",
+	  gradient: ["#0892a5", "#06908f", "#0ca4a5"],
+	  text: "#FFFFFF" // Luminance: ~94 (dark color)
 	},
 	SOPHROLOGUE: {
-		icon: Brain,
-		color: "#2196F3", // Blue
-		gradient: ["#2196F3", "#64B5F6"]
+	  icon: Brain,
+	  color: "#0ca4a5",
+	  gradient: ["#f84aa7", "#a74482", "#0ca4a5"],
+	  text: "#FFFFFF" // Luminance: ~94 (dark color)
 	},
 	AROMATHERAPEUTE: {
-		icon: Flower,
-		color: "#9C27B0", // Purple
-		gradient: ["#9C27B0", "#BA68C8"]
+	  icon: Flower,
+	  color: "#d6a184",
+	  gradient: ["#fec196", "#ffa686", "#d6a184"],
+	  text: "#333333" // Luminance: ~171 (light color)
 	},
 	COACH_VIE: {
-		icon: Heart,
-		color: "#E91E63", // Pink
-		gradient: ["#E91E63", "#F48FB1"]
+	  icon: Heart,
+	  color: "#cad178",
+	  gradient: ["#c7aa74", "#d3d57c", "#cad178"],
+	  text: "#333333" // Luminance: ~188 (light color)
 	},
 	COACH_SEDUCTION: {
-		icon: Sparkles,
-		color: "#FF9800", // Orange
-		gradient: ["#FF9800", "#FFB74D"]
+	  icon: Sparkles,
+	  color: "#e8d7f1",
+	  gradient: ["#a167a5", "#d3bccc", "#e8d7f1"],
+	  text: "#333333" // Luminance: ~219 (light color)
 	},
 	COACH_SPORTIF: {
-		icon: Dumbbell,
-		color: "#F44336", // Red
-		gradient: ["#F44336", "#EF5350"]
+	  icon: Dumbbell,
+	  color: "#ff9505",
+	  gradient: ["#ffc971", "#ffb627", "#ff9505"],
+	  text: "#333333" // Luminance: ~165 (light color)
 	},
 	ASTROLOGUE: {
-		icon: Star,
-		color: "#673AB7", // Deep Purple
-		gradient: ["#673AB7", "#9575CD"]
+	  icon: Star,
+	  color: "#21295c",
+	  gradient: ["#065a82", "#1b3b6f", "#21295c"],
+	  text: "#FFFFFF" // Luminance: ~38 (dark color)
 	},
 	GRAPHOLOGUE: {
-		icon: PenTool,
-		color: "#795548", // Brown
-		gradient: ["#795548", "#A1887F"]
+	  icon: PenTool,
+	  color: "#ecf8f8",
+	  gradient: ["#e7d8c9", "#eee4e1", "#ecf8f8"],
+	  text: "#333333" // Luminance: ~241 (light color)
 	},
 	MAGNETISEUR: {
-		icon: Magnet,
-		color: "#3F51B5", // Indigo
-		gradient: ["#3F51B5", "#7986CB"]
+	  icon: Magnet,
+	  color: "#cce3de",
+	  gradient: ["#f6fff8", "#eaf4f4", "#cce3de"],
+	  text: "#333333" // Luminance: ~215 (light color)
 	},
 	NATUROPATHE: {
-		icon: Leaf,
-		color: "#8BC34A", // Light Green
-		gradient: ["#8BC34A", "#AED581"]
+	  icon: Leaf,
+	  color: "#6b9080",
+	  gradient: ["#cce3de", "#a4c3b2", "#6b9080"],
+	  text: "#FFFFFF" // Luminance: ~132 (slightly dark, but close to threshold)
 	},
 	MUSICOTHERAPEUTE: {
-		icon: Music,
-		color: "#FF5722", // Deep Orange
-		gradient: ["#FF5722", "#FF8A65"]
+	  icon: Music,
+	  color: "#87bfff",
+	  gradient: ["#2667ff", "#3f8efc", "#87bfff"],
+	  text: "#333333" // Luminance: ~175 (light color)
 	},
 	NUMEROLOGUE: {
-		icon: Hash,
-		color: "#607D8B", // Blue Grey
-		gradient: ["#607D8B", "#90A4AE"]
+	  icon: Hash,
+	  color: "#fbf7f0",
+	  gradient: ["#a47c41", "#f1e5d7", "#fbf7f0"],
+	  text: "#FFFFFF" // Luminance: ~245 (light color)
 	},
 	PSYCHANALYSTE: {
-		icon: BrainCircuit,
-		color: "#9C27B0", // Purple
-		gradient: ["#9C27B0", "#BA68C8"]
+	  icon: BrainCircuit,
+	  color: "#3f020b",
+	  gradient: ["#e60b43", "#670117", "#3f020b"],
+	  text: "#FFFFFF" // Luminance: ~19 (dark color)
 	},
 	PSYCHOLOGUE: {
-		icon: Brain,
-		color: "#2196F3", // Blue
-		gradient: ["#2196F3", "#64B5F6"]
+	  icon: Brain,
+	  color: "#e0e2db",
+	  gradient: ["#b8bdb5", "#d2d4c8", "#e0e2db"],
+	  text: "#333333" // Luminance: ~225 (light color)
 	},
 	PSYCHOPRATICIEN: {
-		icon: Brain,
-		color: "#2196F3", // Blue
-		gradient: ["#2196F3", "#64B5F6"]
+	  icon: Brain,
+	  color: "#fdffe8",
+	  gradient: ["#fff9c5", "#ffdcc6", "#fdffe8"],
+	  text: "#333333" // Luminance: ~252 (light color)
 	},
 	BIO_ENERGETICIEN: {
-		icon: Zap,
-		color: "#FFC107", // Amber
-		gradient: ["#FFC107", "#FFD54F"]
+	  icon: Zap,
+	  color: "#7bdff2",
+	  gradient: ["#eff7f6", "#b2f7ef", "#7bdff2"],
+	  text: "#333333" // Luminance: ~198 (light color)
 	},
 	REIKI: {
-		icon: Sparkles,
-		color: "#00BCD4", // Cyan
-		gradient: ["#00BCD4", "#4DD0E1"]
+	  icon: Sparkles,
+	  color: "#e3f2fd",
+	  gradient: ["#90caf9", "#bbdefb", "#e3f2fd"],
+	  text: "#333333" // Luminance: ~235 (light color)
 	},
 	SHIATSU: {
-		icon: Hand,
-		color: "#795548", // Brown
-		gradient: ["#795548", "#A1887F"]
+	  icon: Hand,
+	  color: "#ff8500",
+	  gradient: ["#ff9e00", "#ff9100", "#ff8500"],
+	  text: "#333333" // Luminance: ~149 (light color)
 	},
 	YOGA_THERAPEUTE: {
-		icon: Activity,
-		color: "#4CAF50", // Green
-		gradient: ["#4CAF50", "#81C784"]
+	  icon: Activity,
+	  color: "#240046",
+	  gradient: ["#5a189a", "#3c096c", "#240046"],
+	  text: "#FFFFFF" // Luminance: ~15 (dark color)
 	},
 	HYPNOTISEUR: {
-		icon: Eye,
-		color: "#3F51B5", // Indigo
-		gradient: ["#3F51B5", "#7986CB"]
+	  icon: Eye,
+	  color: "#590d22",
+	  gradient: ["#a4133c", "#800f2f", "#590d22"],
+	  text: "#FFFFFF" // Luminance: ~34 (dark color)
 	},
 	PHYTOTHERAPEUTE: {
-		icon: Leaf,
-		color: "#8BC34A", // Light Green
-		gradient: ["#8BC34A", "#AED581"]
+	  icon: Leaf,
+	  color: "#355070",
+	  gradient: ["#b56576", "#6d597a", "#355070"],
+	  text: "#FFFFFF" // Luminance: ~74 (dark color)
 	}
-} as const;
-
+  } as const;
 
 
 interface Skill {
@@ -423,7 +443,17 @@ const ProfessionalCard = ({
 						</VStack>
 					</VStack>
 					<VStack space="xs" style={{ flex: 1 }}>
-						<Heading size="md">{professional.name}</Heading>
+						<Heading 
+							size="md" 
+							style={{
+								color: (() => {
+									const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+									return key ? professionalStyles[key as keyof typeof professionalStyles]?.text : '#FFFFFF';
+								})()
+							}}
+						>
+							{professional.name}
+						</Heading>
 						<VStack space="sm">
 							<Badge
 								size="sm"
