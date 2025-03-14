@@ -11,6 +11,7 @@
 - formations (school or whatever)
 - programs interaction
 - chat interaction
+- city name too long
 ### Professional Styles
 - gradient 3 colors
 - text dark when colors are light

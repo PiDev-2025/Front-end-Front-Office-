@@ -362,6 +362,27 @@ const ProfessionalCard = ({
 									alignItems: 'center',
 									justifyContent: 'flex-start',
 									width: '100%',
+									gap: 5
+								}}
+							>
+								<Button
+									size="sm"
+									variant="link"
+									style={{
+										borderColor: getBadgeColor(professional.type),
+										padding: 2
+									}}
+								>
+									<Target size={14} color={getBadgeColor(professional.type)} />
+								</Button>
+								<Text size="xs" italic>see my programs</Text>
+							</HStack>
+							<HStack 
+								space="xs" 
+								style={{ 
+									alignItems: 'center',
+									justifyContent: 'flex-start',
+									width: '100%',
 									gap: 4
 								}}
 							>
@@ -373,9 +394,9 @@ const ProfessionalCard = ({
 										padding: 2
 									}}
 								>
-									<MapPin size={14} color={getBadgeColor(professional.type)} />
+									<Clapperboard size={14} color={getBadgeColor(professional.type)} />
 								</Button>
-								<Text size="xs" italic>locate me</Text>
+								<Text size="xs" italic>see my content</Text>
 							</HStack>
 							<HStack 
 								space="xs" 
@@ -415,42 +436,18 @@ const ProfessionalCard = ({
 										padding: 2
 									}}
 								>
-									<Target size={14} color={getBadgeColor(professional.type)} />
+									<MapPin size={14} color={getBadgeColor(professional.type)} />
 								</Button>
-								<Text size="xs" italic>see my programs</Text>
+								<Text size="xs" italic>locate me</Text>
 							</HStack>
-							<HStack 
-								space="xs" 
-								style={{ 
-									alignItems: 'center',
-									justifyContent: 'flex-start',
-									width: '100%',
-									gap: 4
-								}}
-							>
-								<Button
-									size="sm"
-									variant="link"
-									style={{
-										borderColor: getBadgeColor(professional.type),
-										padding: 2
-									}}
-								>
-									<Clapperboard size={14} color={getBadgeColor(professional.type)} />
-								</Button>
-								<Text size="xs" italic>see my content</Text>
-							</HStack>
+
+
+
 						</VStack>
 					</VStack>
 					<VStack space="xs" style={{ flex: 1 }}>
 						<Heading 
 							size="md" 
-							style={{
-								color: (() => {
-									const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
-									return key ? professionalStyles[key as keyof typeof professionalStyles]?.text : '#FFFFFF';
-								})()
-							}}
 						>
 							{professional.name}
 						</Heading>
@@ -466,10 +463,18 @@ const ProfessionalCard = ({
 									<BadgeIcon 
 										as={getBadgeIcon(professional.type)} 
 										size="sm"
-										color="white"
+										color={(() => {
+											const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+											return key ? professionalStyles[key as keyof typeof professionalStyles]?.text : '#FFFFFF';
+										})()}
 									/>
 									<Box style={{ width: 4 }} />
-									<BadgeText style={{ color: 'white' }}>{professional.type}</BadgeText>
+									<BadgeText style={{ 
+										color: (() => {
+											const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+											return key ? professionalStyles[key as keyof typeof professionalStyles]?.text : '#FFFFFF';
+										})()
+									}}>{professional.type}</BadgeText>
 								</Box>
 							</Badge>
 							<HStack space="xs" style={{ width: '100%' }}>
@@ -484,7 +489,7 @@ const ProfessionalCard = ({
 									<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
 										<BadgeIcon as={MapPin} size="sm" color="#666" />
 										<Box style={{ width: 4 }} />
-										<BadgeText style={{ color: '#666' }}>{professional.location}</BadgeText>
+										<BadgeText style={{ color: '#666' }}>{professional.location.split(',')[0]}</BadgeText>
 									</Box>
 								</Badge>
 								<Badge 
@@ -566,7 +571,10 @@ const ProfessionalCard = ({
 													<LinearGradient
 														start={{x: 0, y: 0}}
 														end={{x: 1, y: 0}}
-														colors={['#F59E0B', '#FCD34D']}
+														colors={(() => {
+															const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+															return key ? [...professionalStyles[key as keyof typeof professionalStyles]?.gradient] : ['#22C55E', '#0EA5E9'];
+														})()}
 														style={StyleSheet.absoluteFill}
 													/>
 												</ProgressFilledTrack>
@@ -577,7 +585,7 @@ const ProfessionalCard = ({
 								<Box>
 									<HStack space="xs" className="mb-1">
 										<Text size="xs" bold>Accompanied:</Text>
-										<Text size="xs">{professional.satisfaction || 90} persons</Text>
+										<Text size="xs">{professional.satisfaction || 90} / total_accompanied</Text>
 									</HStack>
 									<Box style={{ position: 'relative' }}>
 										<Progress size="sm" value={100}>
@@ -596,7 +604,10 @@ const ProfessionalCard = ({
 													<LinearGradient
 														start={{x: 0, y: 0}}
 														end={{x: 1, y: 0}}
-														colors={['#F59E0B', '#FCD34D']}
+														colors={(() => {
+															const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+															return key ? [...professionalStyles[key as keyof typeof professionalStyles]?.gradient] : ['#22C55E', '#0EA5E9'];
+														})()}
 														style={StyleSheet.absoluteFill}
 													/>
 												</ProgressFilledTrack>

@@ -15,7 +15,7 @@ import { NAV_THEME } from "./libs/constants";
 import { useColorScheme } from "./libs/useColorScheme";
 // import APIsScreen from "./screens/APIs";
 // import EnvironmentScreen from "./screens/Environment";
-// import Map from "./screens/Map";
+import Map from "./screens/Map";
 // import ProfessionalProfile from "./screens/ProfessionalProfile";
 import QCTScreen from "./screens/QCTScreen";
 // import StatesScreen from "./screens/States";
@@ -182,13 +182,13 @@ export default function App(): React.JSX.Element {
 											headerShown: true,
 										}}
 									/>
-									{/* <Stack.Screen
+									<Stack.Screen
 										name="Map"
 										component={Map}
 										options={{
 											headerShown: true,
 										}}
-									/> */}
+									/>
 									{/* <Stack.Screen
 										name="ProfessionalProfile"
 										component={ProfessionalProfile}
