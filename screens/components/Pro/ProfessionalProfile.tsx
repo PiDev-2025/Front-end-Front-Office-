@@ -52,7 +52,8 @@ import {
 	Eye,
 	Zap,
 	Dumbbell,
-	CalendarPlus
+	CalendarPlus,
+	Clapperboard
 } from "lucide-react-native";
 
 // Types
@@ -334,38 +335,92 @@ const ProfessionalCard = ({
 								alt={`${professional.name}'s avatar`}
 							/>
 						</Avatar>
-						<HStack space="xs" style={{ justifyContent: 'center' }}>
-							<Button
-								size="sm"
-								variant="link"
-								style={{
-									borderColor: getBadgeColor(professional.type),
-									padding: 8
+						<VStack space="xs" style={{ width: '100%', gap: 2 }}>
+							<HStack 
+								space="xs" 
+								style={{ 
+									alignItems: 'center',
+									justifyContent: 'flex-start',
+									width: '100%',
+									gap: 4
 								}}
 							>
-								<Target size={16} color={getBadgeColor(professional.type)} />
-							</Button>
-							<Button
-								size="sm"
-								variant="link"
-								style={{
-									borderColor: getBadgeColor(professional.type),
-									padding: 8
+								<Button
+									size="sm"
+									variant="link"
+									style={{
+										borderColor: getBadgeColor(professional.type),
+										padding: 2
+									}}
+								>
+									<MapPin size={14} color={getBadgeColor(professional.type)} />
+								</Button>
+								<Text size="xs" italic>locate me</Text>
+							</HStack>
+							<HStack 
+								space="xs" 
+								style={{ 
+									alignItems: 'center',
+									justifyContent: 'flex-start',
+									width: '100%',
+									gap: 4
 								}}
 							>
-								<Mail size={16} color={getBadgeColor(professional.type)} />
-							</Button>
-							<Button
-								size="sm"
-								variant="link"
-								style={{
-									borderColor: getBadgeColor(professional.type),
-									padding: 8
+								<Button
+									size="sm"
+									variant="link"
+									style={{
+										borderColor: getBadgeColor(professional.type),
+										padding: 2
+									}}
+								>
+									<Mail size={14} color={getBadgeColor(professional.type)} />
+								</Button>
+								<Text size="xs" italic>chat with me</Text>
+							</HStack>
+							<HStack 
+								space="xs" 
+								style={{ 
+									alignItems: 'center',
+									justifyContent: 'flex-start',
+									width: '100%',
+									gap: 4
 								}}
 							>
-								<CalendarPlus size={16} color={getBadgeColor(professional.type)} />
-							</Button>
-						</HStack>
+								<Button
+									size="sm"
+									variant="link"
+									style={{
+										borderColor: getBadgeColor(professional.type),
+										padding: 2
+									}}
+								>
+									<Target size={14} color={getBadgeColor(professional.type)} />
+								</Button>
+								<Text size="xs" italic>see my programs</Text>
+							</HStack>
+							<HStack 
+								space="xs" 
+								style={{ 
+									alignItems: 'center',
+									justifyContent: 'flex-start',
+									width: '100%',
+									gap: 4
+								}}
+							>
+								<Button
+									size="sm"
+									variant="link"
+									style={{
+										borderColor: getBadgeColor(professional.type),
+										padding: 2
+									}}
+								>
+									<Clapperboard size={14} color={getBadgeColor(professional.type)} />
+								</Button>
+								<Text size="xs" italic>see my content</Text>
+							</HStack>
+						</VStack>
 					</VStack>
 					<VStack space="xs" style={{ flex: 1 }}>
 						<Heading size="md">{professional.name}</Heading>
@@ -463,6 +518,36 @@ const ProfessionalCard = ({
 									<HStack space="xs" className="mb-1">
 										<Text size="xs" bold>Satisfaction:</Text>
 										<Text size="xs">{professional.satisfaction || 90}%</Text>
+									</HStack>
+									<Box style={{ position: 'relative' }}>
+										<Progress size="sm" value={100}>
+											<ProgressFilledTrack>
+												<LinearGradient
+													start={{x: 0, y: 0}}
+													end={{x: 1, y: 0}}
+													colors={['#E5E7EB', '#D1D5DB']}
+													style={StyleSheet.absoluteFill}
+												/>
+											</ProgressFilledTrack>
+										</Progress>
+										<Box style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+											<Progress size="sm" value={professional.satisfaction || 90}>
+												<ProgressFilledTrack>
+													<LinearGradient
+														start={{x: 0, y: 0}}
+														end={{x: 1, y: 0}}
+														colors={['#F59E0B', '#FCD34D']}
+														style={StyleSheet.absoluteFill}
+													/>
+												</ProgressFilledTrack>
+											</Progress>
+										</Box>
+									</Box>
+								</Box>
+								<Box>
+									<HStack space="xs" className="mb-1">
+										<Text size="xs" bold>Accompanied:</Text>
+										<Text size="xs">{professional.satisfaction || 90} persons</Text>
 									</HStack>
 									<Box style={{ position: 'relative' }}>
 										<Progress size="sm" value={100}>
