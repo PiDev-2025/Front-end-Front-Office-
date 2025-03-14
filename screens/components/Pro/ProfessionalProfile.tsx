@@ -51,16 +51,31 @@ import {
 	Activity,
 	Eye,
 	Zap,
-	Dumbbell
+	Dumbbell,
+	CalendarPlus
 } from "lucide-react-native";
 
-// Jotai atoms
-const professionalsAtom = atomWithStorage("professionals", []);
-const loadingAtom = atomWithStorage("loading", false);
-const errorAtom = atomWithStorage("error", null);
+// Types
+interface Professional {
+	id: string;
+	name: string;
+	type: ProfessionalType;
+	location: string;
+	distance: string;
+	bio: string;
+	avatar: string;
+	compatibility: number;
+	satisfaction: number;
+	experience: string;
+	specialties: string;
+	languages: string;
+	[key: string]: unknown;
+}
 
-// SurrealDB instance
-const db = new Surreal("http://localhost:8000/rpc"); // Adjust URL as needed
+// Jotai atoms
+const professionalsAtom = atomWithStorage<Professional[]>("professionals", []);
+const loadingAtom = atomWithStorage<boolean>("loading", false);
+const errorAtom = atomWithStorage<string | null>("error", null);
 
 // Professional types enum
 const ProfessionalTypes = {
@@ -198,34 +213,7 @@ const professionalStyles = {
 	}
 } as const;
 
-// SurrealDB fetch function
-const fetchProfessionalsFromDB = async () => {
-	try {
-		// Connect to SurrealDB
-		await db.connect();
 
-		// Sign in (adjust credentials as needed)
-		await db.signin({
-			user: "root",
-			pass: "root",
-		});
-
-		// Select namespace and database
-		await db.use("sw", "core");
-
-		// Fetch all professionals
-		const professionals = await db.select("professional");
-
-		return professionals;
-	} catch (error) {
-		throw new Error(
-			"Failed to fetch professionals from SurrealDB: " + error.message
-		);
-	} finally {
-		// Optional: Close connection if needed
-		// await db.close();
-	}
-};
 
 interface Skill {
 	name: string;
@@ -336,7 +324,7 @@ const ProfessionalCard = ({
 			</Box>
 			{/* Top Section */}
 			<VStack space="md">
-				<HStack space="md" alignItems="flex-start">
+				<HStack space="md" style={{ alignItems: 'flex-start' }}>
 					<VStack space="xs" style={{ width: 110 }}>
 						<Avatar size="2xl">
 							<AvatarImage
@@ -366,6 +354,16 @@ const ProfessionalCard = ({
 								}}
 							>
 								<Mail size={16} color={getBadgeColor(professional.type)} />
+							</Button>
+							<Button
+								size="sm"
+								variant="link"
+								style={{
+									borderColor: getBadgeColor(professional.type),
+									padding: 8
+								}}
+							>
+								<CalendarPlus size={16} color={getBadgeColor(professional.type)} />
 							</Button>
 						</HStack>
 					</VStack>
@@ -504,7 +502,7 @@ const ProfessionalCard = ({
 								<Text size="sm" bold style={{ width: 100 }}>Experience:</Text>
 								<Text size="sm">{professional.experience}</Text>
 							</HStack>
-							<HStack space="md" alignItems="flex-start">
+							<HStack space="md" style={{ alignItems: 'flex-start' }}>
 								<Text size="sm" bold style={{ width: 100 }}>Specialties:</Text>
 								<Text size="sm" style={{ flex: 1 }}>{professional.specialties}</Text>
 							</HStack>
@@ -559,6 +557,21 @@ const ProfessionalCard = ({
 	);
 };
 
+// API fetch function
+const fetchProfessionalsFromDB = async (): Promise<Professional[]> => {
+	try {
+		const response = await fetch('http://127.0.0.1:8000/professionals');
+		if (!response.ok) {
+			throw new Error('Failed to fetch professionals');
+		}
+		const data = await response.json();
+		return data as Professional[];
+	} catch (error) {
+		console.error('Error fetching professionals:', error);
+		return [];
+	}
+};
+
 // Main Professional Profile Component
 const ProfessionalProfile = () => {
 	const [professionals, setProfessionals] = useAtom(professionalsAtom);
@@ -574,7 +587,11 @@ const ProfessionalProfile = () => {
 				setProfessionals(data);
 				setError(null);
 			} catch (err) {
-				setError(err.message);
+				if (err instanceof Error) {
+					setError(err.message);
+				} else {
+					setError('An unknown error occurred');
+				}
 			} finally {
 				setLoading(false);
 			}
@@ -583,9 +600,6 @@ const ProfessionalProfile = () => {
 		if (!professionals.length) {
 			loadProfessionals();
 		}
-
-		setError(false);
-
 	}, [setProfessionals, setLoading, setError]);
 
 	// Mock data for development
@@ -942,7 +956,6 @@ const styles = StyleSheet.create({
 });
 
 export default ProfessionalProfile;
-
 // Optional: Function to seed initial data (run this separately or on first load)
 // const seedDatabase = async () => {
 // 	try {
@@ -970,3 +983,4 @@ export default ProfessionalProfile;
 // 		console.error("Failed to seed database:", error);
 // 	}
 // };
+
