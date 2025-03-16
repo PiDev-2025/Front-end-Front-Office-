@@ -31,6 +31,7 @@ import Step2UploadImages from '../src/Components/Pages/Step/Step2AddParking';
 import FaceAuth from "./Components/FaceAuth/FaceAuth";
 import ParkingDetails from "./Pages/ParkingDetails";
 import SecLocation from './Components/Pages/Step/Location';
+import ParkingImages from './Pages/colmap'
 import ParkingPlan from "./Pages/viualisation3D"
 import NotFound from './Pages/NotFound';
 
@@ -64,6 +65,7 @@ const App = () => {
               <Route path="imageUpload" element={<ImageUpload />} />
               <Route path="ownerAddPaking" element={<OwnerAddPaking />} />
               <Route path="step2/:parkingId" element={<Step2UploadImages />} />
+              <Route path="colmap" element={<ParkingImages />} />
               <Route path="how-it-works" element={<HowItworks />} />
               <Route path="booking" element={<Booking />} />
               <Route path="careers" element={<Careers />} />

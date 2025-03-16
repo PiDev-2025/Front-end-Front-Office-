@@ -6,7 +6,7 @@ function ParkingImages() {
 
   useEffect(() => {
     // Remplace l'URL par celle de ton API
-    axios.get('/api/parkings/images') 
+    axios.get('http://127.0.0.1:8000/upload_images/') 
       .then(response => {
         setImageUrls(response.data.images);
       })
