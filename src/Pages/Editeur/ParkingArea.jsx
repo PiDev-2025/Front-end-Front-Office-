@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDrop } from "react-dnd";
-import { ItemTypes } from "./ItemTypes";
+import { ItemTypes } from "../ItemTypes";
 
 const ParkingArea = ({ children, onDropParkingSpot, onDropStreet }) => {
   const [isDraggingScene, setIsDraggingScene] = useState(false);

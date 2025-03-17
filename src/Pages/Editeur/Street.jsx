@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useDrag } from "react-dnd";
-import { ItemTypes } from "./ItemTypes";
+import { ItemTypes } from "../ItemTypes";
 
 const Street = ({ id, position, rotation, width, length, updatePosition, updateRotation, updateDimensions, onRemove, hasEntrance, hasExit, toggleEntrance, toggleExit }) => {
   const [showControls, setShowControls] = useState(false);

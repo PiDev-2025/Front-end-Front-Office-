@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import ParkingSpot from './ParkingSpot';
+import ParkingSpot from '../ParkingSpot';
 
 // Wrapper pour fournir le contexte DnD nécessaire
 const DndWrapper = ({ children }) => (

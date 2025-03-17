@@ -1,7 +1,6 @@
 import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-
 import DefaultLayout from "./Layouts/DefaultLayout";
 import Homepage from './Pages/Homepage';
 import HowItworks from './Pages/HowItworks';
@@ -32,7 +31,7 @@ import FaceAuth from "./Components/FaceAuth/FaceAuth";
 import ParkingDetails from "./Pages/ParkingDetails";
 import SecLocation from './Components/Pages/Step/Location';
 import ParkingImages from './Pages/colmap'
-import ParkingPlan from "./Pages/viualisation3D"
+import ParkingPlan from "./Pages/Editeur/viualisation3D"
 import NotFound from './Pages/NotFound';
 
 
@@ -61,7 +60,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<DefaultLayout />}>
               <Route index element={<Homepage />} />
-              <Route path="parkingPlan" element={<ParkingPlan />} />
+              <Route path="parkingPlan/:id" element={<ParkingPlan />} />
               <Route path="imageUpload" element={<ImageUpload />} />
               <Route path="ownerAddPaking" element={<OwnerAddPaking />} />
               <Route path="step2/:parkingId" element={<Step2UploadImages />} />
