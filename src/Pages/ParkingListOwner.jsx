@@ -238,8 +238,8 @@ const ParkingListOwner = () => {
     }, []);
     
     const formattedPrice = parking.price ? 
-      `€${parseFloat(parking.price).toFixed(2)}/hr` : 
-      "€5.00/hr";
+      `Dt${parseFloat(parking.price).toFixed(2)}/hr` : 
+      "Dt5.00/hr";
     
     return (
       <div 

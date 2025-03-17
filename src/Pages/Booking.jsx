@@ -1,22 +1,18 @@
 import React, { Fragment, useState, useEffect } from 'react';
-import { Col, Container, Row } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
 import { CarIcon, DocumentIcon, LocationIcon, RightArrowIcon, SettingIcon } from '../Components/Icon/Icon';
-
+import { Link } from 'react-router-dom';
 import SecLocation from "./../Components/Pages/Step/Location";
 import BookNow from "../Components/Pages/Step/BookNow";
-import Personalize from "./../Components/Pages/Step/Personalize";
+import Reservation from "./../Components/Pages/Step/Reservation";
 import Confirmation from "./../Components/Pages/Step/Confirmation";
 import { useLocation } from 'react-router-dom';
 
-
 const Booking = () => {
-    // Initialiser avec 1 par défaut
     const [tabActiveId, setTabActiveId] = useState(1);
     const [selectedParking, setSelectedParking] = useState(null);
     const location = useLocation();
 
-
-    // Récupérer les données au chargement
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const step = params.get('step');
@@ -24,14 +20,12 @@ const Booking = () => {
             setTabActiveId(parseInt(step));
         }
     
-        // Vérifier si selectedParking est passé via location.state
         if (location.state?.selectedParking) {
             setSelectedParking(location.state.selectedParking);
             console.log("Parking sélectionné :", location.state.selectedParking);
         }
     }, [location]);
     
-
     const dataTab = [
         {
             id: 1,
@@ -46,7 +40,7 @@ const Booking = () => {
         {
             id: 3,
             icon: <SettingIcon color={3 <= tabActiveId ? "#1E19D8" : "#737373"} />,
-            title: "Personalize",
+            title: "Reservation",
         },
         {
             id: 4,
@@ -62,11 +56,27 @@ const Booking = () => {
             case 2:
                 return <BookNow 
                     parkingData={selectedParking} 
-                    isPopup={false} 
-                    onContinue={() => setTabActiveId(3)}
+                    onContinue={(parking) => {
+                        console.log("Received parking data:", parking);
+                        setSelectedParking(parking);
+                        setTabActiveId(3);
+                    }}
                 />;
             case 3:
-                return <Personalize />;
+                if (!selectedParking) {
+                    console.log("No parking selected, redirecting to step 2");
+                    setTabActiveId(2);
+                    return null;
+                }
+                return <Reservation 
+                    parkingData={selectedParking}
+                    onContinue={(reservationData) => {
+                        console.log("Reservation completed:", reservationData);
+                        setTabActiveId(4);
+                    }}
+                />;
+            case 4:
+                return <Confirmation />;
             default:
                 return <Confirmation />;
         }
@@ -76,6 +86,8 @@ const Booking = () => {
         <Fragment>
             <section>
                 <Container>
+                 
+
                     <div className="py-6 border-t border-b border-solid border-[#E5E5E5] w-full mb-10 overflow-auto no-scrollbar">
                         <div className="flex items-center justify-center gap-3 w-[920px] lg:w-full">
                             {dataTab.map((obj, i) => (
@@ -97,17 +109,8 @@ const Booking = () => {
                         {showContent(tabActiveId)}
                     </div>
 
-                    <div className={"items-center justify-end gap-3 " + (tabActiveId <= 3 ? "flex" : "hidden")}>
-                        <span className={'font-medium text__18 text-[#A3A3A3] ' + (tabActiveId == 4 ? "hidden" : "")}>
-                            Go to step {tabActiveId == 3 ? "finalize" : tabActiveId + 1}
-                        </span>
-                        <div 
-                            onClick={() => tabActiveId <= 3 ? setTabActiveId(tabActiveId + 1) : ''} 
-                            className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass cursor-pointer"
-                        >
-                            Continue
-                        </div>
-                    </div>
+                  
+                   
                 </Container>
             </section>
         </Fragment>

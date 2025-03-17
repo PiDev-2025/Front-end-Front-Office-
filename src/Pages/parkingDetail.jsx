@@ -113,15 +113,15 @@ const ParkingDetails = () => {
               <div className="p-5 space-y-3">
                 <div className="flex justify-between items-center border-b border-gray-200 pb-3">
                   <span className="text-gray-600 flex items-center"><span className="mr-2">⏱️</span> Per Hour</span>
-                  <span className="text-xl font-bold text-blue-600">{parking.pricing?.perHour ?? "N/A"} €</span>
+                  <span className="text-xl font-bold text-blue-600">{parking.pricing?.perHour ?? "N/A"} Dt</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-gray-200 pb-3">
                   <span className="text-gray-600 flex items-center"><span className="mr-2">📅</span> Per Day</span>
-                  <span className="text-xl font-bold text-blue-600">{parking.pricing?.perDay ?? "N/A"} €</span>
+                  <span className="text-xl font-bold text-blue-600">{parking.pricing?.perDay ?? "N/A"} Dt</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 flex items-center"><span className="mr-2">🗓️</span> Per Week</span>
-                  <span className="text-xl font-bold text-blue-600">{parking.pricing?.perWeek ?? "N/A"} €</span>
+                  <span className="text-xl font-bold text-blue-600">{parking.pricing?.perWeek ?? "N/A"} Dt</span>
                 </div>
               </div>
             </div>

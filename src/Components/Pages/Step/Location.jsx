@@ -26,10 +26,10 @@ const generatePriceMarkerSVG = (price, isLimited) => {
     // Set colors based on availability
     const bgColor = isLimited ? '%23F59E0B' : '%2322C55E'; // Orange or Green
     
-    // Format price (remove € symbol if present and trim to reasonable length)
-    const formattedPrice = price.replace('€', '').trim();
+    // Format price (remove Dt symbol if present and trim to reasonable length)
+    const formattedPrice = price.replace('Dt', '').trim();
     
-    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 40' width='70' height='40'%3E%3Cpath fill='${bgColor}' d='M35 0c-9.4 0-17 7.6-17 17 0 10.5 17 23 17 23s17-12.5 17-23c0-9.4-7.6-17-17-17z'/%3E%3Ctext x='35' y='19' font-family='Arial' font-size='12' text-anchor='middle' font-weight='bold' fill='white'%3E€${formattedPrice}%3C/text%3E%3C/svg%3E`;
+    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 40' width='70' height='40'%3E%3Cpath fill='${bgColor}' d='M35 0c-9.4 0-17 7.6-17 17 0 10.5 17 23 17 23s17-12.5 17-23c0-9.4-7.6-17-17-17z'/%3E%3Ctext x='35' y='19' font-family='Arial' font-size='12' text-anchor='middle' font-weight='bold' fill='white'%3EDt${formattedPrice}%3C/text%3E%3C/svg%3E`;
 };
 
 // Generate custom marker icons for each parking based on price
@@ -208,7 +208,7 @@ const SecLocation = () => {
 
     // Add new state for filters
     const [showFilters, setShowFilters] = useState(false);
-    const [priceRange, setPriceRange] = useState([0, 50]); // Default price range €0-50
+    const [priceRange, setPriceRange] = useState([0, 50]); // Default price range Dt0-50
     const [maxDistance, setMaxDistance] = useState(searchRadius); // Use searchRadius as initial value
     const [filtersApplied, setFiltersApplied] = useState(false);
     const filterPanelRef = useRef(null);
@@ -321,7 +321,7 @@ useEffect(() => {
                 description: parking.description,
                 lat: parking.position.lat,
                 lng: parking.position.lng,
-                price: `€${parking.pricing.hourly}/hr`,
+                price: `Dt${parking.pricing.hourly}/hr`,
                 pricingValue: parking.pricing.hourly,
                 dailyRate: parking.pricing.daily,
                 weeklyRate: parking.pricing.weekly,
@@ -380,7 +380,7 @@ useEffect(() => {
                     location: parking.location,
                     lat: parking.position.lat,
                     lng: parking.position.lon,
-                    price: `€${parking.pricing}/hr`,
+                    price: `Dt${parking.pricing}/hr`,
                     pricingValue: parking.pricing,
                     totalSpots: parking.totalSpots,
                     availableSpots: parking.availableSpots,
@@ -849,8 +849,8 @@ const findNameMatches = (searchTerm) => {
         } else if (sortMethod === "price") {
             // Sort by price (ascending)
             return [...parkings].sort((a, b) => {
-                const priceA = parseFloat(a.price.replace('€', '').replace('/hr', ''));
-                const priceB = parseFloat(b.price.replace('€', '').replace('/hr', ''));
+                const priceA = parseFloat(a.price.replace('Dt', '').replace('/hr', ''));
+                const priceB = parseFloat(b.price.replace('Dt', '').replace('/hr', ''));
                 return priceA - priceB;
             });
         }
