@@ -3,10 +3,19 @@ import { Fragment } from 'react'
 import { Col, Row } from 'react-bootstrap'
 import { CardCarPersonalize } from '../../Card/Card'
 import { useState } from 'react'
+import axios from 'axios';
 
-const Personalize = () => {
-
+const Personalize = ({ parkingData, reservationDetails, onContinue }) => {
     const [toogleSelect, settoogleSelect] = useState("")
+    const [loading, setLoading] = useState(false);
+    const [reservationStatus, setReservationStatus] = useState(null);
+    const [qrCode, setQrCode] = useState(null);
+    const [reservationInfo, setReservationInfo] = useState({
+        startDate: new Date(),
+        endDate: new Date(),
+        vehicleType: '',
+        protection: ''
+    });
 
     const dataSelect = [
         {
@@ -97,6 +106,71 @@ const Personalize = () => {
             <h5 className='font-bold text__20  ml-8 md:ml-0'>{e.price}</h5>
         </div>
     }
+
+    const handleReservation = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.post('/api/reservations', {
+                parkingId: parkingData._id,
+                startTime: reservationDetails.startTime,
+                endTime: reservationDetails.endTime,
+                vehicleType: reservationDetails.vehicleType
+            });
+
+            setReservationStatus({ type: 'success', message: 'Réservation créée avec succès!' });
+            // Afficher le QR code
+            setQrCode(response.data.qrCode);
+        } catch (error) {
+            setReservationStatus({ type: 'error', message: error.response?.data?.message || 'Erreur lors de la réservation' });
+        }
+        setLoading(false);
+    };
+
+    const calculateTotal = () => {
+        if (!parkingData || !reservationInfo.startDate || !reservationInfo.endDate) return 0;
+
+        const hours = Math.ceil(
+            (new Date(reservationInfo.endDate) - new Date(reservationInfo.startDate)) / (1000 * 60 * 60)
+        );
+
+        let total = hours * parkingData.pricing.hourly;
+
+        // Ajouter le coût de la protection
+        if (reservationInfo.protection === "Standard Protection") {
+            total += 20;
+        } else if (reservationInfo.protection === "Maximum Protection") {
+            total += 40;
+        }
+
+        return total;
+    };
+
+    const handleSubmit = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.post('/api/reservations', {
+                parkingId: parkingData._id,
+                startTime: reservationInfo.startDate,
+                endTime: reservationInfo.endDate,
+                vehicleType: reservationInfo.vehicleType,
+                protection: reservationInfo.protection
+            });
+
+            setReservationStatus({
+                type: 'success',
+                message: 'Réservation créée avec succès!'
+            });
+            setQrCode(response.data.qrCode);
+            onContinue(response.data);
+        } catch (error) {
+            setReservationStatus({
+                type: 'error',
+                message: error.response?.data?.message || 'Erreur lors de la réservation'
+            });
+        }
+        setLoading(false);
+    };
+
     return (
         <Fragment>
             <h3 className='font-bold text__32 mb-6'>Personalize</h3>
@@ -130,6 +204,33 @@ const Personalize = () => {
                     </div>
                 </Col>
             </Row>
+
+            <div>
+                {reservationStatus && (
+                    <div className={`alert ${reservationStatus.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
+                        {reservationStatus.message}
+                    </div>
+                )}
+                {qrCode && (
+                    <div className="qr-code-container">
+                        <img src={qrCode} alt="QR Code de réservation" />
+                    </div>
+                )}
+            </div>
+
+            <div className="reservation-details mt-4">
+                <h4>Détails de la réservation</h4>
+                <div className="total-price">
+                    <span>Total à payer: {calculateTotal()}€</span>
+                </div>
+                <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="btn btn-primary mt-3"
+                >
+                    {loading ? 'En cours...' : 'Confirmer la réservation'}
+                </button>
+            </div>
 
         </Fragment>
     )

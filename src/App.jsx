@@ -37,8 +37,8 @@ import SecLocation from './Components/Pages/Step/Location';
 import ParkingPlan from "./Pages/viualisation3D"
 import EmployeeProfile from "./Pages/EmployeeProfile"
 import ParkingListOwner from "./Pages/ParkingListOwner"; // Assurez-vous du bon chemin d'importation
-
-
+import UserReservations from './Components/Pages/UserReservations';
+import PrivateRoute from './Pages/PrivateRoute';
 
 const App = () => {
   let location = useLocation();
@@ -93,6 +93,14 @@ const App = () => {
               <Route path="ScanQr" element={<EmployeeProfile />} />
               <Route path="my-parkings" element={<ParkingListOwner />} />
               <Route path="ParkingRequestForm" element={<ParkingRequestForm />} />
+              <Route 
+                path="/mes-reservations" 
+                element={
+                  <PrivateRoute>
+                    <UserReservations />
+                  </PrivateRoute>
+                } 
+              />
             </Route>
           </Routes>
         </AuthProvider>

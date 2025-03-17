@@ -151,6 +151,20 @@ const Navbar = () => {
               </li>
             )}
 
+            {/* Ajouter le lien Mes réservations dans le menu mobile */}
+            {user && (
+              <li className="w-full">
+                <NavLink
+                  to="/mes-reservations"
+                  onClick={() => setToogleMenuResponsive(false)}
+                  className="font-medium text-black flex items-center"
+                >
+                  
+                  Réservations
+                </NavLink>
+              </li>
+            )}
+
             {/* Show Logout or Login Button */}
             <li className="w-full">
               {user ? (
@@ -288,6 +302,25 @@ const Navbar = () => {
                   }
                 >
                   Scan Qr
+                </NavLink>
+              </li>
+            )}
+
+            {/* Ajouter le lien Mes réservations (visible seulement si l'utilisateur est connecté) */}
+            {user && (
+              <li>
+                <NavLink
+                  to="/mes-reservations"
+                  className={
+                    navabarScroll && !ToogleMenuResponsive
+                      ? "text-Mwhite"
+                      : "text-Mblack"
+                  }
+                >
+                  <span className="flex items-center">
+                    <span className="mr-1"></span>
+                    Réservations
+                  </span>
                 </NavLink>
               </li>
             )}

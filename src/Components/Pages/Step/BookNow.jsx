@@ -22,7 +22,7 @@ const featureIcons = {
   "Extension Available": "⏱️"
 };
 
-const BookNow = ({ parkingData, isPopup }) => {
+const BookNow = ({ parkingData, onContinue }) => {
   const { id } = useParams();
   const [parking, setParking] = useState(null);
   const navigate = useNavigate();
@@ -136,8 +136,20 @@ const TitleBox = ({ icon, children }) => (
 
   // Function to handle reservation
   const handleReservation = () => {
-    // Navigate to reservation page with parking ID
-    navigate(`/reservation/${id || parking._id}`);
+    const parkingToUse = parkingData || parking;
+    
+    if (onContinue && parkingToUse) {
+      console.log("Using onContinue with parking data:", parkingToUse);
+      onContinue(parkingToUse);
+    } else {
+      console.log("Navigating to booking with parking data:", parkingToUse);
+      navigate('/booking', { 
+        state: { 
+          selectedParking: parkingToUse,
+          step: 3 
+        }
+      });
+    }
   };
 
   if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>;
@@ -163,8 +175,8 @@ const TitleBox = ({ icon, children }) => (
   return (
     <div className="p-4 max-w-7xl mx-auto space-y-6">
       {/* Header with name (moved description to its own box below) */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6">
+      <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6">
         <h1 className="text-3xl font-bold text-black text-center">{parkingName || "Nom du parking"}</h1>
           {parkingLocation && (
             <p className="mt-3 text-blue-200 flex items-center">
@@ -179,8 +191,8 @@ const TitleBox = ({ icon, children }) => (
         {/* Left column - Map and Availability */}
         <div className="lg:col-span-2 space-y-6">
            {/* Map */}
-           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-            <TitleBox icon="📍">Location</TitleBox>
+           <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
+           <TitleBox icon="📍">Location</TitleBox>
             <div className="overflow-hidden rounded-b-lg">
               <GoogleMap
                 mapContainerStyle={mapContainerStyle}
@@ -196,8 +208,8 @@ const TitleBox = ({ icon, children }) => (
           </div>
           
                  {/* Photos */}
-                 <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-            <TitleBox icon="📸">Parking Views</TitleBox>
+                 <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
+                 <TitleBox icon="📸">Parking Views</TitleBox>
             <div className="p-4">
               {parking?.images && parking.images.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -221,7 +233,7 @@ const TitleBox = ({ icon, children }) => (
           </div>
    
           {parkingDescription && (
-            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+              <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
               <TitleBox icon="📝">Description</TitleBox>
               <div className="p-5">
                 <p className="text-gray-700">{parkingDescription}</p>
@@ -236,15 +248,15 @@ const TitleBox = ({ icon, children }) => (
         {/* Right column - Details */}
         <div className="space-y-6">
                 {/* Pricing */}
-                <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-            <TitleBox icon="💰">Pricing</TitleBox>
+                <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
+                <TitleBox icon="💰">Pricing</TitleBox>
             <div className="p-5 space-y-4">
               <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                 <div className="flex items-center">
                   <span className="text-blue-500 mr-2">⏱️</span>
                   <span>Per Hour</span>
                 </div>
-                <span className="text-xl font-bold">{parking.pricing?.hourly || parking.pricing?.perHour || 0} €</span>
+                <span className="text-xl font-bold">{parking.pricing?.hourly || parking.pricing?.perHour || 0} Dt</span>
               </div>
               
               {(parking.pricing?.daily > 0 || parking.pricing?.perDay > 0) && (
@@ -253,7 +265,7 @@ const TitleBox = ({ icon, children }) => (
                     <span className="text-blue-500 mr-2">📅</span>
                     <span>Per Day</span>
                   </div>
-                  <span className="text-xl font-bold">{parking.pricing?.daily || parking.pricing?.perDay} €</span>
+                  <span className="text-xl font-bold">{parking.pricing?.daily || parking.pricing?.perDay} Dt</span>
                 </div>
               )}
               
@@ -263,7 +275,7 @@ const TitleBox = ({ icon, children }) => (
                     <span className="text-blue-500 mr-2">🗓️</span>
                     <span>Per Week</span>
                   </div>
-                  <span className="text-xl font-bold">{parking.pricing?.weekly || parking.pricing?.perWeek} €</span>
+                  <span className="text-xl font-bold">{parking.pricing?.weekly || parking.pricing?.perWeek} Dt</span>
                 </div>
               )}
               
@@ -273,21 +285,21 @@ const TitleBox = ({ icon, children }) => (
                     <span className="text-blue-500 mr-2">📆</span>
                     <span>Per Month</span>
                   </div>
-                  <span className="text-xl font-bold">{parking.pricing?.monthly} €</span>
+                  <span className="text-xl font-bold">{parking.pricing?.monthly} Dt</span>
                 </div>
               )}
                 {/* Reservation Button - Modified */}
                 <button 
                 onClick={handleReservation}
-                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-black font-medium rounded-lg transition-colors text-center"
+                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-black foBdium rounded-lg transition-colors text-center"
               >
                 Réserver
               </button>
             </div>
           </div>
        {/* Availability */}
-       <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-      <div className="flex items-center p-4 border-b border-gray-200 bg-gray-50">
+       <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
+       <div className="flex items-center p-4 border-b border-gray-200 bg-gray-50">
         <span className="text-blue-500 mr-2">🅿️</span>
         <span className="font-bold text-lg">Availability</span>
       </div>
@@ -334,8 +346,8 @@ const TitleBox = ({ icon, children }) => (
        
 
           {/* Accepted Vehicles */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
-            <TitleBox icon="🚗">Accepted Vehicles</TitleBox>
+          <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
+          <TitleBox icon="🚗">Accepted Vehicles</TitleBox>
             <div className="p-5">
               <div className="flex flex-wrap gap-4 justify-center">
                 {parking.vehicleTypes && parking.vehicleTypes.length > 0 ? (
@@ -357,7 +369,7 @@ const TitleBox = ({ icon, children }) => (
 
           {/* Features (if available) */}
           {parking.features && parking.features.length > 0 && (
-            <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+              <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
               <TitleBox icon="✨">Features</TitleBox>
               <div className="p-5">
                 <ul className="space-y-2">
