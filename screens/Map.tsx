@@ -10,12 +10,32 @@ import { HStack } from "@/components/ui/hstack";
 import { Text } from "@/components/ui/text";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge, BadgeIcon, BadgeText } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonText } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Heading } from "@/components/ui/heading";
 import { Progress, ProgressFilledTrack } from "@/components/ui/progress";
 import LinearGradient from 'react-native-linear-gradient';
-import { Target, Mail, MapPin, ChevronDown, Clapperboard } from "lucide-react-native";
+import { Target, Mail, MapPin, ChevronDown, Clapperboard, Clock, Calendar as CalendarIcon } from "lucide-react-native";
+import { Select, SelectTrigger, SelectInput, SelectIcon, SelectPortal, SelectBackdrop, SelectContent, SelectDragIndicator, SelectDragIndicatorWrapper, SelectItem } from "@/components/ui/select";
+
+// Add new interfaces
+interface TimeSlot {
+	time: string;
+	available: boolean;
+}
+
+interface Service {
+	id: string;
+	name: string;
+	duration: number;
+	price: number;
+}
+
+// Add new interface for DaySlots
+interface DaySlots {
+	date: Date;
+	slots: TimeSlot[];
+}
 
 // Professional Card Component from ProfessionalProfile
 const ProfessionalCard = ({ 
@@ -29,6 +49,11 @@ const ProfessionalCard = ({
 	onToggle: (expanded: boolean) => void,
 	onClose: () => void
 }) => {
+	const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+	const [selectedService, setSelectedService] = useState<string>("");
+	const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
+	const [selectedDay, setSelectedDay] = useState<Date>(new Date());
+
 	const getBadgeColor = (type: string) => {
 		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === type)?.[0];
 		return key ? professionalStyles[key as keyof typeof professionalStyles]?.color : "#666";
@@ -37,6 +62,63 @@ const ProfessionalCard = ({
 	const getBadgeIcon = (type: string) => {
 		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === type)?.[0];
 		return key ? professionalStyles[key as keyof typeof professionalStyles]?.icon : BriefcaseMedicalIcon;
+	};
+
+	// Mock services data
+	const services: Service[] = [
+		{ id: '1', name: 'Initial Consultation', duration: 60, price: 80 },
+		{ id: '2', name: 'Follow-up Session', duration: 45, price: 65 },
+		{ id: '3', name: 'Quick Check-in', duration: 30, price: 45 },
+	];
+
+	// Generate time slots for a given date
+	const generateTimeSlots = (date: Date): TimeSlot[] => {
+		const slots: TimeSlot[] = [];
+		const startHour = 9; // 9 AM
+		const endHour = 18; // 6 PM
+
+		for (let hour = startHour; hour < endHour; hour++) {
+			for (let minute = 0; minute < 60; minute += 30) {
+				const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+				slots.push({
+					time,
+					available: Math.random() > 0.3 // Random availability for demo
+				});
+			}
+		}
+		return slots;
+	};
+
+	// Generate next 7 days with their time slots
+	const generateWeekSlots = (): DaySlots[] => {
+		const weekSlots: DaySlots[] = [];
+		const today = new Date();
+
+		for (let i = 0; i < 7; i++) {
+			const date = new Date(today);
+			date.setDate(today.getDate() + i);
+			weekSlots.push({
+				date: date,
+				slots: generateTimeSlots(date)
+			});
+		}
+		return weekSlots;
+	};
+
+	const weekSlots = generateWeekSlots();
+
+	// Format date to display day and date
+	const formatDate = (date: Date): string => {
+		const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+		const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+		return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
+	};
+
+	// Check if two dates are the same day
+	const isSameDay = (date1: Date, date2: Date): boolean => {
+		return date1.getDate() === date2.getDate() &&
+			   date1.getMonth() === date2.getMonth() &&
+			   date1.getFullYear() === date2.getFullYear();
 	};
 
 	return (
@@ -271,6 +353,146 @@ const ProfessionalCard = ({
 							</HStack>
 						</VStack>
 					</Card>
+
+					{/* Add Service Selection and Calendar after the compatibility section */}
+					<Box className="mt-4 p-4 bg-white rounded-lg">
+						<VStack space="md">
+							<Heading size="sm">Book an Appointment</Heading>
+							
+							{/* Service Selection */}
+							<Box>
+								<Text size="xs" bold className="mb-2">Select Service</Text>
+								<Select
+									selectedValue={selectedService}
+									onValueChange={setSelectedService}
+									placeholder="Choose a service"
+								>
+									<SelectTrigger>
+										<SelectInput />
+										<SelectIcon>
+											<ChevronDown size={20} />
+										</SelectIcon>
+									</SelectTrigger>
+									<SelectPortal>
+										<SelectBackdrop />
+										<SelectContent>
+											<SelectDragIndicatorWrapper>
+												<SelectDragIndicator />
+											</SelectDragIndicatorWrapper>
+											{services.map((service) => (
+												<SelectItem
+													key={service.id}
+													label={`${service.name} (${service.duration}min - €${service.price})`}
+													value={service.id}
+												/>
+											))}
+										</SelectContent>
+									</SelectPortal>
+								</Select>
+							</Box>
+
+							{/* Available Days and Time Slots */}
+							<Box>
+								<Text size="xs" bold className="mb-2">Available Time Slots</Text>
+								<VStack space="md" style={{ maxHeight: 400 }}>
+									{weekSlots.map((daySlot, dayIndex) => (
+										<Box 
+											key={dayIndex}
+											style={[
+												styles.dayContainer,
+												isSameDay(daySlot.date, selectedDay) && {
+													borderColor: getBadgeColor(professional.type),
+													backgroundColor: 'rgba(0,0,0,0.02)'
+												}
+											]}
+										>
+											<Pressable
+												onPress={() => setSelectedDay(daySlot.date)}
+												style={styles.dayHeader}
+											>
+												<Text 
+													size="sm" 
+													bold
+													style={{
+														color: isSameDay(daySlot.date, selectedDay) 
+															? getBadgeColor(professional.type)
+															: '#333'
+													}}
+												>
+													{formatDate(daySlot.date)}
+												</Text>
+											</Pressable>
+											{isSameDay(daySlot.date, selectedDay) && (
+												<Box style={styles.timeSlotsContainer}>
+													<VStack space="xs">
+														{daySlot.slots.map((slot, slotIndex) => (
+															<Pressable
+																key={slotIndex}
+																onPress={() => slot.available && setSelectedTimeSlot(slot.time)}
+																style={[
+																	styles.timeSlotVertical,
+																	{
+																		backgroundColor: slot.available 
+																			? selectedTimeSlot === slot.time 
+																				? getBadgeColor(professional.type)
+																			: '#fff'
+																		: '#f5f5f5',
+																		borderColor: slot.available 
+																			? getBadgeColor(professional.type) 
+																			: '#ddd'
+																	}
+																]}
+																disabled={!slot.available}
+															>
+																<HStack space="xs" style={{ justifyContent: 'center' }}>
+																	<Clock 
+																		size={14} 
+																		color={
+																			selectedTimeSlot === slot.time 
+																				? '#fff' 
+																				: slot.available 
+																					? getBadgeColor(professional.type)
+																				: '#999'
+																		} 
+																	/>
+																	<Text
+																		size="sm"
+																		style={{
+																			color: selectedTimeSlot === slot.time 
+																				? '#fff' 
+																				: slot.available 
+																					? getBadgeColor(professional.type)
+																				: '#999'
+																		}}
+																	>
+																		{slot.time}
+																	</Text>
+																</HStack>
+															</Pressable>
+														))}
+													</VStack>
+												</Box>
+											)}
+										</Box>
+									))}
+								</VStack>
+							</Box>
+
+							{/* Book Button */}
+							{selectedService && selectedTimeSlot && (
+								<Button
+									size="md"
+									variant="solid"
+									style={{
+										backgroundColor: getBadgeColor(professional.type),
+										marginTop: 16
+									}}
+								>
+									<ButtonText>Book Appointment</ButtonText>
+								</Button>
+							)}
+						</VStack>
+					</Box>
 				</ScrollView>
 			</Box>
 		</Modal>
@@ -431,5 +653,28 @@ const styles = StyleSheet.create({
 		borderTopRightRadius: 20,
 		padding: 16,
 		maxHeight: '80%',
+	},
+	dayContainer: {
+		borderWidth: 1,
+		borderColor: '#ddd',
+		borderRadius: 8,
+		overflow: 'hidden',
+	},
+	dayHeader: {
+		padding: 12,
+		backgroundColor: '#fff',
+		borderBottomWidth: 1,
+		borderBottomColor: '#eee',
+	},
+	timeSlotsContainer: {
+		padding: 12,
+		backgroundColor: '#fff',
+	},
+	timeSlotVertical: {
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		borderRadius: 8,
+		borderWidth: 1,
+		alignItems: 'center',
 	},
 });
