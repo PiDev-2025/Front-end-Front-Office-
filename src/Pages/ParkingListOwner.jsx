@@ -190,81 +190,137 @@ const ParkingListOwner = () => {
     setHoveredParking(parking._id);
   };
   
-  // Popup amélioré et professionnel
-  const ParkingDetailsPopup = ({ parking, onClose }) => {
-    // Animation d'ouverture
-    const [isOpen, setIsOpen] = useState(false);
+// Popup amélioré avec une largeur augmentée et un en-tête plus clair
+const ParkingDetailsPopup = ({ parking, onClose, handleEdit, handleDelete }) => {
+  // Animation d'ouverture
+  const [isOpen, setIsOpen] = useState(false);
+  
+  useEffect(() => {
+    // Ajouter un court délai pour l'animation
+    setIsOpen(true);
     
-    useEffect(() => {
-      // Ajouter un court délai pour l'animation
-      setIsOpen(true);
-      
-      // Empêcher le défilement du corps pendant l'affichage du popup
-      document.body.style.overflow = 'hidden';
-      
-      // Nettoyer lors du démontage
-      return () => {
-        document.body.style.overflow = 'auto';
-      };
-    }, []);
+    // Empêcher le défilement du corps pendant l'affichage du popup
+    document.body.style.overflow = 'hidden';
     
-    // Fonction pour fermer avec animation
-    const closeWithAnimation = () => {
-      setIsOpen(false);
-      setTimeout(() => {
-        onClose();
-      }, 300); // Délai correspondant à la durée de transition
+    // Nettoyer lors du démontage
+    return () => {
+      document.body.style.overflow = 'auto';
     };
-    
-    // Gestionnaire pour fermer en cliquant à l'extérieur
-    const handleOutsideClick = (e) => {
-      if (e.target === e.currentTarget) {
+  }, []);
+  
+  // Fonction pour fermer avec animation
+  const closeWithAnimation = () => {
+    setIsOpen(false);
+    setTimeout(() => {
+      onClose();
+    }, 300); // Délai correspondant à la durée de transition
+  };
+  
+  // Gestionnaire pour fermer en cliquant à l'extérieur
+  const handleOutsideClick = (e) => {
+    if (e.target === e.currentTarget) {
+      closeWithAnimation();
+    }
+  };
+  
+  // Gestionnaire pour la touche Échap
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
         closeWithAnimation();
       }
     };
     
-    // Gestionnaire pour la touche Échap
-    useEffect(() => {
-      const handleEscape = (e) => {
-        if (e.key === 'Escape') {
-          closeWithAnimation();
-        }
-      };
-      
-      document.addEventListener('keydown', handleEscape);
-      return () => {
-        document.removeEventListener('keydown', handleEscape);
-      };
-    }, []);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
+  
+  // Formatage du prix et gestion des statuts
+  const formattedPrice = parking.pricing?.hourly ? 
+    `${parking.pricing.hourly}Dt/hr` : 
+    "Prix non défini";
     
-    const formattedPrice = parking.price ? 
-      `Dt${parseFloat(parking.price).toFixed(2)}/hr` : 
-      "Dt5.00/hr";
+  // Ajouter le calcul de availability
+  const availability = parking.availableSpots / parking.totalSpots;
+
+  // Statut personnalisé en fonction des places disponibles
+  const getStatusInfo = () => {
+    const availability = parking.availableSpots / parking.totalSpots;
     
-    return (
-      <div 
-        className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black transition-opacity duration-300 ${
-          isOpen ? 'bg-opacity-60' : 'bg-opacity-0'
-        }`}
-        onClick={handleOutsideClick}
-        aria-modal="true"
-        role="dialog"
+    if (availability >= 0.5) {
+      return { 
+        text: "Disponible", 
+        color: "text-green-600", 
+        bgColor: "bg-green-100", 
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        )
+      };
+    } else if (availability > 0.2) {
+      return { 
+        text: "Limité", 
+        color: "text-yellow-600", 
+        bgColor: "bg-yellow-100", 
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        )
+      };
+    } else {
+      return { 
+        text: "Presque complet", 
+        color: "text-red-600", 
+        bgColor: "bg-red-100", 
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        )
+      };
+    }
+  };
+  
+  const statusInfo = getStatusInfo();
+  
+  // Calcul du taux d'occupation visuel
+  const occupancyRate = ((parking.totalSpots - parking.availableSpots) / parking.totalSpots) * 100;
+  
+  return (
+    <div 
+    className={`fixed inset-0 z-[1000] flex items-start justify-center pt-24 transition-opacity duration-300`}
+    style={{
+      backgroundColor: isOpen ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0)',
+      backdropFilter: 'blur(2px)'
+    }}
+    onClick={handleOutsideClick}
+    aria-modal="true"
+    role="dialog"
+  >
+    <div 
+      className={`bg-white rounded-lg shadow-2xl w-full max-w-2xl p-0 relative transform transition-all duration-300 max-h-[80vh] overflow-y-auto ${
+        isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
+      }`}
       >
-        <div 
-          className={`bg-white rounded-lg shadow-xl w-full max-w-md p-0 relative transform transition-all duration-300 max-h-[90vh] overflow-y-auto ${
-            isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
-          }`}
-        >
-          {/* En-tête du popup avec image de fond */}
-          <div className="h-32 bg-gradient-to-r from-blue-600 to-blue-800 relative">
-            <div className="absolute inset-0 bg-opacity-30 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-white opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-              </svg>
+        {/* Nouvel en-tête plus simple et plus clair */}
+        <div className="relative bg-white border-b border-gray-200 p-6 rounded-t-lg">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <div className="bg-blue-600 p-3 rounded-lg shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5h14a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11v4.5a2.5 2.5 0 01-5 0V11" />
+                </svg>
+              </div>
+              <h2 className="ml-4 text-2xl font-bold text-gray-800">Détails du Parking</h2>
             </div>
             <button
               onClick={closeWithAnimation}
-              className="absolute top-3 right-3 text-white hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-white rounded-full p-1"
+              className="text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-1 transition-transform hover:scale-110"
               aria-label="Fermer"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -272,144 +328,151 @@ const ParkingListOwner = () => {
               </svg>
             </button>
           </div>
+        </div>
+        
+        {/* Contenu du popup */}
+        <div className="px-6 pt-6 pb-6">
+          <div className="bg-white rounded-lg shadow-lg p-4 mb-4 relative border border-gray-100">
+            <div className={`absolute -top-3 -right-3 ${statusInfo.bgColor} ${statusInfo.color} px-3 py-1 rounded-full text-xs font-semibold flex items-center shadow-md`}
+                 style={{backgroundColor: availability >= 0.5 ? '#dcfce7' : availability > 0.2 ? '#fef9c3' : '#fee2e2',
+                         color: availability >= 0.5 ? '#16a34a' : availability > 0.2 ? '#ca8a04' : '#dc2626'}}>
+              {statusInfo.icon}
+              {statusInfo.text}
+            </div>
+            
+            <h2 className="text-2xl font-bold text-gray-800">{parking.name}</h2>
           
-          {/* Contenu du popup */}
-          <div className="px-6 pt-4 pb-6 -mt-10">
-            <div className="bg-white rounded-lg shadow-lg p-4 mb-4 relative">
-              <h2 className="text-2xl font-bold text-gray-800">{parking.name}</h2>
-              <p className="text-sm text-gray-600 mt-1 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                {parking.location}
-              </p>
+          </div>
+          
+          {/* Indicateur visuel d'occupation */}
+          <div className="mt-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+            <div className="flex justify-between items-center mb-1 text-sm">
+              <span className="font-medium text-gray-700">Taux d'occupation</span>
+              <span className="text-gray-600">{Math.round(occupancyRate)}%</span>
             </div>
-            
-            <div className="mt-4 bg-gray-50 p-4 rounded-lg shadow-sm">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-2 bg-white rounded-lg shadow-sm">
-                  <p className="text-xs font-medium text-gray-500 uppercase">Total spots</p>
-                  <p className="text-lg font-semibold text-gray-800 flex items-center mt-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                    </svg>
-                    {parking.totalSpots}
-                  </p>
-                </div>
-                <div className="p-2 bg-white rounded-lg shadow-sm">
-                  <p className="text-xs font-medium text-gray-500 uppercase">Available spots</p>
-                  <p className="text-lg font-semibold text-gray-800 flex items-center mt-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    {parking.availableSpots}
-                  </p>
-                </div>
-                <div className="p-2 bg-white rounded-lg shadow-sm">
-                  <p className="text-xs font-medium text-gray-500 uppercase">Price</p>
-                  <p className="text-lg font-semibold text-blue-600 flex items-center mt-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    {formattedPrice}
-                  </p>
-                </div>
-                <div className="p-2 bg-white rounded-lg shadow-sm">
-                  <p className="text-xs font-medium text-gray-500 uppercase">Status</p>
-                  <p className="text-lg font-semibold text-green-600 flex items-center mt-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Active
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-4">
-              <h3 className="font-semibold text-gray-700 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Description
-              </h3>
-              <p className="text-gray-600 mt-1 bg-white p-3 rounded-lg shadow-sm border border-gray-100">
-                {parking.description || "Secure parking location with 24/7 access and video surveillance."}
-              </p>
-            </div>
-            
-            <div className="mt-4">
-              <h3 className="font-semibold text-gray-700 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                </svg>
-                Features
-              </h3>
-              <div className="flex flex-wrap gap-2 mt-1">
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  Secure
-                </span>
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  24/7 Access
-                </span>
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                  Indoor
-                </span>
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Camera Surveillance
-                </span>
-              </div>
-            </div>
-            
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button 
-                onClick={() => {
-                  closeWithAnimation();
-                  setTimeout(() => {
-                    handleEdit(parking);
-                  }, 300);
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="h-2.5 rounded-full"
+                style={{ 
+                  width: `${occupancyRate}%`,
+                  backgroundColor: occupancyRate > 80 ? '#dc2626' : occupancyRate > 50 ? '#eab308' : '#16a34a'
                 }}
-                className="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition shadow-sm flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Modifier
-              </button>
-              <button 
-                onClick={() => {
-                  closeWithAnimation();
-                  setTimeout(() => {
-                    handleDelete(parking._id);
-                  }, 300);
-                }}
-                className="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition shadow-sm flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Supprimer
-              </button>
+              ></div>
             </div>
           </div>
+          
+          <div className="mt-4 bg-gray-50 p-4 rounded-lg shadow-sm">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                <p className="text-xs font-medium text-gray-500 uppercase">Places totales</p>
+                <p className="text-lg font-semibold text-gray-800 flex items-center mt-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{color: '#3b82f6'}}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                  </svg>
+                  {parking.totalSpots}
+                </p>
+              </div>
+              <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                <p className="text-xs font-medium text-gray-500 uppercase">Places disponibles</p>
+                <p className="text-lg font-semibold text-gray-800 flex items-center mt-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{color: '#22c55e'}}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {parking.availableSpots}
+                </p>
+              </div>
+              <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                <p className="text-xs font-medium text-gray-500 uppercase">Prix</p>
+                <p className="text-lg font-semibold flex items-center mt-1" style={{color: '#2563eb'}}>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{color: '#2563eb'}}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {formattedPrice}
+                </p>
+              </div>
+              <div className="p-3 bg-white rounded-lg shadow-sm border border-gray-100 transition-all hover:shadow-md">
+                <p className="text-xs font-medium text-gray-500 uppercase">Heures d'ouverture</p>
+                <p className="text-lg font-semibold text-gray-800 flex items-center mt-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{color: '#a855f7'}}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  24/7
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <h3 className="font-semibold text-gray-700 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{color: '#3b82f6'}}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Description
+            </h3>
+            <p className="text-gray-600 mt-1 bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+              {parking.description || "Emplacement de stationnement sécurisé avec accès 24h/24 et surveillance vidéo."}
+            </p>
+          </div>
+
+          <div className="mt-4">
+            <h3 className="font-semibold text-gray-700 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{color: '#3b82f6'}}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+              </svg>
+              Caractéristiques
+            </h3>
+            <div className="flex flex-wrap gap-2 mt-1">
+              <span className="px-2 py-1 rounded-md text-xs flex items-center transition-transform hover:scale-105" 
+                    style={{backgroundColor: '#dbeafe', color: '#1e40af'}}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Sécurisé
+              </span>
+              <span className="px-2 py-1 rounded-md text-xs flex items-center transition-transform hover:scale-105"
+                    style={{backgroundColor: '#dbeafe', color: '#1e40af'}}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Accès 24/7
+              </span>
+              <span className="px-2 py-1 rounded-md text-xs flex items-center transition-transform hover:scale-105"
+                    style={{backgroundColor: '#dbeafe', color: '#1e40af'}}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                Intérieur
+              </span>
+              <span className="px-2 py-1 rounded-md text-xs flex items-center transition-transform hover:scale-105"
+                    style={{backgroundColor: '#dbeafe', color: '#1e40af'}}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Vidéosurveillance
+              </span>
+              <span className="px-2 py-1 rounded-md text-xs flex items-center transition-transform hover:scale-105"
+                    style={{backgroundColor: '#dbeafe', color: '#1e40af'}}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Éclairage
+              </span>
+              <span className="px-2 py-1 rounded-md text-xs flex items-center transition-transform hover:scale-105"
+                    style={{backgroundColor: '#dbeafe', color: '#1e40af'}}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Gardiennage
+              </span>
+            </div>
+          </div>
+          
+        
         </div>
       </div>
-    );
-  };
-
+    </div>
+  );
+};
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {showPopup && selectedParking && (

@@ -2,12 +2,20 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import fr from 'date-fns/locale/fr';
+import { useGoogleMaps } from '../../context/GoogleMapsContext';
+import { toast } from 'react-toastify';
 
 const UserReservations = () => {
     const [reservations, setReservations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedReservation, setSelectedReservation] = useState(null);
+    const [userLocation, setUserLocation] = useState(null);
+    const [travelTimes, setTravelTimes] = useState({});
+    const { isLoaded } = useGoogleMaps();
+
+    // Ajout d'un ref pour éviter les calculs redondants
+    const calculatedRoutes = React.useRef(new Set());
 
     useEffect(() => {
         const fetchReservations = async () => {
@@ -27,7 +35,18 @@ const UserReservations = () => {
                     }
                 );
                 
-                console.log("Réservations reçues:", response.data);
+                // Log pour le débogage
+                response.data.forEach(reservation => {
+                    console.log("Parking data:", {
+                        id: reservation._id,
+                        parkingName: reservation.parkingId?.name,
+                        position: reservation.parkingId?.position,
+                        coordinates: reservation.parkingId?.coordinates,
+                        lat: reservation.parkingId?.lat,
+                        lng: reservation.parkingId?.lng
+                    });
+                });
+
                 setReservations(response.data);
             } catch (err) {
                 console.error("Erreur de chargement:", err);
@@ -39,6 +58,101 @@ const UserReservations = () => {
 
         fetchReservations();
     }, []);
+
+    const calculateTravelTime = React.useCallback(async (reservation) => {
+        // Éviter de recalculer pour les mêmes réservations
+        if (calculatedRoutes.current.has(reservation._id)) {
+            return null;
+        }
+
+        if (!isLoaded || !userLocation || !reservation.parkingId) {
+            return null;
+        }
+
+        try {
+            // Marquer cette réservation comme calculée
+            calculatedRoutes.current.add(reservation._id);
+
+            let parkingPosition = reservation.parkingId.position;
+            
+            if (!parkingPosition?.lat || !parkingPosition?.lng) {
+                return null;
+            }
+
+            const directionsService = new window.google.maps.DirectionsService();
+            
+            const request = {
+                origin: userLocation,
+                destination: {
+                    lat: Number(parkingPosition.lat),
+                    lng: Number(parkingPosition.lng)
+                },
+                travelMode: window.google.maps.TravelMode.DRIVING,
+            };
+
+            const result = await directionsService.route(request);
+            
+            if (result.status === "OK") {
+                const duration = result.routes[0].legs[0].duration;
+                setTravelTimes(prev => ({
+                    ...prev,
+                    [reservation._id]: {
+                        text: duration.text,
+                        value: duration.value
+                    }
+                }));
+                return duration.text;
+            }
+        } catch (error) {
+            console.error("Error calculating travel time:", error);
+        }
+        return null;
+    }, [isLoaded, userLocation]);
+
+    // Modifier l'effet de géolocalisation
+    useEffect(() => {
+        if (!isLoaded || !navigator.geolocation) return;
+
+        let mounted = true;
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                if (!mounted) return;
+
+                const userPos = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                setUserLocation(userPos);
+            },
+            (error) => {
+                console.error("Error getting user location:", error);
+            }
+        );
+
+        return () => {
+            mounted = false;
+        };
+    }, [isLoaded]);
+
+    // Effet séparé pour le calcul des temps de trajet
+    useEffect(() => {
+        if (!userLocation || !isLoaded || reservations.length === 0) return;
+
+        // Reset calculated routes when user location changes
+        calculatedRoutes.current.clear();
+
+        // Calculate travel times sequentially
+        const calculateTravelTimes = async () => {
+            for (const reservation of reservations) {
+                if (reservation.parkingId?.position) {
+                    await calculateTravelTime(reservation);
+                }
+            }
+        };
+
+        calculateTravelTimes();
+    }, [userLocation, isLoaded, reservations, calculateTravelTime]);
 
     const handleDelete = async (reservationId) => {
         if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette réservation ?')) {
@@ -54,115 +168,258 @@ const UserReservations = () => {
                 }
             });
 
-            // Mettre à jour la liste des réservations
             setReservations(prevReservations => 
                 prevReservations.filter(res => res._id !== reservationId)
             );
         } catch (err) {
-            console.error("Erreur lors de la suppression:", err);
+            toast.error("Erreur lors de la suppression:", err);
             setError(err.response?.data?.message || 'Erreur lors de la suppression de la réservation');
         }
     };
 
-    const ReservationCard = ({ reservation }) => {
-        const handlePrint = () => {
-            const printWindow = window.open('', '', 'width=600,height=600');
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>QR Code Réservation - ${reservation.parkingId.name}</title>
-                        <style>
-                            body { font-family: Arial; text-align: center; padding: 20px; }
-                            .qr-container { margin: 20px auto; }
-                            .details { margin: 20px 0; text-align: left; max-width: 400px; margin: auto; }
-                            .footer { margin-top: 20px; font-size: 12px; color: #666; }
-                        </style>
-                    </head>
-                    <body>
-                        <h2>Réservation Parking - ${reservation.parkingId.name}</h2>
-                        <div class="qr-container">
-                            <img src="${reservation.qrCode}" alt="QR Code" style="max-width: 300px"/>
+    const getStatusColor = (status) => {
+        switch(status) {
+            case 'accepted':
+                return {
+                    style: {
+                        backgroundColor: '#d1fae5',
+                        color: '#065f46'
+                    },
+                    label: 'Confirmée'
+                };
+            case 'pending':
+                return {
+                    style: {
+                        backgroundColor: '#fef3c7',
+                        color: '#92400e'
+                    },
+                    label: 'En attente'
+                };
+            default:
+                return {
+                    style: {
+                        backgroundColor: '#fee2e2',
+                        color: '#b91c1c'
+                    },
+                    label: 'Annulée'
+                };
+        }
+    };
+
+    const vehiculeOptions = [
+        { value: "Moto", label: "Moto", image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765730/moto_xdypx2.png" },
+        { value: "Citadine", label: "City Car", image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-de-ville_ocwbob.png" },
+        { value: "Berline / Petit SUV", label: "Small SUV", image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/wagon-salon_bj2j1s.png" },
+        { value: "Familiale / Grand SUV", label: "Large SUV", image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-familiale_rmgclg.png" },
+        { value: "Utilitaire", label: "Utility vehicle", image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-de-livraison_nodnzh.png" }
+    ];
+    
+    const getVehicleIcon = (vehicleType) => {
+        const matchedOption = vehiculeOptions.find(option =>
+            vehicleType.toLowerCase().includes(option.value.toLowerCase())
+        );
+    
+        if (matchedOption) {
+            return (
+                <img
+                    src={matchedOption.image}
+                    alt={matchedOption.label}
+                    className="w-5 h-5 mr-1"
+                />
+            );
+        }
+    
+        return (
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        );
+    };
+
+    const TravelInfo = ({ travelTime, userLocation, parkingLocation }) => {
+        const [showRoute, setShowRoute] = useState(false);
+        const [routeDetails, setRouteDetails] = useState(null);
+    
+        const fetchRouteDetails = async () => {
+            if (!window.google || !userLocation || !parkingLocation) return;
+    
+            const directionsService = new window.google.maps.DirectionsService();
+            try {
+                const result = await directionsService.route({
+                    origin: userLocation,
+                    destination: parkingLocation,
+                    travelMode: window.google.maps.TravelMode.DRIVING,
+                    provideRouteAlternatives: true
+                });
+    
+                if (result.status === "OK") {
+                    setRouteDetails(result.routes[0]);
+                    setShowRoute(true);
+                }
+            } catch (error) {
+                console.error("Error fetching route details:", error);
+            }
+        };
+    
+        return (
+            <div className="mt-4 bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                        <div>
+                            <span className="text-sm font-medium text-gray-700">Temps estimé</span>
+                            <p className="text-lg font-bold text-blue-600">{travelTime.text}</p>
                         </div>
-                        <div class="details">
-                            <p><strong>Date d'arrivée:</strong> ${new Date(reservation.startTime).toLocaleString()}</p>
-                            <p><strong>Date de départ:</strong> ${new Date(reservation.endTime).toLocaleString()}</p>
-                            <p><strong>Type de véhicule:</strong> ${reservation.vehicleType}</p>
-                            <p><strong>Montant total:</strong> ${reservation.totalPrice}€</p>
+                    </div>
+                    <button
+                        onClick={fetchRouteDetails}
+                        className="px-3 py-1 text-black bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
+                    >
+                        Voir le trajet
+                    </button>
+                </div>
+    
+                {showRoute && routeDetails && (
+                    <div className="mt-3 border-t pt-3">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-600">Distance totale:</span>
+                            <span className="text-sm text-gray-900">{routeDetails.legs[0].distance.text}</span>
                         </div>
-                        <div class="footer">
-                            <p>Veuillez présenter ce QR code à l'entrée du parking</p>
+                        
+                        <div className="space-y-2">
+                            {routeDetails.legs[0].steps.map((step, index) => (
+                                <div key={index} className="flex items-start space-x-2 text-sm">
+                                    <div className="min-w-[24px] h-6 flex items-center justify-center bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                                        {index + 1}
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-700" dangerouslySetInnerHTML={{ __html: step.instructions }}></p>
+                                        <p className="text-xs text-gray-500">{step.distance.text} - environ {step.duration.text}</p>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const ReservationCard = React.memo(({ reservation }) => {
+        const statusInfo = getStatusColor(reservation.status);
+        
+        useEffect(() => {
+            if (isLoaded && reservation.parkingId) {
+                console.log("Attempting to calculate travel time for reservation:", {
+                    id: reservation._id,
+                    parkingId: reservation.parkingId,
+                    position: reservation.parkingId.position
+                });
+                calculateTravelTime(reservation);
+            }
+        }, [reservation, isLoaded, calculateTravelTime]); // Update dependencies
+
+        const renderTravelTime = () => {
+            const travelTime = travelTimes[reservation._id];
+            if (!travelTime) return null;
+
+            return (
+                <div className="mt-3 flex items-center text-gray-600 bg-gray-50 p-4 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium">Temps de trajet estimé:</span>
+                        <span className="text-lg font-semibold text-blue-600">{travelTime.text}</span>
+                        
+                    </div>
+                </div>
+            );
         };
 
         return (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4">
-                    <h3 className="text-black text-lg font-semibold">{reservation.parkingId.name}</h3>
-                    <p className="text-blue-100 text-sm">
-                        Réservation #{reservation.reservationId}
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]">
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4 relative">
+                    <div className="absolute top-0 right-0 mt-2 mr-2">
+                    <span style={statusInfo.style} className="text-xs px-3 py-1 rounded-full font-semibold">
+    {statusInfo.label}
+</span>
+                    </div>
+                    <h3 className="text-black text-xl font-semibold">{reservation.parkingId?.name || 'Parking'}</h3>
+                    <p className="text-blue-100 text-sm opacity-90">
                     </p>
                 </div>
+                
                 <div className="p-6">
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <p className="text-sm text-gray-600">Arrivée</p>
-                            <p className="font-medium">
-                                {format(new Date(reservation.startTime), 'PPP à HH:mm', { locale: fr })}
+                    <div className="flex justify-between mb-6 bg-gray-50 rounded-lg p-4">
+                        <div className="text-center flex-1 border-r border-gray-200">
+                            <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Arrivée</p>
+                            <p className="font-medium text-gray-800">
+                                {format(new Date(reservation.startTime), 'dd MMM yyyy', { locale: fr })}
+                            </p>
+                            <p className="text-sm text-gray-700">
+                                {format(new Date(reservation.startTime), 'HH:mm', { locale: fr })}
                             </p>
                         </div>
-                        <div>
-                            <p className="text-sm text-gray-600">Départ</p>
-                            <p className="font-medium">
-                                {format(new Date(reservation.endTime), 'PPP à HH:mm', { locale: fr })}
+                        <div className="text-center flex-1">
+                            <p className="text-xs text-gray-500 uppercase font-semibold mb-1">Départ</p>
+                            <p className="font-medium text-gray-800">
+                                {format(new Date(reservation.endTime), 'dd MMM yyyy', { locale: fr })}
+                            </p>
+                            <p className="text-sm text-gray-700">
+                                {format(new Date(reservation.endTime), 'HH:mm', { locale: fr })}
                             </p>
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Véhicule:</span>
-                            <span className="font-medium">{reservation.vehicleType}</span>
+                    
+                    <div className="space-y-3 mb-5">
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                            <div className="flex items-center text-gray-700">
+                                {getVehicleIcon(reservation.vehicleType)}
+                                <span className="text-sm">Véhicule</span>
+                            </div>
+                            <span className="font-medium text-gray-900">{reservation.vehicleType}</span>
                         </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Prix total:</span>
-                            <span className="font-medium">{reservation.totalPrice}Dt</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Statut:</span>
-                            <span className={`font-medium ${
-                                reservation.status === 'accepted' ? 'text-green-600' :
-                                reservation.status === 'pending' ? 'text-yellow-600' :
-                                'text-red-600'
-                            }`}>
-                                {reservation.status === 'accepted' ? 'Confirmée' :
-                                reservation.status === 'pending' ? 'En attente' :
-                                'Annulée'}
-                            </span>
+                        
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                            <div className="flex items-center text-gray-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span className="text-sm">Prix total</span>
+                            </div>
+                            <span className="font-semibold text-lg text-blue-700">{reservation.totalPrice} Dt</span>
                         </div>
                     </div>
-                    <div className="flex space-x-3 mt-4">
+                    
+                    {renderTravelTime()}
+
+                    <div className="flex space-x-2 mt-6">
                         <button
                             onClick={() => setSelectedReservation(reservation)}
-                            className="flex-1 bg-blue-600 text-black py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                            className="flex-1 bg-white border border-red-500 text-red-500 py-2.5 px-4 rounded-lg hover:bg-red-50 transition-colors flex justify-center items-center"
                         >
-                           QR Code
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                            </svg>
+                            QR Code
                         </button>
                         <button
                             onClick={() => handleDelete(reservation._id)}
-                            className="flex-1 bg-red-600 text-black py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+                            className="flex-1 bg-white border border-red-500 text-red-500 py-2.5 px-4 rounded-lg hover:bg-red-50 transition-colors flex justify-center items-center"
                         >
-                            Delete
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Supprimer
                         </button>
                     </div>
                 </div>
             </div>
         );
-    };
+    });
 
     const QRCodeModal = () => {
         const handlePrintQR = () => {
@@ -172,10 +429,12 @@ const UserReservations = () => {
                     <head>
                         <title>QR Code Réservation - ${selectedReservation.parkingId.name}</title>
                         <style>
-                            body { font-family: Arial; text-align: center; padding: 20px; }
+                            body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
                             .qr-container { margin: 20px auto; }
                             .details { margin: 20px 0; text-align: left; max-width: 400px; margin: auto; }
                             .footer { margin-top: 20px; font-size: 12px; color: #666; }
+                            h2 { color: #3B82F6; }
+                            .details p { padding: 8px 0; border-bottom: 1px solid #eee; }
                         </style>
                     </head>
                     <body>
@@ -187,7 +446,7 @@ const UserReservations = () => {
                             <p><strong>Date d'arrivée:</strong> ${new Date(selectedReservation.startTime).toLocaleString()}</p>
                             <p><strong>Date de départ:</strong> ${new Date(selectedReservation.endTime).toLocaleString()}</p>
                             <p><strong>Type de véhicule:</strong> ${selectedReservation.vehicleType}</p>
-                            <p><strong>Montant total:</strong> ${selectedReservation.totalPrice}€</p>
+                            <p><strong>Montant total:</strong> ${selectedReservation.totalPrice} Dt</p>
                         </div>
                         <div class="footer">
                             <p>Veuillez présenter ce QR code à l'entrée du parking</p>
@@ -201,27 +460,47 @@ const UserReservations = () => {
         };
 
         return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-xl p-8 max-w-md w-full">
-                    <h3 className="text-xl font-semibold mb-4 text-center">QR Code de réservation</h3>
-                    <img 
-                        src={selectedReservation.qrCode} 
-                        alt="QR Code" 
-                        className="mx-auto mb-4"
-                    />
-                    <div className="text-center mb-6">
-                        <p className="text-gray-600">Présentez ce QR code à l'entrée du parking</p>
+            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl relative animate-fade-in-up">
+                    <button 
+                        onClick={() => setSelectedReservation(null)}
+                        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    
+                    <h3 className="text-xl font-semibold mb-2 text-center text-gray-800">QR Code de réservation</h3>
+                    <p className="text-center text-sm text-gray-500 mb-6">Parking {selectedReservation.parkingId.name}</p>
+                    
+                    <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                        <img 
+                            src={selectedReservation.qrCode} 
+                            alt="QR Code" 
+                            className="mx-auto mb-4 w-64 h-64 object-contain"
+                        />
                     </div>
+                    
+                    <div className="text-center mb-6">
+                        <p className="text-gray-600 font-medium">
+                            Présentez ce QR code à l'entrée du parking
+                        </p>
+                    </div>
+                    
                     <div className="flex space-x-3">
                         <button
                             onClick={handlePrintQR}
-                            className="flex-1 py-2 px-4 bg-blue-600 text-black rounded-lg hover:bg-blue-700"
+                            className="flex-1 py-3 px-4 bg-blue-600 text-black rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                         >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
                             Imprimer
                         </button>
                         <button
                             onClick={() => setSelectedReservation(null)}
-                            className="flex-1 py-2 px-4 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200"
+                            className="flex-1 py-3 px-4 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
                         >
                             Fermer
                         </button>
@@ -231,31 +510,80 @@ const UserReservations = () => {
         );
     };
 
-    if (loading) return (
-        <div className="flex justify-center items-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
+    // Animation pour le chargement
+    if (loading) return (   
+        <div className="flex flex-col justify-center items-center min-h-[500px]">   
+            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-500 mb-4"></div>
+            <p className="text-gray-500 font-medium">Chargement de vos réservations...</p>
+        </div>   
     );
 
-    if (error) return (
-        <div className="bg-red-50 text-red-600 p-4 rounded-lg text-center">
-            {error}
-        </div>
+    // Message d'erreur amélioré  
+    if (error) return (  
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto my-8">
+            <div className="flex items-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="text-lg font-medium text-red-800">Erreur de chargement</h3>
+            </div>
+            <p className="text-red-600">{error}</p>
+            <button
+                onClick={() => window.location.reload()}
+                className="mt-4 bg-red-100 text-red-700 py-2 px-4 rounded-lg hover:bg-red-200 transition-colors inline-flex items-center"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Réessayer
+            </button>
+        </div>  
     );
 
-    return (
-        <div className="container mx-auto px-4 py-8">
-            <h2 className="text-2xl font-bold mb-6">Mes réservations</h2>
+    // Pas de réservations    
+    if (reservations.length === 0) return (    
+        <div className="container mx-auto px-4 py-12">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center max-w-2xl mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="text-xl font-medium text-gray-700 mb-2">Aucune réservation trouvée</h3>
+                <p className="text-gray-500 mb-6">Vous n'avez pas encore effectué de réservation.</p>
+                <a href="/parkings" className="inline-block bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors">
+                    Découvrir les parkings
+                </a>
+            </div>
+        </div>    
+    );
+
+    return (    
+        <div className="container mx-auto px-4 py-10 max-w-6xl">
+            <h2 className="text-3xl font-bold mb-8 text-gray-800 border-b pb-4">Mes réservations</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {reservations.map(reservation => (
                     <ReservationCard 
-                        key={reservation._id} 
+                        key={reservation._id || Math.random().toString()} 
                         reservation={reservation}
                     />
                 ))}
             </div>
             {selectedReservation && <QRCodeModal />}
-        </div>
+            <style>{`
+                @keyframes fade-in-up {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .animate-fade-in-up {
+                    animation: fade-in-up 0.6s ease-out forwards;
+                }
+            `}</style>
+        </div>    
     );
 };
 

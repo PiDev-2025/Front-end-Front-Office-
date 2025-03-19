@@ -175,18 +175,7 @@ const ParkingDetails = () => {
             </div>
           </div>
       
-          {/* Ligne 5 : Boutons */}
-          <div className="flex gap-4">
-            <button
-              className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition w-full"
-              onClick={() => navigate('/bookings')}
-            >
-              🔙 Retour à la liste
-            </button>
-            <button className="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">
-              📅 Réserver une place
-            </button>
-          </div>
+        
         </div>
       );
   };

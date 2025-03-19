@@ -319,7 +319,7 @@ const validateForm = () => {
         return false;
       }
       
-      if (!availableSpots || availableSpots <= 0 || availableSpots > totalSpots) {
+      if ( availableSpots > totalSpots) {
         setValidationError("Available spots must be a positive number not exceeding total spots");
         return false;
       }
