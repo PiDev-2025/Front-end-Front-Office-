@@ -41,6 +41,42 @@ const createPriceMarker = (price, isLimited) => {
     };
 };
 
+// Add this StatusIndicator component definition
+const StatusIndicator = ({ availability }) => {
+  const getStatusInfo = () => {
+    if (availability >= 0.5) {
+      return { 
+        text: "Available", 
+        color: "text-black",
+        bgColor: "bg-green-500",
+        icon: "✓"
+      };
+    } else if (availability > 0.2) {
+      return { 
+        text: "Limited", 
+        color: "text-black",
+        bgColor: "bg-yellow-500",
+        icon: "⚠"
+      };
+    } else {
+      return { 
+        text: "Almost Full", 
+        color: "text-black",
+        bgColor: "bg-red-500",
+        icon: "!"
+      };
+    }
+  };
+
+  const status = getStatusInfo();
+  return (
+    <div className={`${status.bgColor} ${status.color} px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center`}>
+      <span className="mr-1 text-xs">{status.icon}</span>
+      {status.text}
+    </div>
+  );
+};
+
 // Popup component for parking details
 const ParkingDetailsPopup = ({ parking, onClose }) => {
     if (!parking) return null;
@@ -338,10 +374,18 @@ useEffect(() => {
                 createdAt: parking.createdAt,
                 availabilityPercentage: parking.availableSpots 
                     ? Math.floor((parking.availableSpots / parking.totalSpots) * 100)
-                    : 0
+                    : 0,
+                // Ajout du formattage des données météo
+                weather: parking.weather ? {
+                    temperature: Math.round(parking.weather.temperature),
+                    description: parking.weather.description,
+                    humidity: parking.weather.humidity,
+                    windSpeed: parking.weather.windSpeed,
+                    icon: parking.weather.icon
+                } : null
             }));
             
-            console.log("Formatted parkings:", formattedParkings);
+            console.log("Formatted parkings with weather:", formattedParkings);
             setParkings(formattedParkings);
             
             // Only auto-search if we have initial context location data
@@ -1246,10 +1290,57 @@ const findNameMatches = (searchTerm) => {
                                             <p className="text-xs text-gray-500">{parking.distance}  away</p>
                                         </div>
                                     </div>
-                                    <div className="mt-2 text-xs text-gray-500">
-                                        <p>Total spots: {parking.totalSpots}</p>
-                                        <p>Available spots: {parking.availableSpots}</p>
-                                    </div>
+                                    <div className="mt-2 space-y-2">
+  {/* Availability section - plus compact */}
+  <div className="flex items-center justify-between">
+    <div className="flex items-center space-x-2">
+      <span className="text-xs text-gray-500">
+        {parking.availableSpots}/{parking.totalSpots} spots
+      </span>
+      <StatusIndicator availability={parking.availableSpots / parking.totalSpots} />
+    </div>
+  </div>
+  
+  {/* Progress bar */}
+  <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+    <div
+      className="h-full transition-all duration-500"
+      style={{ 
+        width: `${(parking.availableSpots / parking.totalSpots) * 100}%`,
+        backgroundColor: (parking.availableSpots / parking.totalSpots) >= 0.5 ? '#22c55e' : 
+                        (parking.availableSpots / parking.totalSpots) >= 0.2 ? '#eab308' : 
+                        '#dc2626'
+      }}
+    />
+  </div>
+
+  {/* Weather section - compact design avec humidité et vent */}
+{parking.weather && (
+  <div className="flex items-center gap-2 mt-2 bg-gray-50 p-2 rounded-md">
+    <div className="w-8 h-8 flex-shrink-0">
+      <img 
+        src={parking.weather.icon}
+        alt="Weather"
+        className="w-full h-full object-contain"
+      />
+    </div>
+    <div className="flex flex-col justify-center">
+      <div className="flex items-center text-xs">
+        <span className="font-medium">{parking.weather.temperature}°C</span>
+        <span className="mx-1.5 text-gray-400">|</span>
+        <span className="text-gray-600">{parking.weather.description}</span>
+      </div>
+      <div className="text-xs text-gray-500">
+        <span>💧 {parking.weather.humidity}%</span>
+        <span className="mx-1.5">•</span>
+        <span>💨 {parking.weather.windSpeed} m/s</span>
+      </div>
+    </div>
+  </div>
+)}
+
+</div>
+
                                     
                                     {/* Add Details button */}
                                     <div className="mt-3 flex justify-between">

@@ -27,32 +27,32 @@ registerLocale('fr', fr);
 
 // Vehicle types with optimized data structure
 const VEHICLE_TYPES = [
-    {
-      value: "Moto",
-      label: "Motorcycle",
-      image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765730/moto_xdypx2.png"
-    },
-    {
-      value: "Citadine",
-      label: "City Car",
-      image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-de-ville_ocwbob.png"
-    },
-    {
-      value: "Berline / Petit SUV",
-      label: "Sedan / Small SUV",
-      image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/wagon-salon_bj2j1s.png"
-    },
-    {
-      value: "Familiale / Grand SUV",
-      label: "Family / Large SUV",
-      image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-familiale_rmgclg.png"
-    },
-    {
-      value: "Utilitaire",
-      label: "Utility Vehicle",
-      image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-de-livraison_nodnzh.png"
-    }
-  ];
+  {
+    value: "Moto",
+    label: "Moto",
+    image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765730/moto_xdypx2.png"
+  },
+  {
+    value: "Citadine",
+    label: "City Car",
+    image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-de-ville_ocwbob.png"
+  },
+  {
+    value: "Berline / Petit SUV",
+    label: "Small SUV",
+    image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/wagon-salon_bj2j1s.png"
+  },
+  {
+    value: "Familiale / Grand SUV",
+    label: "Large SUV",
+    image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-familiale_rmgclg.png"
+  },
+  {
+    value: "Utilitaire",
+    label: "Utility Vehicle",
+    image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765729/voiture-de-livraison_nodnzh.png"
+  }
+];
 
 // Payment methods with consistent structure
 const PAYMENT_METHODS = [
@@ -65,7 +65,7 @@ const datePickerStyles = `
   .react-datepicker {
     font-family: 'Inter', sans-serif;
     border: none;
-    border-radius: 0.75rem;
+    border-radius: 0.99rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     overflow: hidden;
   }
@@ -131,82 +131,121 @@ const datePickerStyles = `
   }
 `;
 
+// Modifier le CustomDatePicker pour gérer la date minimum
 const CustomDatePicker = ({ selected, onChange, label, minDate, isStartDate = false }) => {
+  const getMinDate = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 10);
+    now.setSeconds(0);
+    return now;
+  };
+
+  const getMinTime = () => {
+    const now = new Date();
+    if (selected?.toDateString() === now.toDateString()) {
+      now.setMinutes(now.getMinutes() + 10);
+      return now;
+    }
+    return new Date(0, 0, 0, 0, 0); // Début de journée pour les autres jours
+  };
+
+  const getMaxTime = () => {
+    return new Date(0, 0, 0, 23, 59); // 23:59
+  };
+
   return (
     <div className="relative">
-      <style>{datePickerStyles}</style>
       <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-      <div className="relative shadow-sm">
-        <DatePicker
-          selected={selected}
-          onChange={onChange}
-          showTimeSelect
-          timeFormat="HH:mm"
-          timeIntervals={30}
-          timeCaption="Heure"
-          dateFormat="dd/MM/yyyy HH:mm"
-          minDate={minDate}
-          locale="fr"
-          className="w-full p-4 pl-12 pr-10 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 hover:border-blue-300 text-gray-700 font-medium bg-white"
-          calendarClassName="!bg-white !border-2 !rounded-xl !shadow-xl"
-          popperPlacement="bottom-start"
-          popperClassName="z-[9999]"
-          showPopperArrow={false}
-          autoComplete="off"
-          disabledKeyboardNavigation
-          placeholderText="Sélectionner date et heure"
-          timeInputLabel="Heure:"
-          filterTime={(time) => {
-            // Permet uniquement des créneaux de 30 minutes
-            const minutes = time.getMinutes();
-            return minutes === 0 || minutes === 30;
-          }}
-        />
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
-          {isStartDate ? (
-            <Calendar className="w-5 h-5 text-blue-500" />
-          ) : (
-            <Clock className="w-5 h-5 text-blue-500" />
-          )}
-        </div>
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-          <ChevronDown className="w-5 h-5 text-gray-400" />
-        </div>
-      </div>
+      <div className="relative">
+  <DatePicker
+    selected={selected}
+    onChange={onChange}
+    showTimeSelect
+    timeFormat="HH:mm"
+    timeIntervals={30}
+    timeCaption="Heure"
+    dateFormat="dd/MM/yyyy HH:mm"
+    minDate={isStartDate ? getMinDate() : minDate}
+    minTime={
+      isStartDate && selected?.toDateString() === new Date().toDateString()
+        ? getMinDate()
+        : getMinTime()
+    }
+    maxTime={getMaxTime()}
+    locale="fr"
+    className="w-full py-3 px-12 border border-gray-300 rounded-lg text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+    calendarClassName="bg-white border border-gray-200 rounded-lg shadow-lg"
+    dayClassName={date => 
+      date.getDate() === selected?.getDate() && 
+      date.getMonth() === selected?.getMonth() 
+        ? "bg-blue-500 text-white rounded-full" 
+        : "text-gray-700 hover:bg-blue-100"
+    }
+    popperClassName="z-50"
+    popperPlacement="bottom-start"
+    popperModifiers={[
+      {
+        name: "offset",
+        options: {
+          offset: [0, 8],
+        },
+      },
+    ]}
+    showPopperArrow={false}
+    autoComplete="off"
+    disabledKeyboardNavigation
+    placeholderText="Sélectionner date et heure"
+    timeInputLabel="Heure:"
+    filterTime={(time) => {
+      const minutes = time.getMinutes();
+      return minutes === 0 || minutes === 30;
+    }}
+  />
+  <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+    {isStartDate ? (
+      <Calendar className="w-5 h-5 text-blue-500" />
+    ) : (
+      <Clock className="w-5 h-5 text-blue-500" />
+    )}
+  </div>
+  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+    <ChevronDown className="w-5 h-5 text-gray-400" />
+  </div>
+</div>
     </div>
   );
 };
 
 // Vehicle type selector component
 const VehicleTypeSelector = ({ selectedType, onSelect }) => (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {VEHICLE_TYPES.map(type => (
-        <div
-          key={type.value}
-          onClick={() => onSelect(type.value)}
-          className={`p-5 border rounded-2xl cursor-pointer transition-all flex flex-col items-center text-center shadow-sm
-            ${
-              selectedType === type.value 
-                ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' 
-                : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
-            }`}
-        >
-          {/* Image */}
-          <div className="bg-gray-100 p-3 rounded-xl w-16 h-16 flex justify-center items-center mb-3">
-            <img src={type.image} alt={type.label} className="w-12 h-12 object-contain" />
-          </div>
-  
-          {/* Label */}
-          <p className="font-semibold text-gray-800">{type.label}</p>
-  
-          {/* Check icon if selected */}
-          {selectedType === type.value && (
-            <CheckCircle2 size={24} className="text-blue-500 mt-2" />
-          )}
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    {VEHICLE_TYPES.map(type => (
+      <div
+        key={type.value}
+        onClick={() => onSelect(type.value)}
+        className={`p-3 border rounded-2xl cursor-pointer transition-all flex flex-col items-center text-center shadow-sm
+          ${
+            selectedType === type.value 
+              ? 'border-blue-500 bg-blue-50 shadow-lg scale-105' 
+              : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
+          }`}
+      >
+        {/* Image */}
+        <div className="bg-gray-100 p-3 rounded-xl w-16 h-16 flex justify-center items-center mb-3">
+          <img src={type.image} alt={type.label} className="w-12 h-12 object-contain" />
         </div>
-      ))}
-    </div>
-  );
+
+        {/* Label */}
+        <p className="font-semibold text-gray-800">{type.label}</p>
+
+        {/* Check icon if selected */}
+        {selectedType === type.value && (
+          <CheckCircle2 size={24} className="text-blue-500 mt-2" />
+        )}
+      </div>
+    ))}
+  </div>
+);
 
 // Payment method selector component
 const PaymentMethodSelector = ({ selected, onSelect }) => (
@@ -293,41 +332,6 @@ const QRCodeModal = ({ qrCode, onPrint, onContinue, onViewReservations }) => (
   </div>
 );
 
-const ReservationSteps = ({ currentStep }) => {
-  const steps = [
-    { id: 1, label: "Sélection des dates" },
-    { id: 2, label: "Type de véhicule" },
-    { id: 3, label: "Paiement" },
-    { id: 4, label: "Confirmation" }
-  ];
-
-  return (
-    <div className="flex mb-8 overflow-x-auto py-2">
-      {steps.map((step, index) => (
-        <React.Fragment key={step.id}>
-          <div className="flex items-center">
-            <div 
-              className={`rounded-full h-8 w-8 flex items-center justify-center ${
-                step.id <= currentStep ? 'bg-blue-600 text-black' : 'bg-gray-200 text-gray-600'
-              }`}
-            >
-              {step.id}
-            </div>
-            <span className={`ml-2 ${step.id <= currentStep ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
-              {step.label}
-            </span>
-          </div>
-          {index < steps.length - 1 && (
-            <div className="mx-2 flex-grow flex items-center">
-              <ArrowRight size={16} className="text-gray-400" />
-              <div className={`h-1 w-full mx-2 ${step.id < currentStep ? 'bg-blue-600' : 'bg-gray-200'}`}></div>
-            </div>
-          )}
-        </React.Fragment>
-      ))}
-    </div>
-  );
-};
 
 const Reservation = ({ parkingData, onContinue }) => {
   const navigate = useNavigate();
@@ -337,10 +341,16 @@ const Reservation = ({ parkingData, onContinue }) => {
   const [calculatedPrice, setCalculatedPrice] = useState(0);
   const [currentStep, setCurrentStep] = useState(1);
   const [reservationInfo, setReservationInfo] = useState({
-    startDate: new Date(),
+    startDate: (() => {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + 10); // Ajoute 10 minutes
+      now.setSeconds(0); // Mettre les secondes à 0
+      return now;
+    })(),
     endDate: (() => {
       const date = new Date();
-      date.setHours(date.getHours() + 1); // Changer à 1 heure minimum
+      date.setMinutes(date.getMinutes() + 70); // 10 minutes + 1 heure
+      date.setSeconds(0);
       return date;
     })(),
     vehicleType: ''
