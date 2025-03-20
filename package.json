@@ -54,15 +54,33 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
+    ],
+    "rules": {
+      "no-unused-vars": "warn",
+      "eqeqeq": "warn",
+      "react-hooks/exhaustive-deps": "warn",
+      "jsx-a11y/anchor-is-valid": "warn",
+      "jsx-a11y/role-has-required-aria-props": "warn",
+      "array-callback-return": "warn"
+    },
+    "overrides": [
+      {
+        "files": [
+          "node_modules/face-api.js/**/*.js"
+        ],
+        "rules": {
+          "source-map-loader": "off"
+        }
+      }
     ]
   },
   "browserslist": {
@@ -79,6 +97,7 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "react-app-rewired": "^2.2.1",
     "tailwindcss": "^3.3.2"
   }
 }
