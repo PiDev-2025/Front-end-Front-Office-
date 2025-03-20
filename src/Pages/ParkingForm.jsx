@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import {
   Form,
@@ -12,11 +11,14 @@ import {
   Spinner,
   Modal
 } from "react-bootstrap";
-import { Autocomplete } from "@react-google-maps/api";
-import { useGoogleMaps } from "../context/GoogleMapsContext";
+import { useMapbox } from "../context/MapboxContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { showToast } from "../utils/toast";
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
+import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 
 import {
   FaMapMarkerAlt,
@@ -34,8 +36,11 @@ import {
 } from "react-icons/fa";
 
 const ParkingRequestForm = () => {
-  const { isLoaded } = useGoogleMaps();
+  const { isLoaded } = useMapbox();
   const navigate = useNavigate();
+  const mapContainer = useRef(null);
+  const map = useRef(null);
+  const [marker, setMarker] = useState(null);
   
   // State for managing steps
   const [currentStep, setCurrentStep] = useState(1);
@@ -44,7 +49,6 @@ const ParkingRequestForm = () => {
   // Parking details state
   const [position, setPosition] = useState({ lat: undefined, lng: undefined });
   const [address, setAddress] = useState("");
-  const [autocomplete, setAutocomplete] = useState(null);
   const [features, setFeatures] = useState([]);
   const [pricing, setPricing] = useState({
     hourly: "",
@@ -212,22 +216,69 @@ const ParkingRequestForm = () => {
     });
   };
 
-  // Google Maps Autocomplete
-  const onLoad = (autoComplete) => setAutocomplete(autoComplete);
+  // Ajout de l'initialisation de la carte Mapbox
+  useEffect(() => {
+    if (isLoaded && mapContainer.current) {
+      // Initialize map
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: [10.18, 36.8], // Tunisia center
+        zoom: 13
+      });
 
-  const onPlaceChanged = () => {
-    if (autocomplete) {
-      const place = autocomplete.getPlace();
-      if (place.geometry) {
-        setPosition({
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng()
-        });
-        setAddress(place.formatted_address);
-      }
+      // Add navigation controls
+      map.current.addControl(new mapboxgl.NavigationControl());
+
+      // Add geocoder for search
+      const geocoder = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl,
+        placeholder: 'Search location',
+        countries: 'tn'
+      });
+
+      map.current.addControl(geocoder);
+
+      // Add click handler for location selection
+      map.current.on('click', (e) => {
+        const { lng, lat } = e.lngLat;
+        updateMarkerPosition(lng, lat);
+      });
+
+      // Gestionnaire de résultat de recherche
+      geocoder.on('result', (e) => {
+        const coords = e.result.center;
+        updateMarkerPosition(coords[0], coords[1]);
+        setAddress(e.result.place_name);
+      });
+
+      return () => {
+        if (map.current) map.current.remove();
+      };
     }
+  }, [isLoaded]);
+
+  const updateMarkerPosition = (lng, lat) => {
+    if (marker) marker.remove();
+    
+    const el = document.createElement('div');
+    el.className = 'parking-marker';
+    el.innerHTML = `
+      <svg width="30" height="45" viewBox="0 0 30 45">
+        <path fill="#22C55E" d="M15 0C6.7 0 0 6.7 0 15c0 8.3 15 30 15 30s15-21.7 15-30c0-8.3-6.7-15-15-15z"/>
+        <circle fill="white" cx="15" cy="15" r="7"/>
+      </svg>
+    `;
+
+    const newMarker = new mapboxgl.Marker(el)
+      .setLngLat([lng, lat])
+      .addTo(map.current);
+    
+    setMarker(newMarker);
+    setPosition({ lng, lat });
   };
-  
+
   // Format tariff labels
   const getTariffLabel = (key) => {
     switch(key) {
@@ -509,16 +560,7 @@ const validateForm = () => {
                 <FaMapMarkerAlt className="mr-2 text-blue-500" />
                 Parking Location <span className="text-danger">*</span>
               </Form.Label>
-              <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
-                <Form.Control
-                  type="text"
-                  placeholder="Enter location"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  required
-                  className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-3/4"
-                />
-              </Autocomplete>
+              <div ref={mapContainer} style={{ width: "100%", height: "400px" }} className="rounded-lg shadow-lg" />
             </Form.Group>
   
             <Row className="mb-5">

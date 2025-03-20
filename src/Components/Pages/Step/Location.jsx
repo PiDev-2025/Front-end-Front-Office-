@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
-import { GoogleMap, Marker, InfoWindow, Autocomplete, DirectionsRenderer } from "@react-google-maps/api";
-import { useGoogleMaps } from "../../../context/GoogleMapsContext";
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
+import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
+import { useMapbox } from "../../../context/MapboxContext";
 import { useSearch } from "../../../context/SearchContext";
 import { useFavorites } from "../../../context/FavoritesContext";
 import { Form } from 'react-bootstrap';
@@ -77,6 +80,7 @@ const StatusIndicator = ({ availability }) => {
   );
 };
 
+// Popup component for parking details
 // Popup component for parking details
 const ParkingDetailsPopup = ({ parking, onClose }) => {
     if (!parking) return null;
@@ -170,8 +174,18 @@ const LoginReminderPopup = ({ onClose }) => {
     );
 };
 
+// Ajouter ces constantes pour les marqueurs personnalisés
+const createCustomMarker = (color) => {
+    return `
+        <svg width="30" height="45" viewBox="0 0 30 45">
+            <path fill="${color}" d="M15 0C6.7 0 0 6.7 0 15c0 8.3 15 30 15 30s15-21.7 15-30c0-8.3-6.7-15-15-15z"/>
+            <circle fill="white" cx="15" cy="15" r="7"/>
+        </svg>
+    `;
+};
+
 const SecLocation = () => {
-    const { isLoaded, userLocation, setUserLocation } = useGoogleMaps();
+    const { isLoaded, userLocation, setUserLocation } = useMapbox();
     const { searchData, updateSearchData } = useSearch();
     const { isFavorite, toggleFavorite, isLoggedIn } = useFavorites();
     const navigate = useNavigate();
@@ -185,10 +199,12 @@ const SecLocation = () => {
     const [hasSearched, setHasSearched] = useState(false);
     const [showLoginReminder, setShowLoginReminder] = useState(false);
     const [directions, setDirections] = useState(null); // Store directions
+    const mapContainer = useRef(null);
+    const map = useRef(null);
+    const searchBoxRef = useRef(null);
     
     // Set today as minimum date for date pickers
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set to beginning of day for accurate comparison
     
     // Date validation error state
     const [dateError, setDateError] = useState("");
@@ -254,58 +270,62 @@ const SecLocation = () => {
     const [showSortDropdown, setShowSortDropdown] = useState(false);
 
     // Function to calculate distance between two points using the Haversine formula
-    const calculateDistance = (lat1, lon1, lat2, lon2) => {
-        const R = 6371; // Radius of the Earth in km
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = 
-            Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c; // Distance in km
-    };
+  // Fonction de calcul de distance plus précise
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Rayon de la Terre en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c; // Distance en km
+    return parseFloat(distance.toFixed(1));
+};
 
     // Get user's current location
     const getUserLocation = () => {
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
+            // Options pour une haute précision
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            };
+            
+            // Observer les changements de position
+            const watchId = navigator.geolocation.watchPosition(
                 (position) => {
                     const userPos = {
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
                     };
-                    setLocation(userPos);
+                    
+                    // Mettre à jour la position dans le state et le contexte
                     setUserLocation(userPos);
+                    setLocation(userPos);
                     
-                    // Reverse geocode to get the address
-                    if (window.google && isLoaded) {
-                        const geocoder = new window.google.maps.Geocoder();
-                        geocoder.geocode({ location: userPos }, (results, status) => {
-                            if (status === "OK" && results[0]) {
-                                setAddress(results[0].formatted_address);
-                                updateSearchData({ 
-                                    address: results[0].formatted_address,
-                                    location: userPos
-                                });
-                            }
-                        });
+                    // Mettre à jour le marqueur de l'utilisateur
+                    if (map.current && markersRef.current.userMarker) {
+                        markersRef.current.userMarker.setLngLat([userPos.lng, userPos.lat]);
                     }
                     
-                    // Pan map to user's location and search for parkings
-                    if (mapRef) {
-                        mapRef.panTo(userPos);
-                        mapRef.setZoom(15);
+                    // Si nous avons des parkings filtrés, mettre à jour leurs distances
+                    if (filteredParkings.length > 0) {
+                        const updatedParkings = filterParkingsByLocation(searchRadius);
+                        setFilteredParkings(updatedParkings);
                     }
-                    
-                    // Automatically search for parkings near user's location
-                    handleSearch(userPos);
                 },
                 (error) => {
                     console.error("Error getting user location:", error);
                     alert("Unable to retrieve your location. Please check your browser settings.");
-                }
+                },
+                options
             );
+            
+            // Nettoyer l'observateur quand le composant est démonté
+            return () => navigator.geolocation.clearWatch(watchId);
         } else {
             alert("Geolocation is not supported by your browser.");
         }
@@ -473,23 +493,26 @@ useEffect(() => {
     }, [searchData.location, searchData.address]);
 
     // Filter parkings by proximity to the selected location
-    const filterParkingsByLocation = (targetLat, targetLng, maxDistance = searchRadius) => {
-        if (!targetLat || !targetLng) return [];
+    const filterParkingsByLocation = (maxDistance = searchRadius) => {
+        if (!userLocation) return [];
         
         const results = parkings.filter(parking => {
             const distance = calculateDistance(
-                targetLat, targetLng,
-                parking.lat, parking.lng
+                userLocation.lat,
+                userLocation.lng,
+                parking.lat,
+                parking.lng
             );
             
-            // Add distance to each parking object for display
-            parking.distance = distance.toFixed(1) + ' km';
+            // Ajouter la distance au parking
+            parking.distance = distance + ' km';
+            parking.distanceValue = distance; // Stocker la valeur numérique pour le tri
             
-            // Return true if the parking is within the max distance
             return distance <= maxDistance;
-        }).sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance)); // Sort by distance
+        });
         
-        return results;
+        // Trier par distance
+        return results.sort((a, b) => a.distanceValue - b.distanceValue);
     };
 
 // Find name-based matches (as an alternative search method)
@@ -655,89 +678,63 @@ const findNameMatches = (searchTerm) => {
         setEndTime(value);
         updateSearchData({ endTime: value });
     };
-
+    
     // Expanded handle search function with validation
-    const handleSearch = (targetLocation) => {
-        // Validate dates before proceeding
-        if (startDate < today) {
-            setDateError("Start date cannot be in the past");
+    const handleSearch = () => {
+        if (!userLocation) {
+            // Demander la position si non disponible
+            getUserLocation();
             return;
         }
-        
-        if (endDate < startDate) {
-            setDateError("End date must be after start date");
-            return;
-        }
-        
-        // Clear any validation errors
-        setDateError("");
         
         setIsSearching(true);
         setHasSearched(true);
         
-        // Use provided target location or the current location state
-        const searchLocation = targetLocation || location;
-        
-        // Update all form data in the context
+        // Mettre à jour le contexte avec les données de recherche
         updateSearchData({
             toogleTab,
-            address,
-            location: searchLocation,
             vehicleType,
             startDate,
             endDate,
             startTime,
-            endTime
+            endTime,
+            location: userLocation, // Utiliser la position exacte
+            address
         });
         
-        // Simulate search delay
+        // Filtrer les parkings selon la position exacte
         setTimeout(() => {
             setIsSearching(false);
+            let results = filterParkingsByLocation(searchRadius);
             
-            // Filter by proximity
-            let locationResults = filterParkingsByLocation(searchLocation.lat, searchLocation.lng);
+            // Appliquer le tri actuel
+            results = sortParkings(results, sortBy);
             
-            // If no proximity results, try name-based matching as backup
-            if (locationResults.length === 0) {
-                locationResults = findNameMatches(address);
-            }
+            setFilteredParkings(results);
             
-            // Apply current sort method
-            if (locationResults.length > 0) {
-                locationResults = sortParkings(locationResults, sortBy);
-            }
-            
-            setFilteredParkings(locationResults.length > 0 ? locationResults : []);
-            
-            // If we have filtered results, adjust the map to show them
-            if (locationResults.length > 0 && mapRef) {
-                const bounds = new window.google.maps.LatLngBounds();
-                // Add the search location to bounds
-                bounds.extend(searchLocation);
+            // Ajuster la carte pour montrer les résultats
+            if (results.length > 0 && map.current) {
+                const bounds = new mapboxgl.LngLatBounds()
+                    .extend([userLocation.lng, userLocation.lat]); // Ajouter la position de l'utilisateur
                 
-                // Add all parking locations to bounds
-                locationResults.forEach(parking => {
-                    bounds.extend({ lat: parking.lat, lng: parking.lng });
+                // Ajouter tous les parkings aux limites
+                results.forEach(parking => {
+                    bounds.extend([parking.lng, parking.lat]);
                 });
                 
-                mapRef.fitBounds(bounds);
-                
-                // If there's only one result or bounds are too small, zoom in a bit more
-                setTimeout(() => {
-                    if (mapRef.getZoom() > 17) {
-                        mapRef.setZoom(17);
-                    } else if (mapRef.getZoom() < 13) {
-                        mapRef.setZoom(13);
-                    }
-                }, 300);
-            } else if (mapRef) {
-                // If no parkings found, just center on the searched location
-                mapRef.panTo(searchLocation);
-                mapRef.setZoom(14);
+                map.current.fitBounds(bounds, {
+                    padding: 50,
+                    duration: 1000
+                });
+            } else if (map.current) {
+                // Si aucun résultat, centrer sur l'utilisateur
+                map.current.flyTo({
+                    center: [userLocation.lng, userLocation.lat],
+                    zoom: 14,
+                    duration: 1000
+                });
             }
-            
-            console.log("Searched for parkings with:", { address, vehicleType, startDate, endDate });
-        }, 1000);
+        }, 500);
     };
 
     // Set map center based on context location or default
@@ -778,35 +775,7 @@ const findNameMatches = (searchTerm) => {
         };
     }, [showVehicleDropdown]);
 
-    // Handle hover over parking item in list
-    const handleHover = (parking) => {
-        setHoveredParking(parking.id);
-        if (mapRef) {
-            mapRef.panTo({ lat: parking.lat, lng: parking.lng });
-        }
-    };
 
-    // Handle marker click to show info window
-    const handleMarkerClick = (parking) => {
-        setActiveParking(parking);
-        if (userLocation) {
-            const directionsService = new window.google.maps.DirectionsService();
-            directionsService.route(
-                {
-                    origin: userLocation,
-                    destination: { lat: parking.lat, lng: parking.lng },
-                    travelMode: window.google.maps.TravelMode.DRIVING,
-                },
-                (result, status) => {
-                    if (status === window.google.maps.DirectionsStatus.OK) {
-                        setDirections(result);
-                    } else {
-                        console.error(`error fetching directions ${result}`);
-                    }
-                }
-            );
-        }
-    };
 
     // Get marker icon based on parking availability and price
     const getParkingMarkerIcon = (parking) => {
@@ -929,11 +898,1245 @@ const findNameMatches = (searchTerm) => {
         }
     };
 
+    // Référence pour stocker les marqueurs
+    const markersRef = useRef({
+        parkingMarkers: [],
+        routeMarkers: [],
+        userMarker: null
+    });
+
+    // Initialisation de la carte
+    useEffect(() => {
+        if (isLoaded && mapContainer.current) {
+            // Demander la position de l'utilisateur dès le chargement
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const userPos = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        
+                        // Mettre à jour la position dans le state et le contexte
+                        setLocation(userPos);
+                        setUserLocation(userPos);
+
+                        // Initialiser la carte avec la position de l'utilisateur
+                        map.current = new mapboxgl.Map({
+                            container: mapContainer.current,
+                            style: 'mapbox://styles/mapbox/streets-v11',
+                            center: [userPos.lng, userPos.lat],
+                            zoom: 15
+                        });
+
+                        // Ajouter les contrôles de navigation
+                        map.current.addControl(new mapboxgl.NavigationControl());
+
+                        // Créer le marqueur de l'utilisateur
+                        const el = document.createElement('div');
+                        el.className = 'user-location-marker';
+                        el.innerHTML = createCustomMarker('#4A90E2');
+                        
+                        markersRef.current.userMarker = new mapboxgl.Marker(el)
+                            .setLngLat([userPos.lng, userPos.lat])
+                            .addTo(map.current);
+
+                        // Reverse geocoding pour obtenir l'adresse
+                        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${userPos.lng},${userPos.lat}.json?access_token=${mapboxgl.accessToken}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.features && data.features.length > 0) {
+                                    const address = data.features[0].place_name;
+                                    setAddress(address);
+                                    updateSearchData({ 
+                                        address: address,
+                                        location: userPos
+                                    });
+                                }
+                            })
+                            .catch(error => console.error('Error during reverse geocoding:', error));
+                    },
+                    (error) => {
+                        console.error("Error getting user location:", error);
+                        // Fallback à la position par défaut si erreur
+                        const defaultPos = { lat: 36.8, lng: 10.18 };
+                        setLocation(defaultPos);
+                        
+                        map.current = new mapboxgl.Map({
+                            container: mapContainer.current,
+                            style: 'mapbox://styles/mapbox/streets-v11',
+                            center: [defaultPos.lng, defaultPos.lat],
+                            zoom: 13
+                        });
+
+                        map.current.addControl(new mapboxgl.NavigationControl());
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                // Fallback si la géolocalisation n'est pas supportée
+                const defaultPos = { lat: 36.8, lng: 10.18 };
+                map.current = new mapboxgl.Map({
+                    container: mapContainer.current,
+                    style: 'mapbox://styles/mapbox/streets-v11',
+                    center: [defaultPos.lng, defaultPos.lat],
+                    zoom: 13
+                });
+
+                map.current.addControl(new mapboxgl.NavigationControl());
+            }
+
+            return () => {
+                if (map.current) {
+                    map.current.remove();
+                }
+            };
+        }
+    }, [isLoaded]);
+
+    // Mise à jour des marqueurs de parking
+    useEffect(() => {
+        if (!map.current) return;
+
+        // Supprimer les anciens marqueurs
+        markersRef.current.parkingMarkers.forEach(marker => marker.remove());
+        markersRef.current.parkingMarkers = [];
+
+        filteredParkings.forEach(parking => {
+            // Créer l'élément du marqueur
+            const el = document.createElement('div');
+            el.className = 'parking-marker';
+            el.innerHTML = createCustomMarker('#22C55E');
+
+            // Créer le contenu du popup
+            const popup = new mapboxgl.Popup({
+                offset: [0, -30],
+                className: 'custom-popup',
+                maxWidth: '300px'
+            }).setHTML(`
+                <div class="p-4 rounded-lg shadow-lg bg-white">
+                    <h3 class="text-lg font-bold mb-2">${parking.name}</h3>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-blue-600 font-semibold">${parking.price}</span>
+                        <span class="text-gray-500 text-sm">${parking.distance} away</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-600">${parking.availableSpots}/${parking.totalSpots} spots</span>
+                        <div class="w-full h-2 bg-gray-200 rounded-full">
+                            <div 
+                                class="h-full rounded-full transition-all duration-300"
+                                style="width: ${(parking.availableSpots / parking.totalSpots) * 100}%; background-color: ${
+                                    (parking.availableSpots / parking.totalSpots) >= 0.5 ? '#22c55e' : 
+                                    (parking.availableSpots / parking.totalSpots) >= 0.2 ? '#eab308' : 
+                                    '#dc2626'
+                                }"
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+            `);
+
+            // Créer et ajouter le marqueur
+            const marker = new mapboxgl.Marker(el)
+                .setLngLat([parking.lng, parking.lat])
+                .setPopup(popup)
+                .addTo(map.current);
+
+            markersRef.current.parkingMarkers.push(marker);
+
+            // Gérer les événements
+            el.addEventListener('mouseenter', () => {
+                marker.getPopup().addTo(map.current);
+                setHoveredParking(parking.id);
+            });
+
+            el.addEventListener('mouseleave', () => {
+                marker.getPopup().remove();
+                setHoveredParking(null);
+            });
+
+            el.addEventListener('click', () => {
+                handleMarkerClick(parking);
+            });
+        });
+    }, [filteredParkings]);
+
+    // Mise à jour de l'itinéraire
+    const drawRoute = async (parking) => {
+        if (!userLocation || !map.current) return;
+
+        // Supprimer l'ancien itinéraire et les marqueurs
+        if (map.current.getSource('route')) {
+            map.current.removeLayer('route');
+            map.current.removeSource('route');
+        }
+        
+        markersRef.current.routeMarkers.forEach(marker => marker.remove());
+        markersRef.current.routeMarkers = [];
+
+        try {
+            const response = await fetch(
+                `https://api.mapbox.com/directions/v5/mapbox/driving/${userLocation.lng},${userLocation.lat};${parking.lng},${parking.lat}?steps=true&geometries=geojson&access_token=${mapboxgl.accessToken}`
+            );
+            
+            const data = await response.json();
+            
+            if (data.routes && data.routes[0]) {
+                // Ajouter la ligne de l'itinéraire
+                map.current.addSource('route', {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        properties: {},
+                        geometry: data.routes[0].geometry
+                    }
+                });
+
+                map.current.addLayer({
+                    id: 'route',
+                    type: 'line',
+                    source: 'route',
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#4A90E2',
+                        'line-width': 4,
+                        'line-opacity': 0.8
+                    }
+                });
+
+                // Ajouter les marqueurs de début et fin
+                const startMarker = document.createElement('div');
+                startMarker.className = 'route-marker start-marker';
+                startMarker.innerHTML = createCustomMarker('#4A90E2');
+
+                const endMarker = document.createElement('div');
+                endMarker.className = 'route-marker end-marker';
+                endMarker.innerHTML = createCustomMarker('#22C55E');
+
+                markersRef.current.routeMarkers = [
+                    new mapboxgl.Marker(startMarker)
+                        .setLngLat([userLocation.lng, userLocation.lat])
+                        .addTo(map.current),
+                    new mapboxgl.Marker(endMarker)
+                        .setLngLat([parking.lng, parking.lat])
+                        .addTo(map.current)
+                ];
+
+                // Ajuster la vue pour montrer l'itinéraire complet
+                const bounds = new mapboxgl.LngLatBounds()
+                    .extend([userLocation.lng, userLocation.lat])
+                    .extend([parking.lng, parking.lat]);
+
+                map.current.fitBounds(bounds, {
+                    padding: 100,
+                    duration: 1000
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching directions:', error);
+        }
+    };
+
+    // Ajouter les styles CSS
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.textContent = `
+            /* Marqueurs de parking */
+            .parking-marker {
+                width: 40px;
+                height: 55px;
+                cursor: pointer;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            }
+            
+            .parking-marker:hover {
+                transform: scale(1.15);
+                filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+            }
+    
+            .parking-marker.selected {
+                transform: scale(1.2);
+                filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.2));
+            }
+    
+            /* Marqueur de position utilisateur */
+            .user-location-marker {
+                width: 24px;
+                height: 24px;
+            }
+    
+            .user-dot {
+                background: rgba(59, 130, 246, 0.15);
+                border-radius: 50%;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: pulse 2s infinite;
+            }
+    
+            .user-dot-inner {
+                background: rgb(59, 130, 246);
+                border-radius: 50%;
+                width: 12px;
+                height: 12px;
+                border: 2px solid white;
+                box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+            }
+    
+            /* Marqueurs d'itinéraire */
+            .route-marker {
+                width: 36px;
+                height: 50px;
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            }
+    
+            .start-marker {
+                filter: hue-rotate(200deg);
+            }
+    
+            .end-marker {
+                filter: hue-rotate(100deg);
+            }
+    
+            /* Popups */
+            .custom-popup .mapboxgl-popup-content {
+                padding: 0;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                            0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                overflow: hidden;
+                border: 1px solid rgba(229, 231, 235, 1);
+            }
+            
+            .custom-popup .mapboxgl-popup-close-button {
+                right: 12px;
+                top: 12px;
+                color: #4B5563;
+                font-size: 18px;
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.8);
+                border-radius: 50%;
+                backdrop-filter: blur(4px);
+                transition: all 0.2s;
+            }
+    
+            .custom-popup .mapboxgl-popup-close-button:hover {
+                background: rgba(255, 255, 255, 0.95);
+                color: #1F2937;
+            }
+            
+            .custom-popup .mapboxgl-popup-tip {
+                border-top-color: white;
+                filter: drop-shadow(0 -1px 1px rgba(0, 0, 0, 0.05));
+            }
+    
+            /* Prix tags */
+            .price-tag {
+                background: linear-gradient(135deg, #22C55E, #16A34A);
+                color: white;
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 13px;
+                font-weight: 600;
+                text-align: center;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                letter-spacing: 0.5px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            
+            .price-tag.limited {
+                background: linear-gradient(135deg, #F59E0B, #D97706);
+            }
+    
+            /* Animations */
+            @keyframes pulse {
+                0% {
+                    transform: scale(0.95);
+                    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+                }
+                70% {
+                    transform: scale(1);
+                    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+                }
+                100% {
+                    transform: scale(0.95);
+                    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+                }
+            }
+    
+            /* Carte */
+            .mapboxgl-ctrl-group {
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+    
+            .mapboxgl-ctrl-group button {
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: none;
+                background: white;
+            }
+    
+            .mapboxgl-ctrl-group button:hover {
+                background: #F3F4F6;
+            }
+    
+            /* Route */
+            .route-line {
+                opacity: 0.8;
+                stroke: #3B82F6;
+                stroke-width: 4;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+            }
+        `;
+        
+        document.head.appendChild(style);
+        return () => document.head.removeChild(style);
+    }, []);
+    // Ajouter cette fonction en haut du fichier, avec les autres constantes
+const createParkingMarkerSVG = (price, isLimited) => `
+<svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(25,25)">
+        <!-- Outer circle with shadow -->
+        <circle r="20" fill="white" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.2))"/>
+        
+        <!-- Background circle with gradient -->
+        <circle r="18" fill="${isLimited ? 
+            'url(#gradientLimited)' : 
+            'url(#gradientNormal)'
+        }"/>
+        
+        <!-- P symbol -->
+        <text 
+            x="0" 
+            y="2" 
+            text-anchor="middle" 
+            font-family="Arial" 
+            font-size="14"
+            font-weight="bold" 
+            fill="white"
+        >P</text>
+        
+        <!-- Price tag -->
+        <g transform="translate(0,8)">
+            <rect 
+                x="-16" 
+                y="-6" 
+                width="32" 
+                height="12" 
+                rx="6"
+                fill="white"
+                opacity="0.9"
+            />
+            <text 
+                x="0" 
+                y="2" 
+                text-anchor="middle" 
+                font-family="Arial" 
+                font-size="9"
+                font-weight="bold" 
+                fill="${isLimited ? '#D97706' : '#16A34A'}"
+            >${price}</text>
+        </g>
+    </g>
+    
+    <!-- Définitions des gradients -->
+    <defs>
+        <linearGradient id="gradientNormal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#22C55E"/>
+            <stop offset="100%" style="stop-color:#16A34A"/>
+        </linearGradient>
+        <linearGradient id="gradientLimited" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#F59E0B"/>
+            <stop offset="100%" style="stop-color:#D97706"/>
+        </linearGradient>
+    </defs>
+</svg>
+`;
+
+    // Mise à jour de la création des marqueurs
+// 1. D'abord, mettons à jour la fonction de création des marqueurs
+const createParkingMarker = (parking) => {
+    const markerElement = document.createElement('div');
+    markerElement.className = 'parking-marker';
+    
+    const isLimited = (parking.availableSpots / parking.totalSpots) < 0.2;
+    const price = parking.price.replace('Dt', '').replace('/hr', '');
+    
+    markerElement.innerHTML = `
+        <div class="marker-container">
+            <div class="marker-pin ${isLimited ? 'limited' : ''}">
+                <div class="pin-head"></div>
+                <div class="pin-price">Dt${price}</div>
+            </div>
+            <div class="marker-shadow"></div>
+        </div>
+    `;
+
+    return markerElement;
+};
+
+// 2. Mettons à jour les styles CSS des marqueurs
+const markerStyles = `
+    .marker-container {
+        position: relative;
+        width: 30px;
+        height: 40px;
+        cursor: pointer;
+        transform-origin: bottom center;
+        transition: all 0.3s;
+    }
+
+    .marker-pin {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30px;
+        height: 40px;
+        background: #22C55E;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .marker-pin.limited {
+        background: #F59E0B;
+    }
+
+    .pin-head {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(45deg);
+        width: 14px;
+        height: 14px;
+        background: white;
+        border-radius: 50%;
+    }
+
+    .pin-price {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(45deg);
+        font-size: 10px;
+        font-weight: bold;
+        color: #22C55E;
+        white-space: nowrap;
+    }
+
+    .marker-pin.limited .pin-price {
+        color: #F59E0B;
+    }
+
+    .marker-shadow {
+        position: absolute;
+        bottom: -2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 20px;
+        height: 6px;
+        background: rgba(0,0,0,0.2);
+        border-radius: 50%;
+    }
+
+    .marker-container:hover {
+        transform: scale(1.1);
+    }
+
+    .marker-container.active {
+        transform: scale(1.2);
+        z-index: 2;
+    }
+`;
+
+// 3. Mettons à jour la fonction de gestion des marqueurs
+useEffect(() => {
+    if (!map.current) return;
+
+    // Supprimer les anciens marqueurs
+    markersRef.current.parkingMarkers.forEach(marker => marker.remove());
+    markersRef.current.parkingMarkers = [];
+
+    // Ajouter les styles des marqueurs si pas déjà présents
+    if (!document.getElementById('marker-styles')) {
+        const styleSheet = document.createElement('style');
+        styleSheet.id = 'marker-styles';
+        styleSheet.textContent = markerStyles;
+        document.head.appendChild(styleSheet);
+    }
+
+    // Créer et ajouter les nouveaux marqueurs
+    filteredParkings.forEach(parking => {
+        const markerElement = createParkingMarker(parking);
+        
+        // Créer le popup
+        const popup = new mapboxgl.Popup({
+            offset: [0, -20],
+            closeButton: false,
+            closeOnClick: false,
+            className: 'custom-popup'
+        }).setHTML(`
+            <div class="p-3 min-w-[200px]">
+                <h3 class="font-semibold text-gray-900">${parking.name}</h3>
+                <div class="flex justify-between items-center mt-1">
+                    <span class="text-blue-600 font-medium">${parking.price}</span>
+                    <span class="text-gray-500 text-sm">${parking.distance}</span>
+                </div>
+                <div class="mt-2">
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-600">${parking.availableSpots}/${parking.totalSpots} spots</span>
+                        <span class="${
+                            (parking.availableSpots / parking.totalSpots) >= 0.5 ? 'text-green-600' :
+                            (parking.availableSpots / parking.totalSpots) >= 0.2 ? 'text-yellow-600' :
+                            'text-red-600'
+                        }">${Math.round((parking.availableSpots / parking.totalSpots) * 100)}% available</span>
+                    </div>
+                    <div class="w-full h-2 bg-gray-200 rounded-full mt-1">
+                        <div class="h-full rounded-full transition-all duration-300"
+                            style="width: ${(parking.availableSpots / parking.totalSpots) * 100}%; 
+                            background-color: ${
+                                (parking.availableSpots / parking.totalSpots) >= 0.5 ? '#22c55e' :
+                                (parking.availableSpots / parking.totalSpots) >= 0.2 ? '#eab308' :
+                                '#dc2626'
+                            }">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+
+        // Créer le marqueur
+        const marker = new mapboxgl.Marker({
+            element: markerElement,
+            anchor: 'bottom'
+        })
+        .setLngLat([parking.lng, parking.lat])
+        .setPopup(popup)
+        .addTo(map.current);
+
+        // Gérer les événements
+        markerElement.addEventListener('mouseenter', () => {
+            markerElement.classList.add('active');
+            popup.addTo(map.current);
+            setHoveredParking(parking.id);
+        });
+
+        markerElement.addEventListener('mouseleave', () => {
+            markerElement.classList.remove('active');
+            popup.remove();
+            setHoveredParking(null);
+        });
+
+        markerElement.addEventListener('click', () => {
+            handleMarkerClick(parking);
+        });
+
+        markersRef.current.parkingMarkers.push(marker);
+    });
+
+    // Nettoyer les marqueurs au démontage
+    return () => {
+        markersRef.current.parkingMarkers.forEach(marker => marker.remove());
+        markersRef.current.parkingMarkers = [];
+    };
+}, [filteredParkings]);
+
+// Mise à jour du contenu du popup
+const createPopupContent = (parking) => {
+    // Calculate availability percentage
+    const availabilityPercentage = Math.round((parking.availableSpots / parking.totalSpots) * 100);
+    
+    // Determine status color and text
+    const getStatusInfo = () => {
+        if (availabilityPercentage >= 50) {
+            return { color: '#22c55e', text: 'Available', icon: '✓' };
+        } else if (availabilityPercentage >= 20) {
+            return { color: '#eab308', text: 'Limited', icon: '⚠' };
+        } else {
+            return { color: '#dc2626', text: 'Almost Full', icon: '!' };
+        }
+    };
+    
+    const status = getStatusInfo();
+
+    return `
+        <div class="popup-content p-4 min-w-[280px]">
+            <!-- Header with name and status -->
+            <div class="flex items-start justify-between mb-3">
+                <h3 class="text-lg font-bold text-gray-900">${parking.name}</h3>
+                <span class="px-2 py-1 text-xs font-medium rounded-full" 
+                      style="background-color: ${status.color}20; color: ${status.color}">
+                    ${status.icon} ${status.text}
+                </span>
+            </div>
+
+            <!-- Price and Distance -->
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl font-bold text-blue-600">${parking.price}</span>
+                    <span class="text-sm text-gray-500">/hour</span>
+                </div>
+                <div class="flex items-center gap-1 text-gray-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-sm">${parking.distance}</span>
+                </div>
+            </div>
+
+            <!-- Availability Section -->
+            <div class="bg-gray-50 p-3 rounded-lg">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-700">
+                        Availability
+                    </span>
+                    <span class="text-sm text-gray-600">
+                        ${parking.availableSpots}/${parking.totalSpots} spots
+                    </span>
+                </div>
+                
+                <!-- Enhanced Progress Bar -->
+                <div class="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="absolute top-0 left-0 h-full transition-all duration-300 rounded-full"
+                         style="width: ${availabilityPercentage}%; 
+                                background-color: ${status.color};
+                                box-shadow: 0 0 8px ${status.color}80">
+                    </div>
+                </div>
+                
+                <!-- Percentage indicator -->
+                <div class="mt-1 text-right">
+                    <span class="text-xs font-medium" style="color: ${status.color}">
+                        ${availabilityPercentage}% available
+                    </span>
+                </div>
+            </div>
+
+            <!-- Weather Info (if available) -->
+            ${parking.weather ? `
+            <div class="mt-3 flex items-center gap-3 bg-blue-50 p-2 rounded-lg">
+                <img src="${parking.weather.icon}" 
+                     alt="Weather" 
+                     class="w-8 h-8 object-contain"
+                />
+                <div>
+                    <div class="text-sm font-medium text-gray-900">
+                        ${parking.weather.temperature}°C
+                    </div>
+                    <div class="text-xs text-gray-600">
+                        ${parking.weather.description}
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
+       
+            </div>
+        </div>
+    `;
+};
+
+// Mise à jour de l'effet pour les marqueurs
+// Modifier l'effet des marqueurs pour ajouter la gestion du clic sur le fond
+useEffect(() => {
+    if (!map.current) return;
+
+    // Gestionnaire de clic sur le fond de la carte
+    const handleMapClick = (e) => {
+        // Vérifier si le clic est sur un marqueur
+        const target = e.originalEvent.target;
+        const isMarkerClick = target.closest('.parking-marker');
+        
+        // Si le clic n'est pas sur un marqueur, réinitialiser la carte
+        if (!isMarkerClick) {
+            // Supprimer l'itinéraire
+            if (map.current.getSource('route')) {
+                map.current.removeLayer('route');
+                map.current.removeSource('route');
+            }
+
+            // Supprimer les marqueurs de route
+            markersRef.current.routeMarkers.forEach(marker => marker.remove());
+            markersRef.current.routeMarkers = [];
+
+            // Réafficher tous les parkings
+            markersRef.current.parkingMarkers.forEach(marker => {
+                if (!marker.getElement().isVisible) {
+                    marker.addTo(map.current);
+                    marker.getElement().isVisible = true;
+                }
+            });
+
+            // Réinitialiser l'état actif
+            setActiveParking(null);
+
+            // Recentrer sur la position de l'utilisateur
+            if (userLocation) {
+                map.current.flyTo({
+                    center: [userLocation.lng, userLocation.lat],
+                    zoom: 15,
+                    duration: 1000
+                });
+            }
+        }
+    };
+
+    // Ajouter l'écouteur d'événement
+    map.current.on('click', handleMapClick);
+
+    // Nettoyage
+    return () => {
+        if (map.current) {
+            map.current.off('click', handleMapClick);
+        }
+    };
+}, [userLocation]);
+
+// Mise à jour du gestionnaire de hover
+// Update the handleHover function
+const handleHover = (parking) => {
+    if (!parking || !parking.id) {
+        console.warn('Invalid parking data in handleHover');
+        return;
+    }
+
+    setHoveredParking(parking.id);
+
+    // Find the marker corresponding to this parking
+    const marker = markersRef.current.parkingMarkers.find(m => 
+        m.getElement().parking && m.getElement().parking.id === parking.id
+    );
+
+    if (!marker) {
+        console.warn('Marker not found for parking:', parking.id);
+        return;
+    }
+
+    // Remove existing popups
+    markersRef.current.parkingMarkers.forEach(m => {
+        if (m.getPopup()) m.getPopup().remove();
+    });
+
+    // Create and show new popup
+    const popup = new mapboxgl.Popup({
+        offset: [0, -15],
+        closeButton: false,
+        closeOnClick: false,
+        className: 'custom-popup'
+    })
+    .setHTML(createPopupContent(parking));
+
+    marker.setPopup(popup);
+    popup.addTo(map.current);
+
+    // Pan to the parking location
+    if (map.current) {
+        map.current.panTo([parking.lng, parking.lat], {
+            duration: 500
+        });
+    }
+};
+
+// Update the parking markers creation in useEffect
+useEffect(() => {
+    if (!map.current) return;
+
+    // Supprimer les anciens marqueurs
+    markersRef.current.parkingMarkers.forEach(marker => marker.remove());
+    markersRef.current.parkingMarkers = [];
+
+    filteredParkings.forEach(parking => {
+        if (!parking || !parking.id) {
+            console.warn('Invalid parking data:', parking);
+            return;
+        }
+
+        // Créer l'élément du marqueur avec le nouveau design SVG
+        const el = document.createElement('div');
+        el.className = 'parking-marker';
+        
+        const isLimited = parking.availableSpots / parking.totalSpots < 0.2;
+        const price = parking.price.replace('Dt', '').replace('/hr', '');
+        el.innerHTML = createParkingMarkerSVG(price, isLimited);
+        
+        // Stocker les données du parking
+        el.parking = parking;
+
+        // Créer et ajouter le marqueur
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([parking.lng, parking.lat])
+            .addTo(map.current);
+
+        markersRef.current.parkingMarkers.push(marker);
+
+        // Ajouter uniquement l'événement de clic sur le marqueur
+        el.addEventListener('click', () => {
+            handleMarkerClick(parking);
+        });
+    });
+}, [filteredParkings]);
+
+// Update handleMarkerClick to include validation
+const handleMarkerClick = (parking) => {
+    if (!parking || !parking.id) {
+        console.warn('Invalid parking data in handleMarkerClick');
+        return;
+    }
+
+    // Hide other markers
+    markersRef.current.parkingMarkers.forEach(marker => {
+        if (marker.getElement().parking.id !== parking.id) {
+            marker.remove();
+        }
+    });
+
+    // Find selected marker
+    const selectedMarker = markersRef.current.parkingMarkers.find(m => 
+        m.getElement().parking.id === parking.id
+    );
+
+    if (selectedMarker) {
+        map.current.flyTo({
+            center: [parking.lng, parking.lat],
+            zoom: 15,
+            duration: 1000
+        });
+    }
+
+    setActiveParking(parking);
+    drawRoute(parking);
+};
+
+
+// Mise à jour du gestionnaire pour quitter le hover
+const handleMouseLeave = () => {
+    setHoveredParking(null);
+    
+    // Ne pas réinitialiser la carte si un parking est activement sélectionné
+    if (!activeParking && map.current) {
+        // Supprimer tous les marqueurs de parking existants
+        markersRef.current.parkingMarkers.forEach(marker => marker.remove());
+        markersRef.current.parkingMarkers = [];
+
+        // Supprimer l'itinéraire s'il existe
+        if (map.current.getSource('route')) {
+            map.current.removeLayer('route');
+            map.current.removeSource('route');
+        }
+
+        // Supprimer les marqueurs de route
+        markersRef.current.routeMarkers.forEach(marker => marker.remove());
+        markersRef.current.routeMarkers = [];
+
+        // Recentrer sur la position de l'utilisateur
+        if (userLocation) {
+            map.current.flyTo({
+                center: [userLocation.lng, userLocation.lat],
+                zoom: 15,
+                duration: 1000
+            });
+        }
+
+        // Réafficher tous les parkings avec le nouveau design SVG
+        filteredParkings.forEach(parking => {
+            const el = document.createElement('div');
+            el.className = 'parking-marker';
+            
+            // Utiliser le nouveau design SVG
+            const isLimited = parking.availableSpots / parking.totalSpots < 0.2;
+            const price = parking.price.replace('Dt', '').replace('/hr', '');
+            el.innerHTML = createParkingMarkerSVG(price, isLimited);
+            
+            // Stocker les données du parking dans l'élément
+            el.parking = parking;
+
+            const marker = new mapboxgl.Marker(el)
+                .setLngLat([parking.lng, parking.lat])
+                .addTo(map.current);
+
+            markersRef.current.parkingMarkers.push(marker);
+
+            // Réattacher les événements
+            el.addEventListener('mouseenter', () => {
+                handleHover(parking);
+            });
+
+            el.addEventListener('mouseleave', handleMouseLeave);
+
+            el.addEventListener('click', () => {
+                handleMarkerClick(parking);
+            });
+        });
+    }
+};
+
+// Ajouter les styles CSS
+useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+        .parking-marker {
+       width: 40px;
+            height: 55px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+     
+    }
+             .mapboxgl-popup {
+            max-width: 320px !important;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+             .mapboxgl-popup-content {
+            padding: 0 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                        0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+            border: 1px solid rgba(229, 231, 235, 1) !important;
+        }
+
+        .mapboxgl-popup-close-button {
+            right: 8px !important;
+            top: 8px !important;
+            color: #4B5563 !important;
+            font-size: 18px !important;
+            width: 24px !important;
+            height: 24px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: rgba(255, 255, 255, 0.8) !important;
+            border-radius: 50% !important;
+            backdrop-filter: blur(4px) !important;
+            transition: all 0.2s !important;
+        }
+            .mapboxgl-popup-close-button:hover {
+            background: rgba(255, 255, 255, 0.95) !important;
+            color: #1F2937 !important;
+        }
+
+        .mapboxgl-popup-tip {
+            border-top-color: white !important;
+            filter: drop-shadow(0 -1px 1px rgba(0, 0, 0, 0.05)) !important;
+        }
+
+        .popup-content button {
+            transition: all 0.2s;
+        }
+
+        .popup-content button:hover {
+            transform: translateY(-1px);
+        }
+
+        
+      .parking-marker:hover {
+        transform: scale(1.1);
+        filter: brightness(1.1);
+    }
+    
+    .parking-marker.selected {
+        transform: scale(1.2);
+        filter: brightness(1.2);
+    }
+        .marker-content {
+            position: relative;
+            width: 70px;
+            height: 40px;
+        }
+        
+        .price-tag {
+            background: #22C55E;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .price-tag.limited {
+            background: #F59E0B;
+        }
+        
+        .parking-popup .mapboxgl-popup-content {
+            padding: 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .parking-popup .mapboxgl-popup-tip {
+            border-top-color: white;
+        }
+        
+        .popup-content {
+            min-width: 200px;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    return () => document.head.removeChild(style);
+}, []);
+
+// Mise à jour de l'effet pour initialiser l'autocomplete Mapbox
+useEffect(() => {
+    if (isLoaded && searchBoxRef.current) {
+        // Créer une carte temporaire masquée pour le geocoder
+        const tempMap = new mapboxgl.Map({
+            container: document.createElement('div'), // Conteneur temporaire
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [10.18, 36.8], // Coordonnées de la Tunisie
+            zoom: 13
+        });
+
+        const geocoder = new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+            mapboxgl: mapboxgl,
+            placeholder: 'Enter your destination',
+            countries: 'tn',
+            language: 'fr',
+            marker: false,
+            proximity: {
+                longitude: 10.18,
+                latitude: 36.8
+            }
+        });
+
+        // Ajouter les styles personnalisés
+        const style = document.createElement('style');
+        style.textContent = `
+            .mapboxgl-ctrl-geocoder {
+                width: 100% !important;
+                max-width: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .mapboxgl-ctrl-geocoder input {
+                background: transparent !important;
+                color: #333333 !important;
+                padding: 0 !important;
+                height: 40px !important;
+                font-size: 14px !important;
+            }
+            .mapboxgl-ctrl-geocoder input::placeholder {
+                color: #A3A3A3 !important;
+            }
+            .mapboxgl-ctrl-geocoder--icon {
+                display: none !important;
+            }
+            .mapboxgl-ctrl-geocoder--button {
+                display: none !important;
+            }
+            .mapboxgl-ctrl-geocoder--suggestion {
+                color: #333333;
+                padding: 8px 12px;
+            }
+            .mapboxgl-ctrl-geocoder--suggestion:hover {
+                background-color: #f0f0f0;
+            }
+            .mapboxgl-ctrl-geocoder--suggestion-title {
+                font-weight: bold;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Gestionnaire de résultat
+        geocoder.on('result', (e) => {
+            const newLocation = {
+                lat: e.result.center[1],
+                lng: e.result.center[0]
+            };
+            setLocation(newLocation);
+            setAddress(e.result.place_name);
+            updateSearchData({ 
+                address: e.result.place_name,
+                location: newLocation
+            });
+            
+            // Pan map to new location
+            if (mapRef) {
+                mapRef.panTo(newLocation);
+                mapRef.setZoom(15);
+            }
+            
+            // Automatically search for parking near this location
+            setHasSearched(true);
+            handleSearch(newLocation);
+        });
+
+        // Remplacer l'input existant par le geocoder
+        const searchContainer = searchBoxRef.current;
+        searchContainer.innerHTML = '';
+        searchContainer.appendChild(geocoder.onAdd(tempMap));
+
+        return () => {
+            geocoder.onRemove();
+            tempMap.remove();
+            document.head.removeChild(style);
+        };
+    }
+}, [isLoaded]);
+
+// Dans le rendu, remplacer le Form.Control par notre nouvelle référence
+// Remplacer la partie de recherche dans le JSX par :
+/* Remplacer ceci dans le rendu :
+<Form.Control 
+    type="text" 
+    className='bg-transparent outline-none border-none shadow-none...' 
+    placeholder="Enter your destination" 
+    value={address}
+    onChange={handleAddressChange}
+/>
+*/
+// Par :
+const renderSearchInput = () => (
+    <div className="flex-1">
+        {isLoaded ? (
+            <div ref={searchBoxRef} className="w-full">
+                {/* Mapbox Geocoder will be injected here */}
+            </div>
+        ) : (
+            <input
+                type="text"
+                className="bg-transparent text-gray-800 text-xs border-none shadow-none h-8 px-0 w-full outline-none"
+                placeholder="Loading..."
+                disabled
+            />
+        )}
+    </div>
+);
+
     if (!isLoaded) return (
         <div className="flex justify-center items-center h-[70vh]">
             <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading Google Maps...</p>
+                <p className="text-gray-600">Loading Mapbox...</p>
             </div>
         </div>
     );
@@ -966,36 +2169,36 @@ const findNameMatches = (searchTerm) => {
                 )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end px-4">
-                    {/* Destination Input */}
-                    <div className="md:col-span-3">
-                        <label className="text-gray-700 text-xs mb-1 block font-medium">Destination</label>
-                        <div className="flex items-center gap-2 bg-white px-3 rounded-lg border transition-all hover:border-blue-500 h-10">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="text-gray-500" viewBox="0 0 16 16">
-                                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                            </svg>
-                            {isLoaded ? (
-                                <Autocomplete
-                                    onLoad={onLoadAutocomplete}
-                                    onPlaceChanged={onPlaceChanged}
-                                >
-                                    <Form.Control 
-                                        type="text" 
-                                        className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent text-xs text-gray-800 h-8 px-0 w-full' 
-                                        placeholder="Enter destination" 
-                                        value={address}
-                                        onChange={handleAddressChange}
-                                    />
-                                </Autocomplete>
-                            ) : (
-                                <Form.Control 
-                                    type="text" 
-                                    className='bg-transparent outline-none border-none shadow-none text-xs text-gray-800 h-8 px-0 w-full' 
-                                    placeholder="Loading..." 
-                                    disabled
-                                />
-                            )}
-                        </div>
-                    </div>
+                    {/* Destination Input - Update this part */}
+      {/* Destination Input */}
+<div className="md:col-span-3">
+    <label className="text-gray-700 text-xs mb-1 block font-medium">Destination</label>
+    <div className="flex items-center gap-2 bg-white px-3 rounded-lg border transition-all hover:border-blue-500 h-10">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="text-gray-500" viewBox="0 0 16 16">
+            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+        </svg>
+        {renderSearchInput()}
+        <button
+            onClick={getUserLocation}
+            className="p-1 hover:bg-gray-100 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                 className="h-4 w-4 text-gray-500" 
+                 fill="none" 
+                 viewBox="0 0 24 24" 
+                 stroke="currentColor">
+                <path strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        </button>
+    </div>
+</div>
                     
                     {/* Vehicle Type */}
                     <div className="md:col-span-2 relative">
@@ -1259,7 +2462,7 @@ const findNameMatches = (searchTerm) => {
                                         hoveredParking === parking.id ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-white'
                                     }`}
                                     onMouseEnter={() => handleHover(parking)}
-                                    onMouseLeave={() => setHoveredParking(null)}
+                                    onMouseLeave={handleMouseLeave} // Utiliser le nouveau gestionnaire
                                     onClick={() => handleMarkerClick(parking)}
                                 >
                                     {/* Favorite Button - Updated Here */}
@@ -1270,7 +2473,7 @@ const findNameMatches = (searchTerm) => {
                                         {isFavorite(parking.id) ? (
                                             // Filled heart for favorites
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                                                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 0 1 5.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
                                             </svg>
                                         ) : (
                                             // Outlined heart for non-favorites (updated)
@@ -1342,8 +2545,8 @@ const findNameMatches = (searchTerm) => {
 </div>
 
                                     
-                                    {/* Add Details button */}
-                                    <div className="mt-3 flex justify-between">
+                               {/* Add Details button */}
+                               <div className="mt-3 flex justify-between">
   <button 
     className="bg-blue-600 text-black py-1 px-3 rounded-md hover:bg-blue-700 transition text-sm"
     onClick={(e) => handleShowDetails(parking, e)}
@@ -1368,76 +2571,9 @@ const findNameMatches = (searchTerm) => {
                     )}
                 </div>
 
-                {/* Map */}
+                {/* Map container */}
                 <div className="flex-1">
-                    <GoogleMap
-                        mapContainerStyle={mapContainerStyle}
-                        center={location}
-                        zoom={15}
-                        onLoad={map => setMapRef(map)}
-                    >
-                        {filteredParkings.map(parking => (
-                            <Marker 
-                                key={parking.id} 
-                                position={{ lat: parking.lat, lng: parking.lng }}
-                                onClick={() => handleMarkerClick(parking)}
-                                icon={getParkingMarkerIcon(parking)}
-                            />
-                        ))}
-                        {activeParking && (
-                            <InfoWindow
-                                position={{ lat: activeParking.lat, lng: activeParking.lng }}
-                                onCloseClick={() => setActiveParking(null)}
-                            >
-                                <div className="relative">
-                                    {/* Favorite Button in InfoWindow - Updated Here */}
-                                    <button 
-                                        className="absolute top-0 right-0"
-                                        onClick={(e) => handleFavoriteToggle(activeParking.id, e)}
-                                    >
-                                        {isFavorite(activeParking.id) ? (
-                                            // Filled heart for favorites
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                                            </svg>
-                                        ) : (
-                                            // Outlined heart for non-favorites (updated)
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 hover:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                            </svg>
-                                        )}
-                                    </button>
-                                    
-                                    <h3 className="text-lg font-semibold pr-6">{activeParking.name}</h3>
-                                    <p className="text-sm text-gray-600">{activeParking.location}</p>
-                                    <p className="text-sm font-medium text-blue-600">{activeParking.price}</p>
-                                    <p className="text-xs text-gray-500">{activeParking.distance} km away</p>
-                                    <p className="text-xs text-gray-500">Total spots: {activeParking.totalSpots}</p>
-                                    <p className="text-xs text-gray-500">Available spots: {activeParking.availableSpots}</p>
-                                    <button 
-                                        className="mt-2 bg-blue-600 text-white py-1 px-2 rounded-sm text-xs"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleShowDetails(activeParking);
-                                        }}
-                                    >
-                                        View Details
-                                    </button>
-                                </div>
-                            </InfoWindow>
-                        )}
-                        {userLocation && (
-                            <Marker 
-                                position={userLocation}
-                                icon={userLocationIcon}
-                            />
-                        )}
-                        {directions && (
-                            <DirectionsRenderer
-                                directions={directions}
-                            />
-                        )}
-                    </GoogleMap>
+                    <div ref={mapContainer} style={{ width: "100%", height: "calc(100vh - 90px)" }} />
                 </div>
             </div>
         </div>
