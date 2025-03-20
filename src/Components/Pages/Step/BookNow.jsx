@@ -1,7 +1,9 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import { GoogleMap, Marker } from "@react-google-maps/api";
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { useMapbox } from "../../../context/MapboxContext";
 import { AuthContext } from '../../../AuthContext';
 
 const mapContainerStyle = { width: "100%", height: "300px" };
@@ -126,6 +128,9 @@ const BookNow = ({ parkingData, onContinue }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const { isAuthenticated } = useContext(AuthContext);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const mapContainer = useRef(null);
+  const map = useRef(null);
+  const { isLoaded } = useMapbox();
 
   // Ajoutez cette fonction pour vérifier le token manuellement
   const checkAuthentication = () => {
@@ -205,16 +210,42 @@ const BookNow = ({ parkingData, onContinue }) => {
     }
 }, [id, parkingData]);
 
+useEffect(() => {
+  if (isLoaded && mapContainer.current && parking) {
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v11',
+      center: [parking.position.lng, parking.position.lat],
+      zoom: 15
+    });
+
+    // Ajouter le marqueur
+    const el = document.createElement('div');
+    el.className = 'parking-marker';
+    el.innerHTML = `
+      <svg width="30" height="45" viewBox="0 0 30 45">
+        <path fill="#22C55E" d="M15 0C6.7 0 0 6.7 0 15c0 8.3 15 30 15 30s15-21.7 15-30c0-8.3-6.7-15-15-15z"/>
+        <circle fill="white" cx="15" cy="15" r="7"/>
+      </svg>
+    `;
+
+    new mapboxgl.Marker(el)
+      .setLngLat([parking.position.lng, parking.position.lat])
+      .addTo(map.current);
+
+    // Ajouter les contrôles de navigation
+    map.current.addControl(new mapboxgl.NavigationControl());
+
+    return () => map.current.remove();
+  }
+}, [isLoaded, parking]);
+
 const TitleBox = ({ icon, children }) => (
   <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center space-x-2">
     <span className="text-xl">{icon}</span>
     <h2 className="font-semibold text-gray-800">{children}</h2>
   </div>
 );
-
-const mapCenter = parking?.position?.lat && parking?.position?.lng 
-  ? { lat: parking.position.lat, lng: parking.position.lng } 
-  : defaultCenter;
 
 const ImageModal = () => {
   if (!selectedImage) return null;
@@ -302,16 +333,7 @@ return (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <TitleBox icon="📍">Location</TitleBox>
           <div className="p-4">
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              zoom={15}
-              center={mapCenter}
-              options={{ streetViewControl: false, mapTypeControl: false }}
-            >
-              {(parking.position?.lat || parking.lat) && (parking.position?.lng || parking.lng) && (
-                <Marker position={mapCenter} />
-              )}
-            </GoogleMap>
+            <div ref={mapContainer} style={{ width: "100%", height: "300px" }} />
           </div>
         </div>
 

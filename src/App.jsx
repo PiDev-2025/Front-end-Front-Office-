@@ -21,12 +21,14 @@ import ForgotPassword from './Pages/ForgotPassword';
 import ResetPassword from './Pages/ResetPassword';
 import { AuthProvider } from './AuthContext';
 import GoogleCallback from './Pages/googlecallbackk';
-import { GoogleMapsProvider } from './context/GoogleMapsContext';
+// import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import { SearchProvider } from './context/SearchContext';
 import { FavoritesProvider } from './context/FavoritesContext';
 import NotFound from './Pages/NotFound';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { MapboxProvider } from './context/MapboxContext';
+
 
 import Profile from './Pages/profile';
 import ParkingRequestForm from '../src/Pages/ParkingForm';
@@ -57,57 +59,55 @@ const App = () => {
   }, []);
   
   return (
-    <GoogleMapsProvider>
+    <MapboxProvider>
       <SearchProvider>
-
-                   <FavoritesProvider>
-        <AuthProvider>
-        <ToastContainer />
-          <Routes>
-            <Route path="/" element={<DefaultLayout />}>
-              <Route index element={<Homepage />} />
-              <Route path="parkingPlan" element={<ParkingPlan />} />
-        
-              <Route path="step2/:parkingId" element={<Step2UploadImages />} />
-              <Route path="how-it-works" element={<HowItworks />} />
-              <Route path="booking" element={<Booking />} />
-              <Route path="careers" element={<Careers />} />
-              <Route path="about" element={<About />} />
-              <Route path="job/detail" element={<JobDetail />} />
-              <Route path="blog" element={<Blog />} />
-              <Route path="blog/detail" element={<BlogDetail />} />
-              <Route path="contact" element={<Contact />} />
-              <Route path="privacy" element={<Privacy />} />
-              <Route path="terms" element={<Terms />} />
-              <Route path="faq" element={<Faq />} />
-              <Route path="login" element={<Login />} />
-              <Route path="sign-up" element={<SignUp />} />
-              <Route path="forgot-password" element={<ForgotPassword />} />
-              <Route path="reset-password/:token" element={<ResetPassword />} />
-              <Route path="google/callback" element={<GoogleCallback />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="parkings/:id" element={<ParkingDetails />} />
-              <Route path="login/face" element={<FaceAuth/>} />
-              <Route path="*" element={<NotFound />} />
-              <Route path="location" element={<SecLocation />} />
-              <Route path="ScanQr" element={<EmployeeProfile />} />
-              <Route path="my-parkings" element={<ParkingListOwner />} />
-              <Route path="ParkingRequestForm" element={<ParkingRequestForm />} />
-              <Route 
-                path="/mes-reservations" 
-                element={
-                  <PrivateRoute>
-                    <UserReservations />
-                  </PrivateRoute>
-                } 
-              />
-            </Route>
-          </Routes>
-        </AuthProvider>
+        <FavoritesProvider>
+          <AuthProvider>
+            <ToastContainer />
+            <Routes>
+              <Route path="/" element={<DefaultLayout />}>
+                <Route index element={<Homepage />} />
+                <Route path="parkingPlan" element={<ParkingPlan />} />
+          
+                <Route path="step2/:parkingId" element={<Step2UploadImages />} />
+                <Route path="how-it-works" element={<HowItworks />} />
+                <Route path="booking" element={<Booking />} />
+                <Route path="careers" element={<Careers />} />
+                <Route path="about" element={<About />} />
+                <Route path="job/detail" element={<JobDetail />} />
+                <Route path="blog" element={<Blog />} />
+                <Route path="blog/detail" element={<BlogDetail />} />
+                <Route path="contact" element={<Contact />} />
+                <Route path="privacy" element={<Privacy />} />
+                <Route path="terms" element={<Terms />} />
+                <Route path="faq" element={<Faq />} />
+                <Route path="login" element={<Login />} />
+                <Route path="sign-up" element={<SignUp />} />
+                <Route path="forgot-password" element={<ForgotPassword />} />
+                <Route path="reset-password/:token" element={<ResetPassword />} />
+                <Route path="google/callback" element={<GoogleCallback />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="parkings/:id" element={<ParkingDetails />} />
+                <Route path="login/face" element={<FaceAuth/>} />
+                <Route path="*" element={<NotFound />} />
+                <Route path="location" element={<SecLocation />} />
+                <Route path="ScanQr" element={<EmployeeProfile />} />
+                <Route path="my-parkings" element={<ParkingListOwner />} />
+                <Route path="ParkingRequestForm" element={<ParkingRequestForm />} />
+                <Route 
+                  path="/mes-reservations" 
+                  element={
+                    <PrivateRoute>
+                      <UserReservations />
+                    </PrivateRoute>
+                  } 
+                />
+              </Route>
+            </Routes>
+          </AuthProvider>
         </FavoritesProvider>
-
       </SearchProvider>
-    </GoogleMapsProvider>
+    </MapboxProvider>
   );
 };
 

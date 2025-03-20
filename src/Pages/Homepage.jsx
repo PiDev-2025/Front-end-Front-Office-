@@ -7,14 +7,18 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Autocomplete } from '@react-google-maps/api';
-import { useGoogleMaps } from '../context/GoogleMapsContext';
 import { useSearch } from '../context/SearchContext';
 import LoadingPopup from '../Components/LoadingPopup';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
+import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
+import { useMapbox } from '../context/MapboxContext';
 
 const Homepage = () => {
     const navigate = useNavigate();
     const { searchData, updateSearchData } = useSearch();
-    const { isLoaded } = useGoogleMaps();
+    const { isLoaded } = useMapbox();
     
     // Loading popup state
     const [isSearching, setIsSearching] = useState(false);
@@ -279,6 +283,122 @@ const Homepage = () => {
         };
     }, [showVehicleDropdown]);
 
+    // Référence pour le conteneur de recherche
+    const searchBoxRef = useRef(null);
+
+    // Mise à jour de l'effet pour initialiser l'autocomplete Mapbox
+    useEffect(() => {
+        if (isLoaded && searchBoxRef.current) {
+            // Créer une carte temporaire masquée pour le geocoder
+            const tempMap = new mapboxgl.Map({
+                container: document.createElement('div'), // Conteneur temporaire
+                style: 'mapbox://styles/mapbox/streets-v11',
+                center: [10.18, 36.8], // Coordonnées de la Tunisie
+                zoom: 13
+            });
+
+            const geocoder = new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl,
+                placeholder: 'Enter your destination',
+                countries: 'tn',
+                language: 'fr',
+                marker: false,
+                proximity: {
+                    longitude: 10.18,
+                    latitude: 36.8
+                }
+            });
+
+            // Ajouter les styles personnalisés
+            const style = document.createElement('style');
+            style.textContent = `
+                .mapboxgl-ctrl-geocoder {
+                    width: 100% !important;
+                    max-width: none !important;
+                    background: transparent !important;
+                    box-shadow: none !important;
+                    border: none !important;
+                }
+                .mapboxgl-ctrl-geocoder input {
+                    background: transparent !important;
+                    color: #333333 !important;
+                    padding: 0 !important;
+                    height: 54px !important;
+                    font-size: 14px !important;
+                }
+                .mapboxgl-ctrl-geocoder input::placeholder {
+                    color: #A3A3A3 !important;
+                }
+                .mapboxgl-ctrl-geocoder--icon {
+                    display: none !important;
+                }
+                .mapboxgl-ctrl-geocoder--button {
+                    display: none !important;
+                }
+                .mapboxgl-ctrl-geocoder--suggestion {
+                    color: #333333;
+                    padding: 8px 12px;
+                }
+                .mapboxgl-ctrl-geocoder--suggestion:hover {
+                    background-color: #f0f0f0;
+                }
+                .mapboxgl-ctrl-geocoder--suggestion-title {
+                    font-weight: bold;
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Gestionnaire de résultat
+            geocoder.on('result', (e) => {
+                const newLocation = {
+                    lat: e.result.center[1],
+                    lng: e.result.center[0]
+                };
+                setLocation(newLocation);
+                setAddress(e.result.place_name);
+                updateSearchData({ 
+                    address: e.result.place_name,
+                    location: newLocation
+                });
+                setErrors(prev => ({ ...prev, address: '' }));
+            });
+
+            // Remplacer l'input existant par le geocoder
+            const searchContainer = searchBoxRef.current;
+            searchContainer.innerHTML = '';
+            searchContainer.appendChild(geocoder.onAdd(tempMap));
+
+            return () => {
+                geocoder.onRemove();
+                tempMap.remove();
+                document.head.removeChild(style);
+            };
+        }
+    }, [isLoaded]);
+
+    // Dans le rendu, remplacer le Form.Control par notre nouvelle référence
+    const renderSearchInput = () => (
+        <div className={`flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full transition-all hover:bg-[#ffffff26]`}>
+            <img src="./../images/icon.svg" alt="" />
+            <div 
+                ref={searchBoxRef}
+                className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full'
+            >
+                <Form.Control 
+                    type="text" 
+                    className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text-white placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
+                    placeholder="Enter your destination" 
+                    value={address}
+                    onChange={(e) => {
+                        setAddress(e.target.value);
+                        setErrors(prev => ({ ...prev, address: '' }));
+                    }}
+                />
+            </div>
+        </div>
+    );
+
     return (
         <Fragment>
             {/* Enhanced Loading Popup */}
@@ -288,8 +408,8 @@ const Homepage = () => {
             />
 
             {/* start:hero */}
-            <section className='relative overflow-hidden min-h-screen bg-[#010101] flex flex-wrap pb-0 mt-0 pt-0'>
-            <img src="./../images/img (1).png" className='absolute left-0 top-0 w-full h-full object-cover object-top hidden md:block' alt="" />
+            <section className='relative overflow-hidden min-h-screen bg-[#010101] flex flex-wrap pb-0 mt-[-100px] pt-[65px]'>
+                <img src="./../images/img (1).png" className='absolute left-0 top-0 w-full h-full object-cover object-top hidden md:block' alt="" />
                 <Container className='relative z-[2] w-full flex flex-col h-full'>
                     <Row className='flex-grow items-center'>
                         <Col md={5} lg={6} className="mt-8 md:mt-0 mb-6 md:mb-0">
@@ -310,33 +430,7 @@ const Homepage = () => {
                                 <div className="flex flex-col gap-4">
                                     <div className="flex flex-wrap md:flex-nowrap gap-4">
                                         <div className="flex flex-col w-full md:w-[50%]">
-                                            <div className={`flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full transition-all hover:bg-[#ffffff26]`}>
-                                                <img src="./../images/icon.svg" alt="" />
-                                                {isLoaded ? (
-                                                    <Autocomplete
-                                                        onLoad={onLoadAutocomplete}
-                                                        onPlaceChanged={onPlaceChanged}
-                                                    >
-                                                        <Form.Control 
-                                                            type="text" 
-                                                            className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
-                                                            placeholder="Enter your destination" 
-                                                            value={address}
-                                                            onChange={(e) => {
-                                                                setAddress(e.target.value);
-                                                                setErrors(prev => ({ ...prev, address: '' }));
-                                                            }}
-                                                        />
-                                                    </Autocomplete>
-                                                ) : (
-                                                    <Form.Control 
-                                                        type="text" 
-                                                        className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
-                                                        placeholder="Loading Google Maps..." 
-                                                        disabled
-                                                    />
-                                                )}
-                                            </div>
+                                            {renderSearchInput()}
                                             {errors.address && <div className="text-white text-xs mt-1">{errors.address}</div>}
                                         </div>
                                         
@@ -490,33 +584,7 @@ const Homepage = () => {
                                 <div className="flex flex-col gap-4">
                                     <div className="flex flex-wrap md:flex-nowrap gap-4">
                                         <div className="flex flex-col w-full md:w-[50%]">
-                                            <div className={`flex items-center gap-2 bg-[#ffffff1a] px-3 rounded-[16px] w-full transition-all hover:bg-[#ffffff26]`}>
-                                                <img src="./../images/icon.svg" alt="" />
-                                                {isLoaded ? (
-                                                    <Autocomplete
-                                                        onLoad={onLoadAutocomplete}
-                                                        onPlaceChanged={onPlaceChanged}
-                                                    >
-                                                        <Form.Control 
-                                                            type="text" 
-                                                            className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
-                                                            placeholder="Enter your destination" 
-                                                            value={address}
-                                                            onChange={(e) => {
-                                                                setAddress(e.target.value);
-                                                                setErrors(prev => ({ ...prev, address: '' }));
-                                                            }}
-                                                        />
-                                                    </Autocomplete>
-                                                ) : (
-                                                    <Form.Control 
-                                                        type="text" 
-                                                        className='bg-transparent outline-none border-none shadow-none focus:shadow-none focus:bg-transparent focus:outline-none focus:border-none text__14 !text-Mwhite placeholder-[#A3A3A3] h-[54px] px-0 w-full' 
-                                                        placeholder="Loading Google Maps..." 
-                                                        disabled
-                                                    />
-                                                )}
-                                            </div>
+                                            {renderSearchInput()}
                                             {errors.address && <div className="text-white text-xs mt-1">{errors.address}</div>}
                                         </div>
                                         
@@ -642,98 +710,37 @@ const Homepage = () => {
 
             <HowItWorks />
 
-            {/* 
-            <section>
-                <Container>
-                    <div className="text-center mb-10">
-                        <h2 className='font-bold text__48'>Our Collections Car</h2>
-                    </div>
+            {/* Le reste des sections commentées */}
 
-                    <Row className='gap-y-4'>
-                        {
-                            dataCars.map((obj) => {
-                                return <Col sm={6} lg={4}>
-                                    <CardCar data={obj} />
-                                </Col>
-                            })
-                        }
-
-                    </Row>
-
-                </Container>
-            </section>
-
-
-            <section>
-                <Container>
-                    <Row>
-                        <Col md={6} className='md:!order-1 order-2 my-auto'>
-                            <p className='text__18 mb-2'>GREENER WORLD</p>
-                            <h1 className='font-bold text__48 mb-10'>The more you drive the more you contribute to a greener world</h1>
-                            <p className='text__18 text-[#525252] mb-6'>We have partnered with OneTreePlanted to <br /> strengthen our commitment to cleaner air. Earn <br className='hidden lg:block' /> EcoPoints for every rental - 100 EcoPoints earned = <br className='hidden lg:block' /> 1 tree planted on your behalf.</p>
-                            <NavLink to="/booking" className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass">Book a Car</NavLink>
-                        </Col>
-                        <Col md={6} className='order-1 md:!order-2 relative'>
-                            <img src="./../images/fgfgfd.png" className='md:max-w-[34rem] lg:max-w-[58rem]  md:-translate-x-[7rem] lg:-translate-x-[12rem] lg:translate-y-[3rem]' alt="" />
-                        </Col>
-                    </Row>
-                </Container>
-            </section>
-
-
-          <section className='pt-0'>
-                <Container>
-                    <p className='text__18 mb-2'>CARENT</p>
-                    <h1 className='font-bold text__48 mb-10'>Rent an electric vehicle <br className='md:block hidden' /> with Carent today</h1>
-                    <Row className='mb-8 lg:mb-0'>
-                        <Col md={7} className='my-auto relative'>
-                            <img src="./../images/sdgsdgd.png" className='xl:max-w-[56rem] xl:-translate-x-[7rem]' alt="" />
-                        </Col>
-                        <Col md={5} className='my-auto'>
-                            <p className='text__18 text-[#525252] mb-6'>The best prices and customer experience along your business or leisure journey. UFODRIVE covers airport rental locations (like our Frankfurt Airport EV Rental Centre) as well as premium city locations (like our Paris EV Rental Hub).</p>
-                            <NavLink to="/booking" className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass">Book a Car</NavLink>
-                        </Col>
-                    </Row>
-
-                    <GridInfo />
-                </Container>
-            </section>
-
-*/}
-
-            <section>
+            <section className='bg-[#010101]'>
                 <Container>
                     <div className="text-center mb-8">
-                        <p className='text__18 mb-2'>Find parking near </p>
-                        <h3 className='font-bold text__48'>your destination<br /> </h3>
+                        <p className='text__18 mb-2 text-white'>Find parking near </p>
+                        <h3 className='font-bold text__48 text-white'>your destination<br /> </h3>
                     </div>
 
                     <Row className='gap-y-4'>
-                        {
-                            dataProfile.map((obj) => {
-                                return <Col className='col-6' lg={3}>
-                                    <div className="w-full border border-solid border-[#E5E5E5] p-2 sm:p-4">
-                                        <div className="w-full h-[150px] sm:h-[250px] bg-[#FAFAFA] mb-3">
-                                            <img src={obj.img} className='w-full h-full object-cover' alt="" />
-                                        </div>
-
-                                        <div className="text-center">
-                                            <h5 className='font-bold text__20 mb-2'>{obj.name}</h5>
-                                            <div className="uppercase text__16 text-[#525252]">
-                                                {Array.isArray(obj.Detail)
-                                                    ? obj.Detail.map((city, index) => (
-                                                        <p key={index}>{city}</p>
-                                                    ))
-                                                    : <p>{obj.Detail}</p> /* If obj.job is a string, display it directly */}
-                                            </div>
+                        {dataProfile.map((obj) => (
+                            <Col key={obj.name} className='col-6' lg={3}>
+                                <div className="w-full border border-solid border-[#E5E5E5] p-2 sm:p-4">
+                                    <div className="w-full h-[150px] sm:h-[250px] bg-[#FAFAFA] mb-3">
+                                        <img src={obj.img} className='w-full h-full object-cover' alt="" />
+                                    </div>
+                                    <div className="text-center">
+                                        <h5 className='font-bold text__20 mb-2'>{obj.name}</h5>
+                                        <div className="uppercase text__16 text-[#525252]">
+                                            {Array.isArray(obj.Detail)
+                                                ? obj.Detail.map((city, index) => (
+                                                    <p key={index}>{city}</p>
+                                                ))
+                                                : <p>{obj.Detail}</p>
+                                            }
                                         </div>
                                     </div>
-                                </Col>
-                            })
-                        }
-
+                                </div>
+                            </Col>
+                        ))}
                     </Row>
-
 
                 </Container>
             </section>
@@ -766,5 +773,3 @@ const Homepage = () => {
 }
 
 export default Homepage
-
-

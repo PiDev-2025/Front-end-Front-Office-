@@ -1,9 +1,126 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import fr from 'date-fns/locale/fr';
-import { useGoogleMaps } from '../../context/GoogleMapsContext';
+import { useMapbox } from "../../context/MapboxContext";
 import { toast } from 'react-toastify';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+
+const MapModal = ({ isOpen, onClose, reservation, userLocation }) => {
+    const mapContainer = useRef(null);
+    const map = useRef(null);
+    const [markers, setMarkers] = useState([]);
+
+    useEffect(() => {
+        if (!isOpen || !mapContainer.current) return;
+
+        map.current = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [reservation.parkingId.position.lng, reservation.parkingId.position.lat],
+            zoom: 12
+        });
+
+        // Add markers
+        const userMarker = new mapboxgl.Marker({ color: '#3B82F6' })
+            .setLngLat([userLocation.lng, userLocation.lat])
+            .setPopup(new mapboxgl.Popup().setHTML('<h3>Votre position</h3>'))
+            .addTo(map.current);
+
+        const parkingMarker = new mapboxgl.Marker({ color: '#22C55E' })
+            .setLngLat([reservation.parkingId.position.lng, reservation.parkingId.position.lat])
+            .setPopup(new mapboxgl.Popup().setHTML(`<h3>${reservation.parkingId.name}</h3>`))
+            .addTo(map.current);
+
+        setMarkers([userMarker, parkingMarker]);
+
+        // Add navigation controls
+        map.current.addControl(new mapboxgl.NavigationControl());
+
+        // Draw route
+        const drawRoute = async () => {
+            try {
+                const response = await fetch(
+                    `https://api.mapbox.com/directions/v5/mapbox/driving/${userLocation.lng},${userLocation.lat};${reservation.parkingId.position.lng, reservation.parkingId.position.lat}?steps=true&geometries=geojson&access_token=${process.env.REACT_APP_MAPBOX_TOKEN}`
+                );
+
+                const data = await response.json();
+
+                if (data.routes && data.routes.length > 0) {
+                    const route = data.routes[0];
+
+                    map.current.addSource('route', {
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            properties: {},
+                            geometry: route.geometry
+                        }
+                    });
+
+                    map.current.addLayer({
+                        id: 'route',
+                        type: 'line',
+                        source: 'route',
+                        layout: {
+                            'line-join': 'round',
+                            'line-cap': 'round'
+                        },
+                        paint: {
+                            'line-color': '#3b82f6',
+                            'line-width': 4,
+                            'line-opacity': 1.25
+                        }
+                    });
+
+                    // Fit bounds to show entire route
+                    const bounds = new mapboxgl.LngLatBounds()
+                        .extend([userLocation.lng, userLocation.lat])
+                        .extend([reservation.parkingId.position.lng, reservation.parkingId.position.lat]);
+
+                    map.current.fitBounds(bounds, {
+                        padding: 50,
+                        duration: 1000
+                    });
+                }
+            } catch (error) {
+                console.error("Error drawing route:", error);
+            }
+        };
+
+        drawRoute();
+
+        return () => {
+            markers.forEach(marker => marker.remove());
+            if (map.current) map.current.remove();
+        };
+    }, [isOpen, reservation, userLocation]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl w-full max-w-4xl shadow-2xl relative">
+                <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                        Itinéraire vers {reservation.parkingId.name}
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-500 hover:text-gray-700"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div ref={mapContainer} className="w-full h-[60vh]" />
+            </div>
+        </div>
+    );
+};
 
 const UserReservations = () => {
     const [reservations, setReservations] = useState([]);
@@ -12,7 +129,9 @@ const UserReservations = () => {
     const [selectedReservation, setSelectedReservation] = useState(null);
     const [userLocation, setUserLocation] = useState(null);
     const [travelTimes, setTravelTimes] = useState({});
-    const { isLoaded } = useGoogleMaps();
+    const { isLoaded } = useMapbox();
+    const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+    const [selectedRouteReservation, setSelectedRouteReservation] = useState(null);
 
     // Ajout d'un ref pour éviter les calculs redondants
     const calculatedRoutes = React.useRef(new Set());
@@ -59,49 +178,59 @@ const UserReservations = () => {
         fetchReservations();
     }, []);
 
+    // Ajoutez cette fonction utilitaire de conversion
+    const formatDuration = (minutes) => {
+        if (minutes < 60) {
+          return `${Math.round(minutes)} min`;
+        } else {
+          const hours = Math.floor(minutes / 60);
+          const remainingMinutes = Math.round(minutes % 60);
+          return remainingMinutes > 0 
+            ? `${hours}h ${remainingMinutes}min`
+            : `${hours}h`;
+        }
+    };
+
     const calculateTravelTime = React.useCallback(async (reservation) => {
-        // Éviter de recalculer pour les mêmes réservations
         if (calculatedRoutes.current.has(reservation._id)) {
             return null;
         }
-
+      
         if (!isLoaded || !userLocation || !reservation.parkingId) {
             return null;
         }
-
+      
         try {
-            // Marquer cette réservation comme calculée
             calculatedRoutes.current.add(reservation._id);
-
-            let parkingPosition = reservation.parkingId.position;
+            
+            const parkingPosition = reservation.parkingId.position;
             
             if (!parkingPosition?.lat || !parkingPosition?.lng) {
                 return null;
             }
-
-            const directionsService = new window.google.maps.DirectionsService();
+      
+            // Utiliser l'API de directions de Mapbox
+            const response = await fetch(
+                `https://api.mapbox.com/directions/v5/mapbox/driving/${userLocation.lng},${userLocation.lat};${parkingPosition.lng},${parkingPosition.lat}?access_token=${process.env.REACT_APP_MAPBOX_TOKEN}`
+            );
+      
+            const data = await response.json();
             
-            const request = {
-                origin: userLocation,
-                destination: {
-                    lat: Number(parkingPosition.lat),
-                    lng: Number(parkingPosition.lng)
-                },
-                travelMode: window.google.maps.TravelMode.DRIVING,
-            };
-
-            const result = await directionsService.route(request);
-            
-            if (result.status === "OK") {
-                const duration = result.routes[0].legs[0].duration;
+            if (data.routes && data.routes.length > 0) {
+                const duration = data.routes[0].duration;
+                const durationMinutes = duration / 60;
+                const formattedDuration = formatDuration(durationMinutes);
+                
                 setTravelTimes(prev => ({
                     ...prev,
                     [reservation._id]: {
-                        text: duration.text,
-                        value: duration.value
+                        text: formattedDuration,
+                        value: duration,
+                        minutes: durationMinutes
                     }
                 }));
-                return duration.text;
+                
+                return formattedDuration;
             }
         } catch (error) {
             console.error("Error calculating travel time:", error);
@@ -158,22 +287,35 @@ const UserReservations = () => {
         if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette réservation ?')) {
             return;
         }
-
+    
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:3001/api/reservations/${reservationId}`, {
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+            if (!token) {
+                toast.error('Session expirée. Veuillez vous reconnecter.');
+                return;
+            }
+    
+            const response = await axios.delete(
+                `http://localhost:3001/api/reservations/${reservationId}`,
+                {
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 }
-            });
-
-            setReservations(prevReservations => 
-                prevReservations.filter(res => res._id !== reservationId)
             );
+    
+            if (response.status === 200) {
+                // Mise à jour de l'état local
+                setReservations(prevReservations => 
+                    prevReservations.filter(res => res._id !== reservationId)
+                );
+                toast.success('Réservation supprimée avec succès');
+            }
         } catch (err) {
-            toast.error("Erreur lors de la suppression:", err);
-            setError(err.response?.data?.message || 'Erreur lors de la suppression de la réservation');
+            console.error('Erreur lors de la suppression:', err);
+            const errorMessage = err.response?.data?.message || 'Erreur lors de la suppression de la réservation';
+            toast.error(errorMessage);
         }
     };
 
@@ -236,95 +378,24 @@ const UserReservations = () => {
         );
     };
 
-    const TravelInfo = ({ travelTime, userLocation, parkingLocation }) => {
-        const [showRoute, setShowRoute] = useState(false);
-        const [routeDetails, setRouteDetails] = useState(null);
-    
-        const fetchRouteDetails = async () => {
-            if (!window.google || !userLocation || !parkingLocation) return;
-    
-            const directionsService = new window.google.maps.DirectionsService();
-            try {
-                const result = await directionsService.route({
-                    origin: userLocation,
-                    destination: parkingLocation,
-                    travelMode: window.google.maps.TravelMode.DRIVING,
-                    provideRouteAlternatives: true
-                });
-    
-                if (result.status === "OK") {
-                    setRouteDetails(result.routes[0]);
-                    setShowRoute(true);
-                }
-            } catch (error) {
-                console.error("Error fetching route details:", error);
-            }
-        };
-    
-        return (
-            <div className="mt-4 bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        </svg>
-                        <div>
-                            <span className="text-sm font-medium text-gray-700">Temps estimé</span>
-                            <p className="text-lg font-bold text-blue-600">{travelTime.text}</p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={fetchRouteDetails}
-                        className="px-3 py-1 text-black bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
-                    >
-                        Voir le trajet
-                    </button>
-                </div>
-    
-                {showRoute && routeDetails && (
-                    <div className="mt-3 border-t pt-3">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-600">Distance totale:</span>
-                            <span className="text-sm text-gray-900">{routeDetails.legs[0].distance.text}</span>
-                        </div>
-                        
-                        <div className="space-y-2">
-                            {routeDetails.legs[0].steps.map((step, index) => (
-                                <div key={index} className="flex items-start space-x-2 text-sm">
-                                    <div className="min-w-[24px] h-6 flex items-center justify-center bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                                        {index + 1}
-                                    </div>
-                                    <div>
-                                        <p className="text-gray-700" dangerouslySetInnerHTML={{ __html: step.instructions }}></p>
-                                        <p className="text-xs text-gray-500">{step.distance.text} - environ {step.duration.text}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
+    const handleShowRoute = (reservation) => {
+        setSelectedRouteReservation(reservation);
+        setIsMapModalOpen(true);
     };
 
     const ReservationCard = React.memo(({ reservation }) => {
         const statusInfo = getStatusColor(reservation.status);
         
         useEffect(() => {
-            if (isLoaded && reservation.parkingId) {
-                console.log("Attempting to calculate travel time for reservation:", {
-                    id: reservation._id,
-                    parkingId: reservation.parkingId,
-                    position: reservation.parkingId.position
-                });
+            if (reservation.parkingId) {
                 calculateTravelTime(reservation);
             }
-        }, [reservation, isLoaded, calculateTravelTime]); // Update dependencies
+        }, [reservation]);
 
         const renderTravelTime = () => {
             const travelTime = travelTimes[reservation._id];
             if (!travelTime) return null;
-
+    
             return (
                 <div className="mt-3 flex items-center text-gray-600 bg-gray-50 p-4 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -333,10 +404,13 @@ const UserReservations = () => {
                     <div className="flex flex-col">
                         <span className="text-sm font-medium">Temps de trajet estimé:</span>
                         <span className="text-lg font-semibold text-blue-600">{travelTime.text}</span>
-                        
                     </div>
                 </div>
             );
+        };
+
+        const handleShowQRCode = () => {
+            setSelectedReservation(reservation);
         };
 
         return (
@@ -397,24 +471,46 @@ const UserReservations = () => {
                     {renderTravelTime()}
 
                     <div className="flex space-x-2 mt-6">
-                        <button
-                            onClick={() => setSelectedReservation(reservation)}
+                    <button
+                            onClick={handleShowQRCode} // Changed to handleShowQRCode
                             className="flex-1 bg-white border border-red-500 text-red-500 py-2.5 px-4 rounded-lg hover:bg-red-50 transition-colors flex justify-center items-center"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                             </svg>
                             QR Code
                         </button>
-                        <button
-                            onClick={() => handleDelete(reservation._id)}
+                    <button
+                            onClick={() => handleShowRoute(reservation)}
                             className="flex-1 bg-white border border-red-500 text-red-500 py-2.5 px-4 rounded-lg hover:bg-red-50 transition-colors flex justify-center items-center"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                             </svg>
-                            Supprimer
+                            Itinéraire
                         </button>
+                      
+                        <button
+ onClick={() => handleDelete(reservation._id)}
+     className="flex-1 bg-white border border-red-500 text-red-500 py-2.5 px-4 rounded-lg hover:bg-red-50 transition-colors flex justify-center items-center"
+>
+    <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        className="h-5 w-5 mr-2" 
+        fill="none" 
+        viewBox="0 0 24 24" 
+        stroke="currentColor"
+    >
+        <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+        />
+    </svg>
+                            
+                        </button>
+                       
                     </div>
                 </div>
             </div>
@@ -564,9 +660,21 @@ const UserReservations = () => {
                     <ReservationCard 
                         key={reservation._id || Math.random().toString()} 
                         reservation={reservation}
+                        onShowRoute={handleShowRoute}  // Changed from showRoute to handleShowRoute
                     />
                 ))}
             </div>
+            {isMapModalOpen && selectedRouteReservation && userLocation && (
+                <MapModal
+                    isOpen={isMapModalOpen}
+                    onClose={() => {
+                        setIsMapModalOpen(false);
+                        setSelectedRouteReservation(null);
+                    }}
+                    reservation={selectedRouteReservation}
+                    userLocation={userLocation}
+                />
+            )}
             {selectedReservation && <QRCodeModal />}
             <style>{`
                 @keyframes fade-in-up {

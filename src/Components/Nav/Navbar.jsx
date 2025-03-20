@@ -47,7 +47,7 @@ const Navbar = () => {
     };
 
     const stickNavabr = () => {
-      if (window.scrollY > 100) {
+      if (window.scrollY > 100) { // Changé de 20 à 10 pour un déclenchement encore plus rapide
         setnavabarScroll(true);
       } else {
         statatusSet();
@@ -56,6 +56,7 @@ const Navbar = () => {
 
     statatusSet();
     window.addEventListener("scroll", stickNavabr);
+    return () => window.removeEventListener("scroll", stickNavabr); // Ajout du cleanup
   }, [location]);
 
   // Function to check if Scan QR should be visible

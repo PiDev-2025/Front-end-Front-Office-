@@ -11,8 +11,11 @@ import {
   Spinner,
   Modal
 } from "react-bootstrap";
-import { Autocomplete } from "@react-google-maps/api";
-import { useGoogleMaps } from "../context/GoogleMapsContext";
+import { useMapbox } from "../context/MapboxContext";
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
+import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 import axios from "axios";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -34,7 +37,10 @@ import {
 } from "react-icons/fa";
 
 const ParkingEditForm = ({ editingParking, setEditingParking, refreshParkings }) => {
-  const { isLoaded } = useGoogleMaps();
+  const { isLoaded } = useMapbox();
+  const mapContainer = useRef(null);
+  const map = useRef(null);
+  const [marker, setMarker] = useState(null);
   
   // State for managing steps
   const [currentStep, setCurrentStep] = useState(1);
@@ -43,7 +49,6 @@ const ParkingEditForm = ({ editingParking, setEditingParking, refreshParkings })
   // Parking details state
   const [position, setPosition] = useState({ lat: undefined, lng: undefined });
   const [address, setAddress] = useState("");
-  const [autocomplete, setAutocomplete] = useState(null);
   const [features, setFeatures] = useState([]);
   const [pricing, setPricing] = useState({
     hourly: "",
@@ -217,22 +222,70 @@ const ParkingEditForm = ({ editingParking, setEditingParking, refreshParkings })
     });
   };
 
-  // Google Maps Autocomplete
-  const onLoad = (autoComplete) => setAutocomplete(autoComplete);
+  // Mapbox initialization
+  useEffect(() => {
+    if (isLoaded && mapContainer.current) {
+      // Initialize map
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: [editingParking.position.lng || 10.18, editingParking.position.lat || 36.8],
+        zoom: 13
+      });
 
-  const onPlaceChanged = () => {
-    if (autocomplete) {
-      const place = autocomplete.getPlace();
-      if (place.geometry) {
-        setPosition({
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng()
-        });
-        setAddress(place.formatted_address);
+      // Add navigation controls
+      map.current.addControl(new mapboxgl.NavigationControl());
+
+      // Add geocoder for search
+      const geocoder = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl,
+        placeholder: 'Search location',
+        countries: 'tn'
+      });
+
+      map.current.addControl(geocoder);
+
+      // Add click handler for location selection
+      map.current.on('click', (e) => {
+        const { lng, lat } = e.lngLat;
+        updateMarkerPosition(lng, lat);
+      });
+
+      // Add initial marker if editing
+      if (editingParking.position) {
+        updateMarkerPosition(editingParking.position.lng, editingParking.position.lat);
       }
+
+      return () => {
+        if (map.current) map.current.remove();
+      };
     }
+  }, [isLoaded]);
+
+  const updateMarkerPosition = (lng, lat) => {
+    if (marker) marker.remove();
+    
+    const el = document.createElement('div');
+    el.className = 'parking-marker';
+    el.innerHTML = `
+      <svg width="30" height="45" viewBox="0 0 30 45">
+        <path fill="#22C55E" d="M15 0C6.7 0 0 6.7 0 15c0 8.3 15 30 15 30s15-21.7 15-30c0-8.3-6.7-15-15-15z"/>
+        <circle fill="white" cx="15" cy="15" r="7"/>
+      </svg>
+    `;
+
+    const newMarker = new mapboxgl.Marker(el)
+      .setLngLat([lng, lat])
+      .addTo(map.current);
+    
+    setMarker(newMarker);
+    setEditingParking(prev => ({
+      ...prev,
+      position: { lng, lat }
+    }));
   };
-  
+
   // Format tariff labels
   const getTariffLabel = (key) => {
     switch(key) {
@@ -316,11 +369,7 @@ const validateForm = () => {
       return false;
     }
     
-    // Address validation
-    if (!address || address.trim() === "") {
-      setValidationError("Address is required");
-      return false;
-    }
+  
     
     // Total spots validation
     if (!totalSpots || isNaN(parseInt(totalSpots)) || parseInt(totalSpots) <= 0) {
@@ -488,16 +537,7 @@ const validateForm = () => {
                 <FaMapMarkerAlt className="mr-2 text-blue-500" />
                 Parking Location <span className="text-danger">*</span>
               </Form.Label>
-              <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
-                <Form.Control
-                  type="text"
-                  placeholder="Enter location"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  required
-                  className="p-2 border-2 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-3/4"
-                />
-              </Autocomplete>
+              <div ref={mapContainer} className="map-container" style={{ height: '400px' }} />
               {position.lat && position.lng && (
                 <div className="text-success mt-2">
                 </div>
