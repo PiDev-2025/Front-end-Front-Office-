@@ -1,12 +1,12 @@
 // src/components/ProfessionalProfile.jsx
+import React, { useEffect, useCallback, memo } from "react";
+import { ScrollView, StyleSheet, Pressable } from "react-native";
 import { useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import React, { useEffect } from "react";
-import { ScrollView, StyleSheet, Pressable } from "react-native";
-import Surreal from "surrealdb";
 import LinearGradient from 'react-native-linear-gradient';
+import Surreal from "surrealdb";
 
-// Individual GlueStack UI imports
+// Individual GlueStack UI imports from components/ui
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge, BadgeIcon, BadgeText } from "@/components/ui/badge";
 import { Box } from "@/components/ui/box";
@@ -246,25 +246,31 @@ interface SkillMap {
 	[key: string]: Skill[];
 }
 
-// Professional Card Component
-const ProfessionalCard = ({ 
+interface ProfessionalCardProps {
+	professional: Professional;
+	isExpanded: boolean;
+	onToggle: (expanded: boolean) => void;
+}
+
+const ProfessionalCard = memo(({ 
 	professional, 
 	isExpanded, 
 	onToggle 
-}: { 
-	professional: any, 
-	isExpanded: boolean,
-	onToggle: (expanded: boolean) => void
-}) => {
-	const getBadgeColor = (type: ProfessionalType) => {
+}: ProfessionalCardProps) => {
+	const getBadgeColor = useCallback((type: ProfessionalType) => {
 		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === type)?.[0];
 		return key ? professionalStyles[key as keyof typeof professionalStyles]?.color : "#666";
-	};
+	}, []);
 
-	const getBadgeIcon = (type: ProfessionalType) => {
+	const getBadgeIcon = useCallback((type: ProfessionalType) => {
 		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === type)?.[0];
 		return key ? professionalStyles[key as keyof typeof professionalStyles]?.icon : Briefcase;
-	};
+	}, []);
+
+	const getGradientColors = useCallback(() => {
+		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
+		return key ? [...professionalStyles[key as keyof typeof professionalStyles]?.gradient] : ['#22C55E', '#0EA5E9'];
+	}, [professional.type]);
 
 	const getSkillBadges = (): Skill[] => {
 		const skillsMap: SkillMap = {
@@ -308,7 +314,7 @@ const ProfessionalCard = ({
 					position: 'absolute',
 					left: 0,
 					bottom: 0,
-					width: 3 ,
+					width: 3,
 					top: 0,
 					overflow: 'hidden',
 				}}
@@ -316,10 +322,7 @@ const ProfessionalCard = ({
 				<LinearGradient
 					start={{x: 0, y: 0}}
 					end={{x: 0, y: 1}}
-					colors={(() => {
-						const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
-						return key ? [...professionalStyles[key as keyof typeof professionalStyles]?.gradient] : ['#22C55E', '#0EA5E9'];
-					})()}
+					colors={getGradientColors()}
 					style={StyleSheet.absoluteFill}
 				/>
 			</Box>
@@ -681,7 +684,9 @@ const ProfessionalCard = ({
 			</Box>
 		</Card>
 	);
-};
+});
+
+ProfessionalCard.displayName = 'ProfessionalCard';
 
 // API fetch function
 const fetchProfessionalsFromDB = async (): Promise<Professional[]> => {
@@ -699,37 +704,49 @@ const fetchProfessionalsFromDB = async (): Promise<Professional[]> => {
 };
 
 // Main Professional Profile Component
-const ProfessionalProfile = () => {
+const ProfessionalProfile = memo(() => {
 	const [professionals, setProfessionals] = useAtom(professionalsAtom);
 	const [loading, setLoading] = useAtom(loadingAtom);
 	const [error, setError] = useAtom(errorAtom);
 	const [expandedCards, setExpandedCards] = React.useState<Set<string>>(new Set());
 
-	useEffect(() => {
-		const loadProfessionals = async () => {
-			setLoading(true);
-			try {
-				const data = await fetchProfessionalsFromDB();
-				setProfessionals(data);
-				setError(null);
-			} catch (err) {
-				if (err instanceof Error) {
-					setError(err.message);
-				} else {
-					setError('An unknown error occurred');
-				}
-			} finally {
-				setLoading(false);
+	const loadProfessionals = useCallback(async () => {
+		setLoading(true);
+		try {
+			const data = await fetchProfessionalsFromDB();
+			setProfessionals(data);
+			setError(null);
+		} catch (err) {
+			if (err instanceof Error) {
+				setError(err.message);
+			} else {
+				setError('An unknown error occurred');
 			}
-		};
-
-		if (!professionals.length) {
-			loadProfessionals();
+		} finally {
+			setLoading(false);
 		}
 	}, [setProfessionals, setLoading, setError]);
 
+	useEffect(() => {
+		if (!professionals.length) {
+			loadProfessionals();
+		}
+	}, [professionals.length, loadProfessionals]);
+
+	const handleCardToggle = useCallback((id: string, expanded: boolean) => {
+		setExpandedCards(prev => {
+			const newSet = new Set(prev);
+			if (expanded) {
+				newSet.add(id);
+			} else {
+				newSet.delete(id);
+			}
+			return newSet;
+		});
+	}, []);
+
 	// Mock data for development
-	const mockProfessionals = [
+	const mockProfessionals: Professional[] = [
 		{
 			id: "1",
 			name: "Marie Dubois",
@@ -739,10 +756,10 @@ const ProfessionalProfile = () => {
 			bio: "Diététicienne spécialisée en rééquilibrage alimentaire et nutrition sportive",
 			avatar: "https://randomuser.me/api/portraits/women/1.jpg",
 			compatibility: 88,
+			satisfaction: 92,
 			experience: "8 ans",
 			specialties: "Nutrition sportive, Rééquilibrage alimentaire, Allergies alimentaires",
-			languages: "Français, Anglais",
-			availability: "Lundi-Vendredi, 9h-19h"
+			languages: "Français, Anglais"
 		},
 		{
 			id: "2",
@@ -753,10 +770,10 @@ const ProfessionalProfile = () => {
 			bio: "Sophrologue certifiée, spécialisée en gestion du stress et sommeil",
 			avatar: "https://randomuser.me/api/portraits/women/2.jpg",
 			compatibility: 92,
+			satisfaction: 95,
 			experience: "12 ans",
 			specialties: "Gestion du stress, Troubles du sommeil, Préparation mentale",
-			languages: "Français, Espagnol",
-			availability: "Lundi-Samedi, 8h-20h"
+			languages: "Français, Espagnol"
 		},
 		{
 			id: "3",
@@ -767,10 +784,10 @@ const ProfessionalProfile = () => {
 			bio: "Aromathérapeute passionné par les huiles essentielles et le bien-être naturel",
 			avatar: "https://randomuser.me/api/portraits/men/3.jpg",
 			compatibility: 75,
+			satisfaction: 88,
 			experience: "6 ans",
 			specialties: "Huiles essentielles, Phytothérapie, Massages aromatiques",
-			languages: "Français, Italien",
-			availability: "Mardi-Samedi, 10h-18h"
+			languages: "Français, Italien"
 		},
 		{
 			id: "4",
@@ -781,10 +798,10 @@ const ProfessionalProfile = () => {
 			bio: "Coach de vie certifiée, spécialisée en développement personnel et professionnel",
 			avatar: "https://randomuser.me/api/portraits/women/4.jpg",
 			compatibility: 95,
+			satisfaction: 90,
 			experience: "10 ans",
 			specialties: "Développement personnel, Coaching professionnel, Gestion des transitions",
-			languages: "Français, Anglais, Espagnol",
-			availability: "Lundi-Vendredi, 9h-18h"
+			languages: "Français, Anglais, Espagnol"
 		},
 		{
 			id: "5",
@@ -795,10 +812,10 @@ const ProfessionalProfile = () => {
 			bio: "Expert en développement des relations et confiance en soi",
 			avatar: "https://randomuser.me/api/portraits/men/5.jpg",
 			compatibility: 70,
+			satisfaction: 85,
 			experience: "7 ans",
 			specialties: "Confiance en soi, Communication, Relations interpersonnelles",
-			languages: "Français, Anglais",
-			availability: "Lundi-Samedi, 10h-22h"
+			languages: "Français, Anglais"
 		},
 		{
 			id: "6",
@@ -809,10 +826,10 @@ const ProfessionalProfile = () => {
 			bio: "Coach sportive spécialisée en remise en forme et nutrition sportive",
 			avatar: "https://randomuser.me/api/portraits/women/6.jpg",
 			compatibility: 85,
+			satisfaction: 90,
 			experience: "9 ans",
 			specialties: "Remise en forme, Musculation, Course à pied",
-			languages: "Français, Anglais",
-			availability: "Lundi-Samedi, 7h-20h"
+			languages: "Français, Anglais"
 		},
 		{
 			id: "7",
@@ -823,10 +840,10 @@ const ProfessionalProfile = () => {
 			bio: "Astrologue professionnel, expert en thèmes natals et synastries",
 			avatar: "https://randomuser.me/api/portraits/men/7.jpg",
 			compatibility: 78,
+			satisfaction: 85,
 			experience: "15 ans",
 			specialties: "Thème natal, Synastrie, Transits planétaires",
-			languages: "Français, Anglais",
-			availability: "Mardi-Dimanche, 10h-22h"
+			languages: "Français, Anglais"
 		},
 		{
 			id: "8",
@@ -837,10 +854,10 @@ const ProfessionalProfile = () => {
 			bio: "Graphologue experte en analyse d'écriture et développement personnel",
 			avatar: "https://randomuser.me/api/portraits/women/8.jpg",
 			compatibility: 72,
+			satisfaction: 80,
 			experience: "11 ans",
 			specialties: "Analyse d'écriture, Orientation professionnelle, Développement personnel",
-			languages: "Français, Allemand",
-			availability: "Lundi-Vendredi, 9h-17h"
+			languages: "Français, Allemand"
 		},
 		{
 			id: "9",
@@ -851,10 +868,10 @@ const ProfessionalProfile = () => {
 			bio: "Magnétiseur expérimenté, pratique les soins énergétiques depuis 15 ans",
 			avatar: "https://randomuser.me/api/portraits/men/9.jpg",
 			compatibility: 82,
+			satisfaction: 88,
 			experience: "15 ans",
 			specialties: "Soins énergétiques, Magnétisme curatif, Rééquilibrage",
-			languages: "Français, Allemand",
-			availability: "Lundi-Samedi, 9h-19h"
+			languages: "Français, Allemand"
 		},
 		{
 			id: "10",
@@ -865,10 +882,10 @@ const ProfessionalProfile = () => {
 			bio: "Naturopathe holistique, spécialisée en nutrition et plantes médicinales",
 			avatar: "https://randomuser.me/api/portraits/women/10.jpg",
 			compatibility: 89,
+			satisfaction: 90,
 			experience: "13 ans",
 			specialties: "Nutrition naturelle, Phytothérapie, Iridologie",
-			languages: "Français, Anglais",
-			availability: "Lundi-Vendredi, 9h-18h"
+			languages: "Français, Anglais"
 		},
 		{
 			id: "11",
@@ -879,10 +896,10 @@ const ProfessionalProfile = () => {
 			bio: "Musicothérapeute certifié, utilisant la musique comme outil thérapeutique",
 			avatar: "https://randomuser.me/api/portraits/men/11.jpg",
 			compatibility: 77,
+			satisfaction: 85,
 			experience: "8 ans",
 			specialties: "Thérapie par la musique, Relaxation sonore, Expression musicale",
-			languages: "Français, Espagnol",
-			availability: "Lundi-Samedi, 10h-19h"
+			languages: "Français, Espagnol"
 		},
 		{
 			id: "12",
@@ -893,10 +910,10 @@ const ProfessionalProfile = () => {
 			bio: "Numérologue passionnée par les nombres et leur influence sur notre vie",
 			avatar: "https://randomuser.me/api/portraits/women/12.jpg",
 			compatibility: 68,
+			satisfaction: 75,
 			experience: "6 ans",
 			specialties: "Numérologie karmique, Analyse des cycles, Prédictions",
-			languages: "Français, Anglais",
-			availability: "Mardi-Samedi, 11h-20h"
+			languages: "Français, Anglais"
 		},
 		{
 			id: "13",
@@ -907,10 +924,10 @@ const ProfessionalProfile = () => {
 			bio: "Psychanalyste formé à l'approche freudienne et jungienne",
 			avatar: "https://randomuser.me/api/portraits/men/13.jpg",
 			compatibility: 91,
+			satisfaction: 90,
 			experience: "20 ans",
 			specialties: "Psychanalyse freudienne, Psychanalyse jungienne, Thérapie analytique",
-			languages: "Français, Anglais, Allemand",
-			availability: "Lundi-Vendredi, 9h-19h"
+			languages: "Français, Anglais, Allemand"
 		},
 		{
 			id: "14",
@@ -921,10 +938,10 @@ const ProfessionalProfile = () => {
 			bio: "Psychologue clinicienne spécialisée en thérapie cognitive et comportementale",
 			avatar: "https://randomuser.me/api/portraits/women/14.jpg",
 			compatibility: 93,
+			satisfaction: 90,
 			experience: "14 ans",
 			specialties: "TCC, Thérapie des traumatismes, Thérapie de couple",
-			languages: "Français, Anglais",
-			availability: "Lundi-Vendredi, 9h-18h"
+			languages: "Français, Anglais"
 		},
 		{
 			id: "15",
@@ -935,10 +952,10 @@ const ProfessionalProfile = () => {
 			bio: "Psychopraticien intégratif, combinant différentes approches thérapeutiques",
 			avatar: "https://randomuser.me/api/portraits/men/15.jpg",
 			compatibility: 87,
+			satisfaction: 85,
 			experience: "12 ans",
 			specialties: "Thérapie intégrative, Gestalt-thérapie, Psychothérapie humaniste",
-			languages: "Français, Anglais",
-			availability: "Lundi-Samedi, 9h-19h"
+			languages: "Français, Anglais"
 		},
 		{
 			id: "16",
@@ -949,10 +966,10 @@ const ProfessionalProfile = () => {
 			bio: "Bio-énergéticienne expérimentée en rééquilibrage énergétique",
 			avatar: "https://randomuser.me/api/portraits/women/16.jpg",
 			compatibility: 79,
+			satisfaction: 80,
 			experience: "10 ans",
 			specialties: "Bioénergie, Rééquilibrage énergétique, Thérapie vibratoire",
-			languages: "Français, Espagnol",
-			availability: "Mardi-Samedi, 10h-19h"
+			languages: "Français, Espagnol"
 		},
 		{
 			id: "17",
@@ -963,10 +980,10 @@ const ProfessionalProfile = () => {
 			bio: "Maître Reiki certifié, pratiquant les soins énergétiques traditionnels",
 			avatar: "https://randomuser.me/api/portraits/men/17.jpg",
 			compatibility: 83,
+			satisfaction: 85,
 			experience: "16 ans",
 			specialties: "Reiki Usui, Reiki Karuna, Soins énergétiques",
-			languages: "Français, Anglais",
-			availability: "Lundi-Samedi, 9h-20h"
+			languages: "Français, Anglais"
 		},
 		{
 			id: "18",
@@ -977,10 +994,10 @@ const ProfessionalProfile = () => {
 			bio: "Praticienne en Shiatsu certifiée, experte en médecine traditionnelle japonaise",
 			avatar: "https://randomuser.me/api/portraits/women/18.jpg",
 			compatibility: 86,
+			satisfaction: 88,
 			experience: "13 ans",
 			specialties: "Shiatsu thérapeutique, Médecine traditionnelle japonaise, Acupression",
-			languages: "Français, Japonais",
-			availability: "Lundi-Vendredi, 9h-19h"
+			languages: "Français, Japonais"
 		},
 		{
 			id: "19",
@@ -991,10 +1008,10 @@ const ProfessionalProfile = () => {
 			bio: "Professeur de yoga thérapeutique, spécialisé dans la gestion du stress",
 			avatar: "https://randomuser.me/api/portraits/men/19.jpg",
 			compatibility: 90,
+			satisfaction: 90,
 			experience: "11 ans",
 			specialties: "Yoga thérapeutique, Méditation, Gestion du stress",
-			languages: "Français, Anglais, Sanskrit",
-			availability: "Lundi-Samedi, 7h-20h"
+			languages: "Français, Anglais, Sanskrit"
 		},
 		{
 			id: "20",
@@ -1005,10 +1022,10 @@ const ProfessionalProfile = () => {
 			bio: "Hypnothérapeute certifiée, spécialisée en gestion des phobies et addictions",
 			avatar: "https://randomuser.me/api/portraits/women/20.jpg",
 			compatibility: 84,
+			satisfaction: 85,
 			experience: "9 ans",
 			specialties: "Hypnose ericksonienne, Gestion des phobies, Arrêt du tabac",
-			languages: "Français, Anglais",
-			availability: "Lundi-Vendredi, 9h-19h"
+			languages: "Français, Anglais"
 		},
 		{
 			id: "21",
@@ -1019,10 +1036,10 @@ const ProfessionalProfile = () => {
 			bio: "Phytothérapeute expert en plantes médicinales et remèdes naturels",
 			avatar: "https://randomuser.me/api/portraits/men/21.jpg",
 			compatibility: 81,
+			satisfaction: 80,
 			experience: "17 ans",
 			specialties: "Plantes médicinales, Herboristerie, Aromathérapie",
-			languages: "Français, Latin",
-			availability: "Lundi-Samedi, 9h-18h"
+			languages: "Français, Latin"
 		}
 	];
 
@@ -1034,19 +1051,13 @@ const ProfessionalProfile = () => {
 		);
 	}
 
-	// if (error) {
-	// 	return (
-	// 		<Box className="flex-1 justify-center items-center">
-	// 			<Text color="$error600">{error}</Text>
-	// 			<Button onPress={() => loadProfessionals()} className="mt-4">
-	// 				<ButtonText>Retry</ButtonText>
-	// 			</Button>
-	// 		</Box>
-	// 	);
-	// }
-
 	return (
-		<ScrollView style={styles.container}>
+		<ScrollView 
+			style={styles.container}
+			removeClippedSubviews={true}
+			showsVerticalScrollIndicator={false}
+			contentContainerStyle={{ paddingBottom: 20 }}
+		>
 			<Box className="p-4">
 				<VStack space="md">
 					{(professionals.length > 0
@@ -1057,22 +1068,16 @@ const ProfessionalProfile = () => {
 							key={professional.id}
 							professional={professional}
 							isExpanded={expandedCards.has(professional.id)}
-							onToggle={(expanded) => {
-								const newSet = new Set(expandedCards);
-								if (expanded) {
-									newSet.add(professional.id);
-								} else {
-									newSet.delete(professional.id);
-								}
-								setExpandedCards(newSet);
-							}}
+							onToggle={(expanded) => handleCardToggle(professional.id, expanded)}
 						/>
 					))}
 				</VStack>
 			</Box>
 		</ScrollView>
 	);
-};
+});
+
+ProfessionalProfile.displayName = 'ProfessionalProfile';
 
 const styles = StyleSheet.create({
 	container: {
