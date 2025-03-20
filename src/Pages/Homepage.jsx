@@ -1,18 +1,16 @@
-import React, { Fragment, useState, useEffect, useRef } from 'react'
+import React, { Fragment, useState, useEffect, useRef, useCallback } from 'react'
 import { Col, Container, Form, Row } from 'react-bootstrap'
-import { CardCar } from '../Components/Card/Card'
 import HowItWorks from '../Components/Pages/HowItWorks'
 import GridInfo from '../Components/Pages/GridInfo'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Autocomplete } from '@react-google-maps/api';
-import { useSearch } from '../context/SearchContext';
 import LoadingPopup from '../Components/LoadingPopup';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
+import { useSearch } from '../context/SearchContext';
 import { useMapbox } from '../context/MapboxContext';
 
 const Homepage = () => {
@@ -30,12 +28,9 @@ const Homepage = () => {
     const [focusedVehicleIndex, setFocusedVehicleIndex] = useState(-1);
     const dropdownRef = useRef(null);
     
-    // Google Maps Autocomplete states
-    const [autocomplete, setAutocomplete] = useState(null);
+    // Date and time states
     const [address, setAddress] = useState(searchData.address || '');
     const [location, setLocation] = useState(searchData.location);
-
-    // Date and time states
     const [startDate, setStartDate] = useState(searchData.startDate);
     const [endDate, setEndDate] = useState(searchData.endDate);
     const [startTime, setStartTime] = useState(searchData.startTime || "14:41");
@@ -59,29 +54,6 @@ const Homepage = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Google Maps Autocomplete handlers
-    const onLoadAutocomplete = (autoC) => {
-        setAutocomplete(autoC);
-    };
-
-    const onPlaceChanged = () => {
-        if (autocomplete !== null) {
-            const place = autocomplete.getPlace();
-            if (place.geometry) {
-                const newLocation = {
-                    lat: place.geometry.location.lat(),
-                    lng: place.geometry.location.lng()
-                };
-                setLocation(newLocation);
-                setAddress(place.formatted_address);
-            } else {
-                console.log('Selected place has no geometry');
-            }
-        } else {
-            console.log('Autocomplete is not loaded yet!');
-        }
-    };
-    
     // Handle search form submission
     const handleSearch = () => {
         if (!validateForm()) return;
@@ -375,7 +347,7 @@ const Homepage = () => {
                 document.head.removeChild(style);
             };
         }
-    }, [isLoaded]);
+    }, [isLoaded, updateSearchData]);
 
     // Dans le rendu, remplacer le Form.Control par notre nouvelle référence
     const renderSearchInput = () => (
@@ -421,12 +393,12 @@ const Homepage = () => {
                         
                         <Col md={7} lg={6} className="bg-[#00000080] backdrop-blur-sm rounded-lg p-4 shadow-lg">
                             <div className="flex items-center text-center mb-4 border-b border-[#333]">
-                                <div onClick={() => settoogleTab("On time")} className={"py-3 cursor-pointer md:min-w-[140px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab == "On time" ? "border-b-2 border-solid border-Mgreen -mb-px" : "opacity-50")}>On time</div>
-                                <div onClick={() => settoogleTab("Monthly")} className={"py-3 cursor-pointer md:min-w-[140px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab == "Monthly" ? "border-b-2 border-solid border-Mgreen -mb-px" : "opacity-50")}>Monthly</div>
+                                <div onClick={() => settoogleTab("On time")} className={"py-3 cursor-pointer md:min-w-[140px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab === "On time" ? "border-b-2 border-solid border-Mgreen -mb-px" : "opacity-50")}>On time</div>
+                                <div onClick={() => settoogleTab("Monthly")} className={"py-3 cursor-pointer md:min-w-[140px] text__16 text-Mwhite w-full md:w-auto " + (toogleTab === "Monthly" ? "border-b-2 border-solid border-Mgreen -mb-px" : "opacity-50")}>Monthly</div>
                             </div>
                             
                             {
-                                toogleTab == "On time" ? 
+                                toogleTab === "On time" ? 
                                 <div className="flex flex-col gap-4">
                                     <div className="flex flex-wrap md:flex-nowrap gap-4">
                                         <div className="flex flex-col w-full md:w-[50%]">

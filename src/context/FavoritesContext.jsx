@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -9,38 +9,26 @@ export const FavoritesProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isApiAvailable, setIsApiAvailable] = useState(true);
   
-  // Check if user is logged in
-  const isLoggedIn = () => {
+  // Optimized isLoggedIn with useCallback
+  const isLoggedIn = useCallback(() => {
     return !!localStorage.getItem('token');
-  };
-
-  // Fetch favorites on mount if user is logged in
-  useEffect(() => {
-    if (isLoggedIn()) {
-      fetchFavorites();
-    }
   }, []);
 
-  // Fetch favorites from server
-  const fetchFavorites = async () => {
+  // Fetch favorites with better error handling
+  const fetchFavorites = useCallback(async () => {
     if (!isLoggedIn()) return;
     
     setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token found');
+
       const response = await axios.get('http://localhost:3001/favorites', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response.data && Array.isArray(response.data.favorites)) {
-        setFavorites(response.data.favorites);
-      } else {
-        console.log('Received favorites data:', response.data);
-        if (response.data && response.data.success) {
-          const favoritesList = response.data.favorites || [];
-          setFavorites(favoritesList);
-        }
-      }
+      const favoritesList = response.data?.favorites || [];
+      setFavorites(Array.isArray(favoritesList) ? favoritesList : []);
       setIsApiAvailable(true);
     } catch (error) {
       console.error('Error fetching favorites:', error);
@@ -48,21 +36,21 @@ export const FavoritesProvider = ({ children }) => {
       
       try {
         const localFavorites = localStorage.getItem('localFavorites');
-        if (localFavorites) {
-          setFavorites(JSON.parse(localFavorites));
-        }
+        setFavorites(localFavorites ? JSON.parse(localFavorites) : []);
       } catch (localError) {
         console.error('Error loading local favorites:', localError);
+        setFavorites([]);
       }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLoggedIn]);
 
-  // Check if a parking is in favorites
-  const isFavorite = (parkingId) => {
-    return favorites.some(fav => fav.parking && fav.parking._id === parkingId);
-  };
+  // Safer isFavorite check
+  const isFavorite = useCallback((parkingId) => {
+    if (!parkingId) return false;
+    return favorites.some(fav => fav?.parking?._id === parkingId);
+  }, [favorites]);
 
   // Toggle favorite status of a parking
   const toggleFavorite = async (parkingId) => {
@@ -129,22 +117,31 @@ export const FavoritesProvider = ({ children }) => {
     }
   };
   
-  // Helper function to update favorites list
-  const updateFavoritesList = (parkingId, isAdding) => {
-    let newFavorites;
-    
-    if (isAdding) {
-      newFavorites = [...favorites, { parking: { _id: parkingId } }];
-    } else {
-      newFavorites = favorites.filter(fav => fav.parking._id !== parkingId);
-    }
+  // Optimized updateFavoritesList
+  const updateFavoritesList = useCallback((parkingId, isAdding) => {
+    if (!parkingId) return;
+
+    const newFavorites = isAdding
+      ? [...favorites, { parking: { _id: parkingId }, createdAt: new Date().toISOString() }]
+      : favorites.filter(fav => fav?.parking?._id !== parkingId);
     
     setFavorites(newFavorites);
     
     if (!isApiAvailable) {
-      localStorage.setItem('localFavorites', JSON.stringify(newFavorites));
+      try {
+        localStorage.setItem('localFavorites', JSON.stringify(newFavorites));
+      } catch (error) {
+        console.error('Error saving to localStorage:', error);
+      }
     }
-  };
+  }, [favorites, isApiAvailable]);
+
+  // Effect with dependency array
+  useEffect(() => {
+    if (isLoggedIn()) {
+      fetchFavorites();
+    }
+  }, [isLoggedIn, fetchFavorites]);
 
   return (
     <FavoritesContext.Provider value={{ 
@@ -153,11 +150,30 @@ export const FavoritesProvider = ({ children }) => {
       toggleFavorite, 
       isLoading, 
       isLoggedIn, 
-      isApiAvailable 
+      isApiAvailable,
+      fetchFavorites // Add this to allow manual refresh
     }}>
       {children}
     </FavoritesContext.Provider>
   );
 };
 
-export const useFavorites = () => useContext(FavoritesContext);
+// Add default context value
+const defaultContext = {
+  favorites: [],
+  isFavorite: () => false,
+  toggleFavorite: async () => ({ success: false }),
+  isLoading: false,
+  isLoggedIn: () => false,
+  isApiAvailable: true,
+  fetchFavorites: () => Promise.resolve()
+};
+
+export const useFavorites = () => {
+  const context = useContext(FavoritesContext);
+  if (!context) {
+    console.warn('useFavorites must be used within a FavoritesProvider');
+    return defaultContext;
+  }
+  return context;
+};
