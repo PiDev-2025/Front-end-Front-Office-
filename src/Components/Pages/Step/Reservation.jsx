@@ -15,7 +15,8 @@ import {
   Car,
   ChevronDown,
   MapPin,
-  ArrowRight
+  ArrowRight,
+  ListChecks
 } from 'lucide-react';
 
 // Ajouter l'import pour la locale française de date-fns
@@ -178,7 +179,7 @@ const CustomDatePicker = ({ selected, onChange, label, minDate, isStartDate = fa
     dayClassName={date => 
       date.getDate() === selected?.getDate() && 
       date.getMonth() === selected?.getMonth() 
-        ? "bg-blue-500 text-white rounded-full" 
+        ? "bg-blue-500 text-black rounded-full" 
         : "text-gray-700 hover:bg-blue-100"
     }
     popperClassName="z-50"
@@ -291,7 +292,7 @@ const PriceSummary = ({ priceDetails, totalPrice }) => (
 
 // QR Code modal component
 const QRCodeModal = ({ qrCode, onPrint, onContinue, onViewReservations }) => (
-  <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fadeIn">
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl animate-scaleIn">
       <div className="flex justify-between items-center mb-6">
         <h4 className="text-2xl font-semibold text-center flex-grow">Votre QR Code</h4>
@@ -660,55 +661,58 @@ const Reservation = ({ parkingData, onContinue }) => {
   };
 
   // Render content based on current step
-  const renderStepContent = () => {
-    switch (currentStep) {
-        case 1: // Date selection
-        return (
-            <div className="space-y-6">
-              <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
-                <h3 className="text-lg font-semibold mb-6 flex items-center text-gray-800">
-                  <Calendar className="mr-2 text-blue-600" size={20} />
-                  Dates de stationnement
-                </h3>
-                
-            {/* Changement pour affichage vertical avec DatePickers plus larges */}
-<div className="flex flex-col space-y-10 w-full max-w-lg">
-  <CustomDatePicker
-    selected={reservationInfo.startDate}
-    onChange={date => setReservationInfo(prev => ({
-      ...prev,
-      startDate: date,
-      // Ensure endDate is at least 1 hour after startDate
-      endDate: new Date(date.getTime() + 60 * 60 * 1000) > prev.endDate
-        ? new Date(date.getTime() + 60 * 60 * 1000)
-        : prev.endDate
-    }))}
-    label="Date et heure d'arrivée"
-    minDate={new Date()}
-    isStartDate={true}
-    className="w-full"
-  />
+const renderStepContent = () => {
+  const commonClasses = "bg-white p-8 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg";
+  
+  switch (currentStep) {
+    case 1: // Date selection
+      return (
+        <div className="space-y-6">
+          <div className={`${commonClasses} border-blue-100`}>
+            <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
+              <div className="bg-blue-50 p-3 rounded-full mr-4">
+                <Calendar className="text-blue-600" size={24} />
+              </div>
+              Dates de stationnement
+            </h3>
+            
+            <div className="flex flex-col space-y-8">
+              <CustomDatePicker
+                selected={reservationInfo.startDate}
+                onChange={date => setReservationInfo(prev => ({
+                  ...prev,
+                  startDate: date,
+                  endDate: new Date(date.getTime() + 60 * 60 * 1000) > prev.endDate
+                    ? new Date(date.getTime() + 60 * 60 * 1000)
+                    : prev.endDate
+                }))}
+                label="Date et heure d'arrivée"
+                minDate={new Date()}
+                isStartDate={true}
+                className="w-full transform transition-all focus:scale-105"
+              />
 
-  <CustomDatePicker
-    selected={reservationInfo.endDate}
-    onChange={date => setReservationInfo(prev => ({
-      ...prev,
-      endDate: date
-    }))}
-    label="Date et heure de départ"
-    minDate={new Date(reservationInfo.startDate.getTime() + 60 * 60 * 1000)}
-    className="w-full"
-  />
-</div>
+              <CustomDatePicker
+                selected={reservationInfo.endDate}
+                onChange={date => setReservationInfo(prev => ({
+                  ...prev,
+                  endDate: date
+                }))}
+                label="Date et heure de départ"
+                minDate={new Date(reservationInfo.startDate.getTime() + 60 * 60 * 1000)}
+                className="w-full transform transition-all focus:scale-105"
+              />
+            </div>
 
-                
-                <div className="mt-6 pt-5 border-t-2 border-gray-200">
-                  <div className="flex items-center text-blue-700 mb-3">
-                    <Clock size={20} className="mr-2" />
-                    <span className="font-medium">Durée totale:</span>
-                  </div>
-                  <div className="bg-blue-50/90 text-gray-800 font-semibold p-4 rounded-xl border-2 border-blue-200 shadow-sm">
-                    {(() => {
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <div className="flex items-center text-blue-700 mb-4">
+                <div className="bg-blue-50 p-2 rounded-full mr-3">
+                  <Clock size={20} className="text-blue-600" />
+                </div>
+                <span className="font-semibold text-gray-800">Durée totale</span>
+              </div>
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+              {(() => {
                       const diff = new Date(reservationInfo.endDate) - new Date(reservationInfo.startDate);
                       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -720,60 +724,64 @@ const Reservation = ({ parkingData, onContinue }) => {
                       if (days === 0 && minutes > 0) result.push(`${minutes} minute${minutes > 1 ? 's' : ''}`);
                       
                       return result.join(' et ') || '0 minute';
-                    })()}
-                  </div>
-                </div>
-              </div>
+                    })()}              </div>
             </div>
-          );
-      case 2: // Vehicle type selection
-        return (
-          <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-sm">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <Car className="mr-2 text-blue-500" size={30} />
-              Type de véhicule
+          </div>
+        </div>
+      );
+
+    case 2: // Vehicle type selection
+      return (
+        <div className={`${commonClasses} border-green-100`}>
+          <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
+            <div className="bg-green-50 p-3 rounded-full mr-4">
+              <Car className="text-green-600" size={24} />
+            </div>
+            Type de véhicule
+          </h3>
+          <VehicleTypeSelector 
+            selectedType={reservationInfo.vehicleType}
+            onSelect={(type) => setReservationInfo(prev => ({...prev, vehicleType: type}))}
+          />
+        </div>
+      );
+
+    case 3: // Payment method
+      return (
+        <div className="space-y-6">
+          <div className={`${commonClasses} border-purple-100`}>
+            <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
+              <div className="bg-purple-50 p-3 rounded-full mr-4">
+                <CreditCard className="text-purple-600" size={24} />
+              </div>
+              Méthode de paiement
             </h3>
-            <VehicleTypeSelector 
-              selectedType={reservationInfo.vehicleType}
-              onSelect={(type) => setReservationInfo(prev => ({...prev, vehicleType: type}))}
+            <PaymentMethodSelector
+              selected={paymentMethod}
+              onSelect={setPaymentMethod}
             />
           </div>
-        );
-      
-      case 3: // Payment method
-        return (
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <CreditCard className="mr-2 text-blue-500" size={20} />
-                Méthode de paiement
-              </h3>
-              <PaymentMethodSelector
-                selected={paymentMethod}
-                onSelect={setPaymentMethod}
-              />
-            </div>
-            
-            <div className="bg-blue-50/90 p-5 rounded-xl border-2 border-blue-200 shadow-sm">
-              <div className="flex items-start">
-                <div className="bg-blue-100 p-2 rounded-full mr-3 shadow-sm">
-                  <AlertCircle size={18} className="text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-blue-800 mb-1">Information importante</h4>
-                  <p className="text-blue-600 text-sm">
-                    Le paiement sera effectué sur place. Veuillez vous présenter avec votre QR code pour accéder au parking.
-                  </p>
-                </div>
+
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200">
+            <div className="flex items-start">
+              <div className="bg-white p-3 rounded-full mr-4 shadow-sm">
+                <AlertCircle size={24} className="text-blue-600" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-blue-800 mb-2">Information importante</h4>
+                <p className="text-blue-700 text-sm leading-relaxed">
+                  Le paiement sera effectué sur place. Veuillez vous présenter avec votre QR code pour accéder au parking.
+                </p>
               </div>
             </div>
           </div>
-        );
-      
-      default:
-        return null;
-    }
-  };
+        </div>
+      );
+
+    default:
+      return null;
+  }
+};
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">

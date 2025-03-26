@@ -9,58 +9,58 @@ const About = () => {
     const dataProfile = [
         {
             img: "./../images/pp (2).jpg",
-            name: "Lindsey Siphron",
-            job: "CHIEF VISIONARY"
+            name: "Sarah Mitchell",
+            job: "CEO & FOUNDER"
         },
         {
             img: "./../images/pp (3).jpg",
-            name: "Kaylynn Baptista",
-            job: "KING OF SIGNALS"
+            name: "John Anderson",
+            job: "OPERATIONS MANAGER"
         },
         {
             img: "./../images/pp (4).jpg",
-            name: "Desirae Dokidis",
-            job: "OPERATIONS NINJA"
+            name: "Emily Parker",
+            job: "CUSTOMER SERVICE HEAD"
         },
         {
             img: "./../images/pp (5).jpg",
-            name: "Corey Westervelt",
-            job: "THE ACTION TAKER"
+            name: "Michael Chen",
+            job: "TECHNICAL DIRECTOR"
         },
         {
             img: "./../images/pp (6).jpg",
-            name: "Kierra Lipshutz",
-            job: "FRONT-END WIZARD"
+            name: "Lisa Thompson",
+            job: "MARKETING MANAGER"
         },
         {
             img: "./../images/pp (7).jpg",
-            name: "Desirae Culhane",
-            job: "BACKEND PILOT"
+            name: "David Wilson",
+            job: "SECURITY HEAD"
         },
         {
             img: "./../images/pp (8).jpg",
-            name: "Jaylon Septimus",
-            job: "THE ELECTRIC AVENGER"
+            name: "Rachel Barnes",
+            job: "FACILITY MANAGER"
         },
         {
             img: "./../images/pp (1).jpg",
-            name: "Miracle Kenter",
-            job: "LORD OF WHEELS"
+            name: "James Cooper",
+            job: "FINANCE DIRECTOR"
         },
     ]
     return (
         <Fragment>
-            <HeadTitle title={"Your Ultimate Car Rental <br /> Destination"} sub={"ABOUT US"} />
+            <HeadTitle title={"Your Smart Parking <br /> Solution"} sub={"ABOUT US"} />
 
             <section>
                 <Container>
                     <Row>
                         <Col md={6} className='mb-4 md:my-auto'>
-                            <p className='text__18 mb-2'>GREENER WORLD</p>
-                            <h3 className='font-bold text__48 mb-2'>Wheels on the Go</h3>
-                            <p className='text__18 mb-8 text-[#525252]'>Welcome to our premier car rental website, where adventure meets convenience. Find the perfect wheels for your journey with our wide selection of top-notch vehicles. Whether it's a road trip, business travel, or just cruising in style, we've got you covered. Enjoy hassle-free booking, competitive rates, and exceptional customer service. Get ready to hit the road and make unforgettable memories with our reliable car rental services. Your next adventure starts here!</p>
+                            <p className='text__18 mb-2'>SMART PARKING</p>
+                            <h3 className='font-bold text__48 mb-2'>Efficient Parking Solutions</h3>
+                            <p className='text__18 mb-8 text-[#525252]'>Welcome to Parkini, your ultimate parking solution. We make parking simple and stress-free with our user-friendly booking platform. Find and reserve the perfect parking spot in advance, enjoy competitive rates, and experience hassle-free parking. Our dedicated team ensures your parking needs are met with excellence and reliability.</p>
 
-                            <a href='#!' className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass cursor-pointer">Book a Car</a>
+                            <a href='/Booking' className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass cursor-pointer">Book Now</a>
                         </Col>
                         <Col md={6} className='my-auto'>
                             <img src="./../images/fdhfgh.png" alt="" />
@@ -71,8 +71,8 @@ const About = () => {
 
             <section>
                 <Container>
-                    <p className='text__18 mb-2'>ON-DEMAND, ALL-ELECTRIC</p>
-                    <h3 className='font-bold text__48 mb-8'>The Future of Car rental <br className='hidden sm:block' /> Is Here</h3>
+                    <p className='text__18 mb-2'>SMART FEATURES</p>
+                    <h3 className='font-bold text__48 mb-8'>The Future of Parking <br className='hidden sm:block' /> Is Here</h3>
                     <GridInfo />
                 </Container>
             </section>
@@ -80,8 +80,8 @@ const About = () => {
             <section>
                 <Container>
                     <div className="text-center mb-8">
-                        <p className='text__18 mb-2'>CARENT TEAM</p>
-                        <h3 className='font-bold text__48'>Magic and Dedication <br /> Right Here</h3>
+                        <p className='text__18 mb-2'>OUR TEAM</p>
+                        <h3 className='font-bold text__48'>Experience & Excellence <br /> At Your Service</h3>
                     </div>
 
                     <Row className='gap-y-4'>
@@ -111,32 +111,32 @@ const About = () => {
 
             <section>
                 <Container>
-                    <p className='text__18 mb-2'>ELECTRIC CAR</p>
-                    <h3 className='font-bold text__48 mb-8'>Car rental experience <br /> of the future</h3>
+                    <p className='text__18 mb-2'>KEY FEATURES</p>
+                    <h3 className='font-bold text__48 mb-8'>Smart Parking Features <br /> For Your Convenience</h3>
 
                     <Row className='gap-y-4'>
                         <Col md={6}>
                             <div className="flex items-center gap-2 px-4 py-3 border border-solid border-[#E5E5E5]">
                                 <img src="./../images/mb (3).svg" className='w-[40px] h-[40px]' alt="" />
-                                <h5 className='font-bold text__20'>All-electric. Charging Included.</h5>
+                                <h5 className='font-bold text__20'>24/7 Secure Parking</h5>
                             </div>
                         </Col>
                         <Col md={6}>
                             <div className="flex items-center gap-2 px-4 py-3 border border-solid border-[#E5E5E5]">
                                 <img src="./../images/mb (1).svg" className='w-[40px] h-[40px]' alt="" />
-                                <h5 className='font-bold text__20'>Book, Arrive & Drive in 2 Minutes</h5>
+                                <h5 className='font-bold text__20'>Quick Online Booking</h5>
                             </div>
                         </Col>
                         <Col md={6}>
                             <div className="flex items-center gap-2 px-4 py-3 border border-solid border-[#E5E5E5]">
                                 <img src="./../images/mb (2).svg" className='w-[40px] h-[40px]' alt="" />
-                                <h5 className='font-bold text__20'>You pick up or we deliver</h5>
+                                <h5 className='font-bold text__20'>Flexible Payment Options</h5>
                             </div>
                         </Col>
                         <Col md={6}>
                             <div className="flex items-center gap-2 px-4 py-3 border border-solid border-[#E5E5E5]">
                                 <img src="./../images/mb (4).svg" className='w-[40px] h-[40px]' alt="" />
-                                <h5 className='font-bold text__20'>World-class, Highest Rated</h5>
+                                <h5 className='font-bold text__20'>Premium Customer Support</h5>
                             </div>
                         </Col>
                     </Row>
