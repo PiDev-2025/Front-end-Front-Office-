@@ -1,0 +1,37 @@
+{
+  "name": "@qazarcloud/qaz-client",
+  "version": "1.0.0",
+  "description": "TypeScript client library for QazarCloud API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "qazarcloud",
+    "api",
+    "client",
+    "typescript"
+  ],
+  "author": "QazarCloud",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.7",
+    "date-fns": "^3.3.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.19",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.2.5",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
+  }
+} 
