@@ -384,7 +384,7 @@ const Homepage = () => {
                 <img src="./../images/img (1).png" className='absolute left-0 top-0 w-full h-full object-cover object-top hidden md:block' alt="" />
                 <Container className='relative z-[2] w-full flex flex-col h-full'>
                     <Row className='flex-grow items-center'>
-                        <Col md={5} lg={6} className="mt-8 md:mt-0 mb-6 md:mb-0">
+                        <Col md={6} lg={6} className="mt-8 md:mt-0 mb-6 md:mb-0">
                             <p className='text__18 text-Mgreen mb-2'>CAR PARKING</p>
                             <h1 className='font-bold text__48 text-Mwhite mb-4'>Find Convenient and Affordable Parking</h1>
                             <p className='text__18 text-[#A3A3A3] mb-4 md:mb-0'>Reserve your parking spot by the hour, day, or month with ease. Book in advance or rent your space and enjoy seamless parking in private residential, hotel, or business lots.</p>
@@ -540,7 +540,7 @@ const Homepage = () => {
                                     <button 
                                         onClick={handleSearch}
                                         disabled={isSearching}
-                                        className={`font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8 ${isSearching ? 'opacity-75 cursor-not-allowed' : ''}`}
+                                        className={`font-medium text__16 text-Mwhite rounded-[24px] border-Mblack bg-Mblack hover:bg-Mblack/90 active:bg-Mblack/80 transition-all btnClass w-full md:w-auto px-8 ${isSearching ? 'opacity-75 cursor-not-allowed' : ''}`}
                                     >
                                         {isSearching ? (
                                             <>
@@ -661,7 +661,7 @@ const Homepage = () => {
                                     <button 
                                         onClick={handleSearch}
                                         disabled={isSearching}
-                                        className={`font-medium text__16 text-Mwhite rounded-[24px] border-Mblue bg-Mblue hover:bg-Mblue/90 active:bg-Mblue/80 transition-all btnClass w-full md:w-auto px-8 ${isSearching ? 'opacity-75 cursor-not-allowed' : ''}`}
+                                        className={`font-medium text__16 text-Mwhite rounded-[24px] border-Mblack bg-Mblack hover:bg-Mblack/90 active:bg-Mblack/80 transition-all btnClass w-full md:w-auto px-8 ${isSearching ? 'opacity-75 cursor-not-allowed' : ''}`}
                                     >
                                         {isSearching ? (
                                             <>
@@ -736,7 +736,7 @@ const Homepage = () => {
                             <img src="./../images/sms.svg" alt="" />
                             <Form.Control type="text" className='h-[52px] px-0 text__14 !text-Mblack placeholder:text-[#525252] outline-none bg-transparent border-none shadow-none focus:outline-none focus:bg-transparent focus:border-none focus:shadow-none' placeholder="Enter your email address" />
                         </div>
-                        <div className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass !py-[14px]">Subscribe</div>
+                        <div className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblack bg-Mblack btnClass !py-[14px]">Subscribe</div>
                     </div>
                 </Container>
             </section>
