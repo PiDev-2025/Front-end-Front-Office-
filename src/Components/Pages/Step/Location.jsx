@@ -12,6 +12,8 @@ import "react-datepicker/dist/react-datepicker.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ParkingDetails from "../../../Pages/ParkingDetails";
+import { useLocation } from 'react-router-dom';
+
 
 const mapContainerStyle = { width: "100%", height: "calc(100vh - 90px)" }; // Adjusted for search bar
 const defaultCenter = { lat: 36.8, lng: 10.18 }; // Tunisia center
@@ -202,6 +204,8 @@ const SecLocation = () => {
     const mapContainer = useRef(null);
     const map = useRef(null);
     const searchBoxRef = useRef(null);
+    const routerLocation = useLocation(); // Rename to avoid conflict with our location state
+
     
     // Set today as minimum date for date pickers
     const today = new Date();
@@ -244,7 +248,7 @@ const SecLocation = () => {
     const [address, setAddress] = useState(searchData.address || '');
     const [location, setLocation] = useState(searchData.location || defaultCenter);
     const [isSearching, setIsSearching] = useState(false);
-    const [searchRadius, setSearchRadius] = useState(MAX_DISTANCE_KM);
+    const [searchRadius, setSearchRadius] = useState(5);
     const [tabActiveId, setTabActiveId] = useState(1);
 
 
@@ -264,6 +268,12 @@ const SecLocation = () => {
     const [maxDistance, setMaxDistance] = useState(searchRadius); // Use searchRadius as initial value
     const [filtersApplied, setFiltersApplied] = useState(false);
     const filterPanelRef = useRef(null);
+    const TUNISIA_BOUNDS = {
+        north: 37.5,
+        south: 30.2,
+        west: 7.5,
+        east: 11.6
+    };
 
     // Replace complex filter states with simple sort state
     const [sortBy, setSortBy] = useState("distance"); // "distance" or "price"
@@ -285,56 +295,131 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
     // Get user's current location
-    const getUserLocation = () => {
-        if (navigator.geolocation) {
-            // Options pour une haute précision
-            const options = {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            };
-            
-            // Observer les changements de position
-            const watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const userPos = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    
-                    // Mettre à jour la position dans le state et le contexte
-                    setUserLocation(userPos);
-                    setLocation(userPos);
-                    
-                    // Mettre à jour le marqueur de l'utilisateur
-                    if (map.current && markersRef.current.userMarker) {
-                        markersRef.current.userMarker.setLngLat([userPos.lng, userPos.lat]);
-                    }
-                    
-                    // Si nous avons des parkings filtrés, mettre à jour leurs distances
-                    if (filteredParkings.length > 0) {
-                        const updatedParkings = filterParkingsByLocation(searchRadius);
-                        setFilteredParkings(updatedParkings);
-                    }
-                },
-                (error) => {
-                    console.error("Error getting user location:", error);
-                    alert("Unable to retrieve your location. Please check your browser settings.");
-                },
-                options
-            );
-            
-            // Nettoyer l'observateur quand le composant est démonté
-            return () => navigator.geolocation.clearWatch(watchId);
-        } else {
-            alert("Geolocation is not supported by your browser.");
-        }
+
+
+// Updated getUserLocation function
+const getUserLocation = () => {
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser");
+        return;
+    }
+
+    const options = {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
     };
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const step = parseInt(params.get('step')) || 1;
-        setTabActiveId(step);
-    }, [location]);
+
+    const validateCoordinates = (lat, lng) => {
+        return lat >= TUNISIA_BOUNDS.south && 
+               lat <= TUNISIA_BOUNDS.north && 
+               lng >= TUNISIA_BOUNDS.west && 
+               lng <= TUNISIA_BOUNDS.east;
+    };
+
+    const handleSuccess = (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        // Validate if coordinates are within Tunisia
+        if (!validateCoordinates(lat, lng)) {
+            alert("Location detected is outside Tunisia. Using default location.");
+            setLocation(defaultCenter);
+            setUserLocation(defaultCenter);
+            return;
+        }
+
+        const userPos = {
+            lat: lat,
+            lng: lng,
+            accuracy: position.coords.accuracy
+        };
+
+        // Only update if accuracy is reasonable (less than 100 meters)
+        if (position.coords.accuracy > 100) {
+            alert("Low accuracy location detected. Please check your GPS settings.");
+            return;
+        }
+
+        setUserLocation(userPos);
+        setLocation(userPos);
+
+        // Update map view
+        if (map.current) {
+            map.current.flyTo({
+                center: [userPos.lng, userPos.lat],
+                zoom: 15,
+                duration: 1000
+            });
+
+            // Update user marker
+            if (markersRef.current.userMarker) {
+                markersRef.current.userMarker.setLngLat([userPos.lng, userPos.lat]);
+            } else {
+                const el = document.createElement('div');
+                el.className = 'user-location-marker';
+                el.innerHTML = createCustomMarker('#4A90E2');
+                
+                markersRef.current.userMarker = new mapboxgl.Marker(el)
+                    .setLngLat([userPos.lng, userPos.lat])
+                    .addTo(map.current);
+            }
+        }
+
+        // Reverse geocoding with error handling
+        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${userPos.lng},${userPos.lat}.json?access_token=${mapboxgl.accessToken}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.features && data.features.length > 0) {
+                    const address = data.features[0].place_name;
+                    setAddress(address);
+                    updateSearchData({ 
+                        address: address,
+                        location: userPos
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error during reverse geocoding:', error);
+                alert("Could not fetch address for your location");
+            });
+    };
+
+    const handleError = (error) => {
+        console.error("Error getting user location:", error);
+        let message = "Unable to get your location. ";
+        
+        switch(error.code) {
+            case error.PERMISSION_DENIED:
+                message += "Please enable location services.";
+                break;
+            case error.POSITION_UNAVAILABLE:
+                message += "Location information unavailable.";
+                break;
+            case error.TIMEOUT:
+                message += "Location request timed out.";
+                break;
+            default:
+                message += "An unknown error occurred.";
+        }
+        
+        alert(message);
+        setLocation(defaultCenter);
+        setUserLocation(defaultCenter);
+    };
+
+    // Try to get user location
+    navigator.geolocation.getCurrentPosition(
+        handleSuccess,
+        handleError,
+        options
+    );
+};
+useEffect(() => {
+    const params = new URLSearchParams(routerLocation.search);
+    const step = parseInt(params.get('step')) || 1;
+    setTabActiveId(step);
+}, [routerLocation.search]);
     const handleBooking = async (parking, e) => {
         if (e) {
           e.stopPropagation();
@@ -492,28 +577,7 @@ useEffect(() => {
         // Don't auto-search after first render - let the user trigger searches explicitly
     }, [searchData.location, searchData.address]);
 
-    // Filter parkings by proximity to the selected location
-    const filterParkingsByLocation = (maxDistance = searchRadius) => {
-        if (!userLocation) return [];
-        
-        const results = parkings.filter(parking => {
-            const distance = calculateDistance(
-                userLocation.lat,
-                userLocation.lng,
-                parking.lat,
-                parking.lng
-            );
-            
-            // Ajouter la distance au parking
-            parking.distance = distance + ' km';
-            parking.distanceValue = distance; // Stocker la valeur numérique pour le tri
-            
-            return distance <= maxDistance;
-        });
-        
-        // Trier par distance
-        return results.sort((a, b) => a.distanceValue - b.distanceValue);
-    };
+
 
 // Find name-based matches (as an alternative search method)
 const findNameMatches = (searchTerm) => {
@@ -681,43 +745,43 @@ const findNameMatches = (searchTerm) => {
     
     // Expanded handle search function with validation
     const handleSearch = () => {
-        if (!userLocation) {
-            // Demander la position si non disponible
-            getUserLocation();
+        if (!location) {
+            alert("Please enter a destination");
             return;
         }
         
         setIsSearching(true);
         setHasSearched(true);
         
-        // Mettre à jour le contexte avec les données de recherche
-        updateSearchData({
-            toogleTab,
-            vehicleType,
-            startDate,
-            endDate,
-            startTime,
-            endTime,
-            location: userLocation, // Utiliser la position exacte
-            address
-        });
-        
-        // Filtrer les parkings selon la position exacte
-        setTimeout(() => {
-            setIsSearching(false);
-            let results = filterParkingsByLocation(searchRadius);
-            
-            // Appliquer le tri actuel
-            results = sortParkings(results, sortBy);
-            
-            setFilteredParkings(results);
-            
-            // Ajuster la carte pour montrer les résultats
-            if (results.length > 0 && map.current) {
-                const bounds = new mapboxgl.LngLatBounds()
-                    .extend([userLocation.lng, userLocation.lat]); // Ajouter la position de l'utilisateur
+        try {
+            // Filter parkings based on current search radius
+            const results = parkings.filter(parking => {
+                const distance = calculateDistance(
+                    location.lat,
+                    location.lng,
+                    parking.lat,
+                    parking.lng
+                );
                 
-                // Ajouter tous les parkings aux limites
+                // Add distance information to parking
+                parking.distance = `${distance.toFixed(1)} km`;
+                parking.distanceValue = distance;
+                
+                // Return true if within radius
+                return distance <= searchRadius;
+            });
+    
+            // Sort results based on current sort method
+            const sortedResults = sortParkings(results, sortBy);
+            
+            // Update filtered parkings
+            setFilteredParkings(sortedResults);
+            
+            // Update map view
+            if (map.current && results.length > 0) {
+                const bounds = new mapboxgl.LngLatBounds()
+                    .extend([location.lng, location.lat]);
+                
                 results.forEach(parking => {
                     bounds.extend([parking.lng, parking.lat]);
                 });
@@ -726,16 +790,49 @@ const findNameMatches = (searchTerm) => {
                     padding: 50,
                     duration: 1000
                 });
-            } else if (map.current) {
-                // Si aucun résultat, centrer sur l'utilisateur
-                map.current.flyTo({
-                    center: [userLocation.lng, userLocation.lat],
-                    zoom: 14,
-                    duration: 1000
-                });
             }
-        }, 500);
+            
+            // Update search context
+            updateSearchData({
+                toogleTab,
+                vehicleType,
+                startDate,
+                endDate,
+                startTime,
+                endTime,
+                location: location,
+                address,
+                radius: searchRadius
+            });
+            
+        } catch (error) {
+            console.error('Error during search:', error);
+            setError('Failed to search parkings');
+        } finally {
+            setIsSearching(false);
+        }
     };
+
+// Modify filterParkingsByLocation function
+const filterParkingsByLocation = (targetLat, targetLng, maxDistance = searchRadius) => {
+    if (!targetLat || !targetLng) return [];
+    
+    const results = parkings.filter(parking => {
+        const distance = calculateDistance(
+            targetLat,
+            targetLng,
+            parking.lat,
+            parking.lng
+        );
+        
+        parking.distance = distance.toFixed(1) + ' km';
+        parking.distanceValue = distance;
+        
+        return distance <= maxDistance;
+    });
+    
+    return results.sort((a, b) => a.distanceValue - b.distanceValue);
+};
 
     // Set map center based on context location or default
     useEffect(() => {
@@ -798,40 +895,131 @@ const findNameMatches = (searchTerm) => {
         { id: "very-high", name: "Very high", description: "Mercedes Sprinter, Renault Master, …" },
     ];
 
-    // Handle search radius change
-    const handleRadiusChange = (value) => {
-        setSearchRadius(value);
-        setMaxDistance(value); // Update max distance filter to match radius
+//  handleShowAllParkings function
+const handleShowAllParkings = async () => {
+    try {
+        setLoading(true);
+        setError(null);
         
-        if (location && hasSearched) {
-            let locationResults = filterParkingsByLocation(location.lat, location.lng, value);
+        const response = await axios.get('http://localhost:3001/parkings/parkings');
+        const allParkings = response.data;
+        
+        const formattedParkings = allParkings.map(parking => ({
+            id: parking._id,
+            name: parking.name,
+            description: parking.description,
+            lat: parking.position.lat,
+            lng: parking.position.lng,
+            price: `Dt${parking.pricing.hourly}/hr`,
+            pricingValue: parking.pricing.hourly,
+            totalSpots: parking.totalSpots,
+            availableSpots: parking.availableSpots,
+            location: parking.location || '',
+            weather: parking.weather,
+            distance: '0 km'
+        }));
+        
+        // Reset search-related states
+        setAddress('');
+        setHasSearched(true);
+        setSearchRadius(30);
+        setFilteredParkings(formattedParkings);
+        
+        // Update map bounds to show all parkings
+        if (map.current && formattedParkings.length > 0) {
+            const bounds = new mapboxgl.LngLatBounds();
             
-            // Apply current sort
-            locationResults = sortParkings(locationResults, sortBy);
-            
-            setFilteredParkings(locationResults);
-            
-            // Adjust map bounds
-            if (mapRef && locationResults.length > 0) {
-                const bounds = new window.google.maps.LatLngBounds();
-                bounds.extend(location);
-                locationResults.forEach(parking => {
-                    bounds.extend({ lat: parking.lat, lng: parking.lng });
-                });
-                mapRef.fitBounds(bounds);
-                
-                // Adjust zoom level if needed
-                setTimeout(() => {
-                    if (mapRef.getZoom() > 17) {
-                        mapRef.setZoom(17);
-                    } else if (mapRef.getZoom() < 13) {
-                        mapRef.setZoom(13);
-                    }
-                }, 300);
+            // Clear existing markers
+            if (markersRef.current.parkingMarkers) {
+                markersRef.current.parkingMarkers.forEach(marker => marker.remove());
+                markersRef.current.parkingMarkers = [];
             }
+            
+            // Add new markers
+            formattedParkings.forEach(parking => {
+                bounds.extend([parking.lng, parking.lat]);
+                
+                const el = document.createElement('div');
+                el.className = 'parking-marker';
+                el.innerHTML = createParkingMarkerSVG(
+                    parking.pricingValue,
+                    parking.availableSpots / parking.totalSpots < 0.2
+                );
+                
+                const marker = new mapboxgl.Marker(el)
+                    .setLngLat([parking.lng, parking.lat])
+                    .addTo(map.current);
+                
+                markersRef.current.parkingMarkers.push(marker);
+            });
+            
+            // Fit map to show all markers
+            map.current.fitBounds(bounds, {
+                padding: 50,
+                maxZoom: 13,
+                duration: 1000
+            });
         }
-    };
-
+        
+        // Clear any active routes
+        if (map.current && map.current.getSource('route')) {
+            map.current.removeLayer('route');
+            map.current.removeSource('route');
+        }
+        
+        // Reset states
+        setHoveredParking(null);
+        setActiveParking(null);
+        setLocation(null);
+        
+    } catch (error) {
+        console.error('Error fetching all parkings:', error);
+        setError('Failed to load parkings');
+    } finally {
+        setLoading(false);
+    }
+};
+//  handleRadiusChange function
+const handleRadiusChange = (value) => {
+    setSearchRadius(value);
+    setMaxDistance(value);
+    
+    if (!location) return;
+    
+    // Filter parkings based on new radius
+    const results = parkings.filter(parking => {
+        const distance = calculateDistance(
+            location.lat,
+            location.lng,
+            parking.lat,
+            parking.lng
+        );
+        
+        parking.distance = `${distance.toFixed(1)} km`;
+        parking.distanceValue = distance;
+        return distance <= value;
+    });
+    
+    // Sort results based on current sort method
+    const sortedResults = sortParkings(results, sortBy);
+    setFilteredParkings(sortedResults);
+    
+    // Update map bounds
+    if (map.current && results.length > 0) {
+        const bounds = new mapboxgl.LngLatBounds()
+            .extend([location.lng, location.lat]);
+        
+        results.forEach(parking => {
+            bounds.extend([parking.lng, parking.lat]);
+        });
+        
+        map.current.fitBounds(bounds, {
+            padding: 50,
+            maxZoom: 15,
+            duration: 1000
+        });
+    }
+};
     const handleShowDetails = async (parking, e) => {
         if (e) {
           e.stopPropagation();
@@ -862,8 +1050,8 @@ const findNameMatches = (searchTerm) => {
         } else if (sortMethod === "price") {
             // Sort by price (ascending)
             return [...parkings].sort((a, b) => {
-                const priceA = parseFloat(a.price.replace('Dt', '').replace('/hr', ''));
-                const priceB = parseFloat(b.price.replace('Dt', '').replace('/hr', ''));
+                const priceA = parseFloat(a.price.replace('Dt  ', '').replace('/hr', ''));
+                const priceB = parseFloat(b.price.replace('Dt  ', '').replace('/hr', ''));
                 return priceA - priceB;
             });
         }
@@ -921,25 +1109,28 @@ const findNameMatches = (searchTerm) => {
                         setLocation(userPos);
                         setUserLocation(userPos);
 
-                        // Initialiser la carte avec la position de l'utilisateur
-                        map.current = new mapboxgl.Map({
-                            container: mapContainer.current,
-                            style: 'mapbox://styles/mapbox/streets-v11',
-                            center: [userPos.lng, userPos.lat],
-                            zoom: 15
-                        });
+                        // Ensure map container exists before initializing
+                        if (!map.current && mapContainer.current) {
+                            // Initialiser la carte avec la position de l'utilisateur
+                            map.current = new mapboxgl.Map({
+                                container: mapContainer.current,
+                                style: 'mapbox://styles/mapbox/streets-v11',
+                                center: [userPos.lng, userPos.lat],
+                                zoom: 15
+                            });
 
-                        // Ajouter les contrôles de navigation
-                        map.current.addControl(new mapboxgl.NavigationControl());
+                            // Add controls after map is initialized
+                            map.current.addControl(new mapboxgl.NavigationControl());
 
-                        // Créer le marqueur de l'utilisateur
-                        const el = document.createElement('div');
-                        el.className = 'user-location-marker';
-                        el.innerHTML = createCustomMarker('#4A90E2');
-                        
-                        markersRef.current.userMarker = new mapboxgl.Marker(el)
-                            .setLngLat([userPos.lng, userPos.lat])
-                            .addTo(map.current);
+                            // Create user marker after map is initialized
+                            const el = document.createElement('div');
+                            el.className = 'user-location-marker';
+                            el.innerHTML = createCustomMarker('#4A90E2');
+                            
+                            markersRef.current.userMarker = new mapboxgl.Marker(el)
+                                .setLngLat([userPos.lng, userPos.lat])
+                                .addTo(map.current);
+                        }
 
                         // Reverse geocoding pour obtenir l'adresse
                         fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${userPos.lng},${userPos.lat}.json?access_token=${mapboxgl.accessToken}`)
@@ -962,14 +1153,16 @@ const findNameMatches = (searchTerm) => {
                         const defaultPos = { lat: 36.8, lng: 10.18 };
                         setLocation(defaultPos);
                         
-                        map.current = new mapboxgl.Map({
-                            container: mapContainer.current,
-                            style: 'mapbox://styles/mapbox/streets-v11',
-                            center: [defaultPos.lng, defaultPos.lat],
-                            zoom: 13
-                        });
+                        if (!map.current && mapContainer.current) {
+                            map.current = new mapboxgl.Map({
+                                container: mapContainer.current,
+                                style: 'mapbox://styles/mapbox/streets-v11',
+                                center: [defaultPos.lng, defaultPos.lat],
+                                zoom: 13
+                            });
 
-                        map.current.addControl(new mapboxgl.NavigationControl());
+                            map.current.addControl(new mapboxgl.NavigationControl());
+                        }
                     },
                     {
                         enableHighAccuracy: true,
@@ -980,19 +1173,23 @@ const findNameMatches = (searchTerm) => {
             } else {
                 // Fallback si la géolocalisation n'est pas supportée
                 const defaultPos = { lat: 36.8, lng: 10.18 };
-                map.current = new mapboxgl.Map({
-                    container: mapContainer.current,
-                    style: 'mapbox://styles/mapbox/streets-v11',
-                    center: [defaultPos.lng, defaultPos.lat],
-                    zoom: 13
-                });
+                if (!map.current && mapContainer.current) {
+                    map.current = new mapboxgl.Map({
+                        container: mapContainer.current,
+                        style: 'mapbox://styles/mapbox/streets-v11',
+                        center: [defaultPos.lng, defaultPos.lat],
+                        zoom: 13
+                    });
 
-                map.current.addControl(new mapboxgl.NavigationControl());
+                    map.current.addControl(new mapboxgl.NavigationControl());
+                }
             }
 
+            // Cleanup function
             return () => {
                 if (map.current) {
                     map.current.remove();
+                    map.current = null;
                 }
             };
         }
@@ -1596,13 +1793,13 @@ const createPopupContent = (parking) => {
             <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
                     <span class="text-2xl font-bold text-blue-600">${parking.price}</span>
-                    <span class="text-sm text-gray-500">/hour</span>
+                    <span class="text-sm text-gray-500"></span>
                 </div>
                 <div class="flex items-center gap-1 text-gray-600">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
                               d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
                               d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span class="text-sm">${parking.distance}</span>
@@ -2102,6 +2299,37 @@ useEffect(() => {
         };
     }
 }, [isLoaded]);
+// Ajoutez ces styles dans votre composant
+const buttonStyles = `
+    .action-button {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .action-button::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(39, 28, 28, 0.18);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .action-button:hover::after {
+        transform: translateX(0);
+    }
+`;
+// Ajoutez cette balise style dans votre composant
+useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = buttonStyles;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+}, []);
 
 // Dans le rendu, remplacer le Form.Control par notre nouvelle référence
 // Remplacer la partie de recherche dans le JSX par :
@@ -2124,7 +2352,7 @@ const renderSearchInput = () => (
         ) : (
             <input
                 type="text"
-                className="bg-transparent text-gray-800 text-xs border-none shadow-none h-8 px-0 w-full outline-none"
+                className="bg-transparent outline-none border-none shadow-none..."
                 placeholder="Loading..."
                 disabled
             />
@@ -2171,11 +2399,11 @@ const renderSearchInput = () => (
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end px-4">
                     {/* Destination Input - Update this part */}
       {/* Destination Input */}
-<div className="md:col-span-3">
-    <label className="text-gray-700 text-xs mb-1 block font-medium">Destination</label>
-    <div className="flex items-center gap-2 bg-white px-3 rounded-lg border transition-all hover:border-blue-500 h-10">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="text-gray-500" viewBox="0 0 16 16">
-            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+      <div className="md:col-span-3">
+                        <label className="text-gray-700 text-xs mb-1 block font-medium">Destination</label>
+                        <div className="flex items-center gap-2 bg-white px-3 rounded-lg border transition-all hover:border-blue-500 h-10">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="text-gray-500" viewBox="0 0 16 16">
+                                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
         </svg>
         {renderSearchInput()}
         <button
@@ -2385,8 +2613,9 @@ const renderSearchInput = () => (
 
             {/* Map and Parking List */}
             <div className="flex flex-1 bg-gray-100 overflow-hidden">
-                {/* Sidebar */}
-                <div className="w-1/3 bg-white p-4 overflow-y-auto shadow-lg rounded-l-lg">
+
+{/* Sidebar with Modern Parking List */}
+<div className="w-1/3 bg-gradient-to-br from-gray-50 to-white p-4 overflow-y-auto shadow-lg rounded-l-lg">
                     <h2 className="text-xl font-bold mb-4">🚗 Available Parkings</h2>
                     
                     {loading ? (
@@ -2424,159 +2653,160 @@ const renderSearchInput = () => (
                                 </button>
                             </div>
                         </div>
-                    ) : !hasSearched ? (
-                        <div className="text-gray-500 p-6 text-center bg-gray-50 rounded-lg">
-                            <div className="mb-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" className="mx-auto text-gray-400" viewBox="0 0 16 16">
-                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                                </svg>
+                    ) : !hasSearched && filteredParkings.length === 0 ? (
+        <div className="text-center p-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">No parking spots found</h3>
+            <p className="mt-2 text-gray-500">Try adjusting your search criteria or explore a different area.</p>
+            <div className="mt-6 flex gap-3 justify-center">
+                <button onClick={() => handleRadiusChange(Math.min(searchRadius + 5, 30))} 
+                    className="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l6 0M12 9l0 6" />
+                    </svg>
+                    Increase radius
+                </button>
+                <button onClick={handleShowAllParkings}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    Show all parkings
+                </button>
+            </div>
+        </div>
+    ) : (
+        <div className="space-y-4">
+            {filteredParkings.map(parking => (
+                <div key={parking.id}
+                    className={`group relative overflow-hidden rounded-xl shadow-md transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl
+                        ${hoveredParking === parking.id ? 'ring-2 ring-blue-500 scale-[1.02]' : 'bg-white'}`}
+                    onMouseEnter={() => handleHover(parking)}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={() => handleMarkerClick(parking)}>
+                    
+                    {/* Background gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    
+                    {/* Content Container */}
+                    <div className="p-4">
+                        {/* Header Section */}
+                        <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                        {parking.name}
+                                    </h3>
+                                    <StatusIndicator availability={parking.availableSpots / parking.totalSpots} />
+                                </div>
+                                <p className="text-sm text-gray-500 mt-1">{parking.distance} away</p>
                             </div>
-                            <h3 className="text-lg font-medium">No parking spots found</h3>
-                            <p className="mt-2">
-                                We couldn't find any parking spots near "{address}". 
-                                <br />Try increasing the search radius or trying a different location.
-                            </p>
-                            <div className="mt-4 flex gap-2 justify-center">
-                                <button onClick={() => {
-                                    handleRadiusChange(Math.min(searchRadius + 5, 30));
-                                }} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm">
-                                    Increase radius
-                                </button>
-                                <button onClick={() => {
-                                    setAddress('');
-                                    setFilteredParkings(parkings);
-                                    updateSearchData({ address: '' });
-                                    setHasSearched(false);
-                                }} className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm">
-                                    Show all parkings
-                                </button>
+                            
+                            {/* Favorite Button */}
+                            <button 
+                                className="group-hover:scale-110 transition-transform duration-300"
+                                onClick={(e) => handleFavoriteToggle(parking.id, e)}>
+                                {isFavorite(parking.id) ? (
+                                    <svg className="w-6 h-6 text-red-500 filter drop-shadow-md" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-6 h-6 text-gray-400 hover:text-red-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+
+                        {/* Price and Availability Section */}
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-bold text-blue-600">{parking.price}</span>
+                                <span className="text-sm text-gray-500"></span>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-sm font-medium text-gray-900">
+                                    {parking.availableSpots}/{parking.totalSpots}
+                                </div>
+                                <div className="text-xs text-gray-500">spots available</div>
                             </div>
                         </div>
-                    ) : (
-                        <div className="space-y-4">
-                            {filteredParkings.map(parking => (
-                                <div 
-                                    key={parking.id} 
-                                    className={`p-4 rounded-lg shadow-md transition-all cursor-pointer relative ${
-                                        hoveredParking === parking.id ? 'bg-blue-50 border-l-4 border-blue-500' : 'bg-white'
-                                    }`}
-                                    onMouseEnter={() => handleHover(parking)}
-                                    onMouseLeave={handleMouseLeave} // Utiliser le nouveau gestionnaire
-                                    onClick={() => handleMarkerClick(parking)}
-                                >
-                                    {/* Favorite Button - Updated Here */}
-                                    <button 
-                                        className="absolute top-3 right-3 z-10"
-                                        onClick={(e) => handleFavoriteToggle(parking.id, e)}
-                                    >
-                                        {isFavorite(parking.id) ? (
-                                            // Filled heart for favorites
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M3.172 5.172a4 4 0 0 1 5.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                                            </svg>
-                                        ) : (
-                                            // Outlined heart for non-favorites (updated)
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400 hover:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                            </svg>
-                                        )}
-                                    </button>
-                                    
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <h3 className="text-lg font-semibold">{parking.name}</h3>
-                                            <p className="text-sm text-gray-600">{parking.location}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-sm font-medium text-blue-600">{parking.price}</p>
-                                            <p className="text-xs text-gray-500">{parking.distance}  away</p>
-                                        </div>
-                                    </div>
-                                    <div className="mt-2 space-y-2">
-  {/* Availability section - plus compact */}
-  <div className="flex items-center justify-between">
-    <div className="flex items-center space-x-2">
-      <span className="text-xs text-gray-500">
-        {parking.availableSpots}/{parking.totalSpots} spots
-      </span>
-      <StatusIndicator availability={parking.availableSpots / parking.totalSpots} />
-    </div>
-  </div>
-  
-  {/* Progress bar */}
-  <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-    <div
-      className="h-full transition-all duration-500"
-      style={{ 
-        width: `${(parking.availableSpots / parking.totalSpots) * 100}%`,
-        backgroundColor: (parking.availableSpots / parking.totalSpots) >= 0.5 ? '#22c55e' : 
-                        (parking.availableSpots / parking.totalSpots) >= 0.2 ? '#eab308' : 
-                        '#dc2626'
-      }}
-    />
-  </div>
 
-  {/* Weather section - compact design avec humidité et vent */}
-{parking.weather && (
-  <div className="flex items-center gap-2 mt-2 bg-gray-50 p-2 rounded-md">
-    <div className="w-8 h-8 flex-shrink-0">
-      <img 
-        src={parking.weather.icon}
-        alt="Weather"
-        className="w-full h-full object-contain"
-      />
-    </div>
-    <div className="flex flex-col justify-center">
-      <div className="flex items-center text-xs">
-        <span className="font-medium">{parking.weather.temperature}°C</span>
-        <span className="mx-1.5 text-gray-400">|</span>
-        <span className="text-gray-600">{parking.weather.description}</span>
-      </div>
-      <div className="text-xs text-gray-500">
-        <span>💧 {parking.weather.humidity}%</span>
-        <span className="mx-1.5">•</span>
-        <span>💨 {parking.weather.windSpeed} m/s</span>
-      </div>
-    </div>
-  </div>
-)}
-
-</div>
-
-                                    
-                               {/* Add Details button */}
-                               <div className="mt-3 flex justify-between">
-  <button 
-    className="bg-blue-600 text-black py-1 px-3 rounded-md hover:bg-blue-700 transition text-sm"
-    onClick={(e) => handleShowDetails(parking, e)}
-  >
-    View Details
-  </button>
-
-  <button
-    className="bg-green-600 text-black py-2 px-4 rounded-md hover:bg-green-700 transition text-sm"
-    onClick={(e) => handleBooking(parking, e)}
-  >
-    Book Now
-  </button>
-</div>
-
-
-
-                                    </div>
-                              
-                            ))}
+                        {/* Progress Bar */}
+                        <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
+                            <div className="absolute top-0 left-0 h-full transition-all duration-500 rounded-full"
+                                style={{
+                                    width: `${(parking.availableSpots / parking.totalSpots) * 100}%`,
+                                    backgroundColor: `${(parking.availableSpots / parking.totalSpots) >= 0.5 ? '#22c55e' : 
+                                                     (parking.availableSpots / parking.totalSpots) >= 0.2 ? '#eab308' : '#dc2626'}`,
+                                    boxShadow: `0 0 10px ${(parking.availableSpots / parking.totalSpots) >= 0.5 ? '#22c55e50' : 
+                                               (parking.availableSpots / parking.totalSpots) >= 0.2 ? '#eab30850' : '#dc262650'}`
+                                }}>
+                            </div>
                         </div>
-                    )}
+
+                        {/* Weather Information */}
+                        {parking.weather && (
+                            <div className="flex items-center gap-3 p-2 bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-lg mb-4">
+                                <img src={parking.weather.icon} alt="Weather" className="w-10 h-10 object-contain" />
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-lg font-semibold text-gray-900">
+                                            {parking.weather.temperature}°C
+                                        </span>
+                                        <span className="text-sm text-gray-600">
+                                            {parking.weather.description}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                                        <span>💧 {parking.weather.humidity}%</span>
+                                        <span>💨 {parking.weather.windSpeed} m/s</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-3 relative z-10">
+    <button 
+        onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleShowDetails(parking, e);
+        }}
+        className="flex-1 bg-white border border-blue-500 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium cursor-pointer"
+    >
+        View Details
+    </button>
+    <button 
+        onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleBooking(parking, e);
+        }}
+        className="flex-1 bg-white border border-blue-500 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium cursor-pointer"
+    >
+        Book Now
+    </button>
+</div>
+                    </div>
                 </div>
+            ))}
+        </div>
+    )}
+</div>
 
                 {/* Map container */}
-                <div className="flex-1">
+                <div className="flex-1"></div>
                     <div ref={mapContainer} style={{ width: "100%", height: "calc(100vh - 90px)" }} />
                 </div>
             </div>
-        </div>
+        
+
+       
+
     );
 };
 
