@@ -9,7 +9,7 @@ import { jwtDecode } from "jwt-decode";
 import { EyeIcon, EyeOffIcon, Mail, Lock, User } from "lucide-react-native";
 import React from "react";
 import { SafeAreaView, StyleSheet, Dimensions } from "react-native";
-import { userSignIn } from "./apis/User";
+import { APIClient } from "@/elysia-client/src/client";
 import {
 	emailAtom,
 	jwtAtom,
@@ -30,6 +30,9 @@ interface CustomJwtPayload {
 	ID: string;
 	[key: string]: any;
 }
+
+// Initialize API client
+const apiClient = new APIClient(process.env.API_URL);
 
 function UserSignIn(): React.JSX.Element {
 	const navigation = useNavigation();
@@ -58,27 +61,39 @@ function UserSignIn(): React.JSX.Element {
 
 	const signinUser = async () => {
 		try {
-			if (username && email && password) {
-				const data = await userSignIn(email, password);
-				if (!data) {
-					throw new Error("Failed to sign in");
-				} else {
-					setJwt(data);
-					if (data) {
-						const _jwtDecoded = jwtDecode<CustomJwtPayload>(data);
-						setJwtDecoded(_jwtDecoded);
-						if (_jwtDecoded.ID) {
-							setUserID(_jwtDecoded.ID);
-						}
+			if (email && password) {
+				console.log('Attempting to sign in with:', { email });
+				await apiClient.signIn({ email, password });
+				const token = apiClient.getToken();
+				if (token) {
+					setJwt(token);
+					const _jwtDecoded = jwtDecode<CustomJwtPayload>(token);
+					setJwtDecoded(_jwtDecoded);
+					if (_jwtDecoded.ID) {
+						setUserID(_jwtDecoded.ID);
 					}
+					navigation.navigate("SympathyWorld" as never);
+				} else {
+					throw new Error("No token received");
 				}
-				navigation.navigate("SympathyWorld" as never);
 			} else {
 				setError("Please fill in all fields");
 			}
 		} catch (error) {
 			console.error("Error signing in:", error);
-			setError("Invalid email or password");
+			if (error instanceof Error) {
+				if (error.message.includes('Network request failed')) {
+					setError("Unable to connect to the server. Please check your internet connection and try again.");
+				} else if (error.message.includes('HTTP error! status: 401')) {
+					setError("Invalid email or password");
+				} else if (error.message.includes('HTTP error! status: 404')) {
+					setError("Server not found. Please try again later.");
+				} else {
+					setError(error.message);
+				}
+			} else {
+				setError("An unexpected error occurred. Please try again.");
+			}
 		}
 	};
 

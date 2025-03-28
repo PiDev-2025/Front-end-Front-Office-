@@ -9,7 +9,7 @@ import { jwtDecode } from "jwt-decode";
 import { EyeIcon, EyeOffIcon, Mail, Lock, User } from "lucide-react-native";
 import React from "react";
 import { SafeAreaView, StyleSheet } from "react-native";
-import { userSignUp } from "./apis/User";
+import { APIClient } from "@/elysia-client/src/client";
 import {
 	emailAtom,
 	jwtAtom,
@@ -29,6 +29,9 @@ interface CustomJwtPayload {
 	ID: string;
 	[key: string]: any;
 }
+
+// Initialize API client
+const apiClient = new APIClient(process.env.API_URL);
 
 function UserSignUp(): React.JSX.Element {
 	const navigation = useNavigation();
@@ -57,16 +60,15 @@ function UserSignUp(): React.JSX.Element {
 	const signupUser = async () => {
 		try {
 			if (username && email && password) {
-				const data = await userSignUp(username, email, password);
-				if (!data) {
-					throw new Error("Failed to sign up");
-				} else {
-					setJwt(data);
-					if (data) {
-						const _jwtDecoded = jwtDecode<CustomJwtPayload>(data);
-						setJwtDecoded(_jwtDecoded);
-					}
+				await apiClient.signUp({ email, password, name: username });
+				const token = apiClient.getToken(); // You'll need to add this method to the client
+				if (token) {
+					setJwt(token);
+					const _jwtDecoded = jwtDecode<CustomJwtPayload>(token);
+					setJwtDecoded(_jwtDecoded);
 					navigation.navigate("UserProfile" as never);
+				} else {
+					throw new Error("No token received");
 				}
 			} else {
 				setError("Please fill in all fields");
