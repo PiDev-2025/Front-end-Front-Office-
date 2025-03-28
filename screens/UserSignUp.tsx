@@ -9,7 +9,7 @@ import { jwtDecode } from "jwt-decode";
 import { EyeIcon, EyeOffIcon, Mail, Lock, User } from "lucide-react-native";
 import React from "react";
 import { SafeAreaView, StyleSheet } from "react-native";
-import { APIClient } from "@/elysia-client/src/client";
+import { APIClient } from "@/ts-elysia-client/src/client";
 import {
 	emailAtom,
 	jwtAtom,
@@ -31,7 +31,7 @@ interface CustomJwtPayload {
 }
 
 // Initialize API client
-const apiClient = new APIClient(process.env.API_URL);
+// const apiClient = new APIClient(process.env.API_URL);
 
 function UserSignUp(): React.JSX.Element {
 	const navigation = useNavigation();

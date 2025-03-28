@@ -1,19 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, Pressable } from 'react-native';
+import { View, FlatList, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { APIClient } from '@/elysia-client/src/client';
+import { ElysiaClient, Chat } from 'ts-elysia-client';
 import { useAtom } from 'jotai';
 import { jwtDecodedAtom } from '../../states/user';
 import { Text } from "@/components/ui/text";
 import { Box } from "@/components/ui/box";
 import { MessageSquare, User } from 'lucide-react-native';
-
-interface ChatRoom {
-	id: string;
-	userId1: string;
-	userId2: string;
-	messages: any[];
-}
 
 type RootStackParamList = {
 	Chat: {
@@ -28,12 +21,13 @@ type NavigationProp = {
 	navigate: (screen: keyof RootStackParamList, params?: any) => void;
 };
 
-const apiClient = new APIClient(process.env.API_URL);
+const client = ElysiaClient.getInstance();
 
 export const ChatList: React.FC = () => {
 	const navigation = useNavigation<NavigationProp>();
-	const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+	const [chatRooms, setChatRooms] = useState<Chat[]>([]);
 	const [jwtDecoded] = useAtom(jwtDecodedAtom);
+	const [refreshing, setRefreshing] = useState(false);
 	const myUserId = jwtDecoded ? (jwtDecoded as any).ID.split(":")[1] : null;
 
 	useEffect(() => {
@@ -42,20 +36,24 @@ export const ChatList: React.FC = () => {
 
 	const loadChatRooms = async () => {
 		try {
-			// In a real app, you would fetch the user's chat rooms
-			// For now, we'll create a sample room
 			if (myUserId) {
-				const room = await apiClient.createChatRoom(myUserId, "other-user-id");
-				setChatRooms([room]);
+				const rooms = await client.getUserChats(myUserId);
+				setChatRooms(rooms);
 			}
 		} catch (error) {
 			console.error('Error loading chat rooms:', error);
 		}
 	};
 
-	const renderItem = ({ item }: { item: ChatRoom }) => {
-		const otherUserId = item.userId1 === myUserId ? item.userId2 : item.userId1;
-		const lastMessage = item.messages[item.messages.length - 1];
+	const onRefresh = async () => {
+		setRefreshing(true);
+		await loadChatRooms();
+		setRefreshing(false);
+	};
+
+	const renderItem = ({ item }: { item: Chat }) => {
+		const otherUserId = item.participants.find(id => id !== myUserId) || '';
+		const lastMessage = item.lastMessage;
 
 		return (
 			<Pressable
@@ -78,7 +76,7 @@ export const ChatList: React.FC = () => {
 				</Box>
 				{lastMessage && (
 					<Text className="text-xs text-gray-400">
-						{new Date(lastMessage.timestamp).toLocaleDateString()}
+						{new Date(lastMessage.createdAt).toLocaleDateString()}
 					</Text>
 				)}
 			</Pressable>
@@ -95,6 +93,9 @@ export const ChatList: React.FC = () => {
 				renderItem={renderItem}
 				keyExtractor={(item) => item.id}
 				contentContainerStyle={styles.list}
+				refreshControl={
+					<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+				}
 			/>
 		</View>
 	);

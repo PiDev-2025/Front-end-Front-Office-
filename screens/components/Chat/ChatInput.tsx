@@ -1,83 +1,74 @@
-import * as React from "react";
-import {
-	Image,
-	StyleSheet,
-	Text,
-	TextInput,
-	TouchableOpacity,
-	View,
-} from "react-native";
-import { aKeyboardVisible } from "../../states/chat";
-import { ChatInputProps } from "./types";
+import React, { useState } from 'react';
+import { View, TextInput, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { Send } from 'lucide-react-native';
+import { Box } from "@/components/ui/box";
+import { Text } from "@/components/ui/text";
+import { ChatInputProps } from './types';
+
 export const ChatInput: React.FC<ChatInputProps> = ({ onSend }) => {
-	const [message, setMessage] = React.useState("");
-	const [keyboardVisible, setKeyboardVisible] =
-		useRecoilState(aKeyboardVisible);
+	const [message, setMessage] = useState('');
+	const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
 	const handleSend = () => {
 		if (message.trim()) {
 			onSend(message);
-			setMessage("");
+			setMessage('');
 		}
 	};
 
 	return (
-		<View style={styles.inputContainer}>
-			<View style={styles.inputWrapper}>
+		<Box className="p-4 border-t border-gray-100 bg-white">
+			<View style={styles.container}>
 				<TextInput
 					style={styles.input}
-					placeholder="Écrire un message"
 					value={message}
 					onChangeText={setMessage}
+					placeholder="Type a message..."
+					placeholderTextColor="#94a3b8"
 					multiline
-					accessibilityLabel="Message input field"
-					// onPressIn={() => setKeyrboardVisible(true)}
+					onFocus={() => setKeyboardVisible(true)}
+					onBlur={() => setKeyboardVisible(false)}
 				/>
+				<TouchableOpacity
+					onPress={handleSend}
+					style={[
+						styles.sendButton,
+						!message.trim() && styles.sendButtonDisabled
+					]}
+				>
+					<Send size={20} color={message.trim() ? '#6366f1' : '#94a3b8'} />
+				</TouchableOpacity>
 			</View>
-			<TouchableOpacity onPress={handleSend} style={styles.sendButton}>
-				<Image
-					source={{
-						uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/5f03c393f3102fd6c48d1b3bdfcffdff60c97615900b5cced378de053843dd63?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-					}}
-					style={styles.sendIcon}
-					resizeMode="contain"
-				/>
-				<Text style={styles.sendText}>Envoyer</Text>
-			</TouchableOpacity>
-		</View>
+		</Box>
 	);
 };
 
 const styles = StyleSheet.create({
-	inputContainer: {
-		borderTopWidth: 1,
-		borderTopColor: "#D9D9D9",
-		padding: 18,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		maxHeight: 100,
-	},
-	inputWrapper: {
-		flex: 1,
-		marginRight: 15,
-	},
-	input: {
-		fontFamily: "Archivo",
-		fontSize: 14,
-		color: "#919191",
-	},
-	sendButton: {
-		flexDirection: "row",
-		alignItems: "center",
+	container: {
+		flexDirection: 'row',
+		alignItems: 'flex-end',
 		gap: 8,
 	},
-	sendIcon: {
-		width: 20,
-		height: 20,
+	input: {
+		flex: 1,
+		minHeight: 40,
+		maxHeight: 120,
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		backgroundColor: '#f1f5f9',
+		borderRadius: 20,
+		fontSize: 16,
+		color: '#1e293b',
 	},
-	sendText: {
-		fontSize: 12,
-		fontWeight: "700",
-		color: "#919191",
+	sendButton: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		backgroundColor: '#f1f5f9',
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	sendButtonDisabled: {
+		opacity: 0.5,
 	},
 });

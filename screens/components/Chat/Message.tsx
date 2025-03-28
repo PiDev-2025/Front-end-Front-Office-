@@ -1,16 +1,16 @@
 import * as React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
-import { jwtDecodedState } from "../../states/user";
+import { jwtDecodedAtom } from "../../states/user";
 import { MessageProps } from "./types";
+import { useAtom } from "jotai";
+
 export const Message: React.FC<MessageProps> = ({
 	avatar,
 	message,
-	senderId,
-	isoTimeStamp,
+	username,
 	timestamp,
+	isOutgoing,
 }) => {
-	const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
-	const isOutgoing = senderId === jwtDecoded.ID.split(":")[1] ? true : false;
 	const containerStyle = isOutgoing
 		? styles.outgoingContainer
 		: styles.incomingContainer;
@@ -31,13 +31,13 @@ export const Message: React.FC<MessageProps> = ({
 								resizeMode="contain"
 							/>
 						)}
-						<Text style={styles.username}>{senderId}</Text>
+						<Text style={styles.username}>{username}</Text>
 					</View>
 				)}
 				<View style={messageStyle}>
 					<Text style={textStyle}>{message}</Text>
 				</View>
-				<Text style={styles.timestamp}>{isoTimeStamp}</Text>
+				<Text style={styles.timestamp}>{timestamp}</Text>
 			</View>
 		</View>
 	);

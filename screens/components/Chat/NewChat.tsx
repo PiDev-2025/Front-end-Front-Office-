@@ -38,9 +38,9 @@ import {
 } from "lucide-react-native";
 import React from "react";
 import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { useAtom } from 'jotai';
+import { jwtAtom, jwtDecodedAtom } from '../../states/user';
 import { sChats1V1Rooms } from "../../states/chat";
-import { jwtDecodedState, jwtState } from "../../states/user";
 
 interface MessageItemProps {
 	room: string;
@@ -276,8 +276,8 @@ const NewChat_Item: React.FC<MessageItemProps> = ({ item }) => {
 	);
 };
 const NewChat: React.FC = () => {
-	const [jwt, setJwt] = useRecoilState(jwtState);
-	const [jwtDecoded, setJwtDecoded] = useRecoilState(jwtDecodedState);
+	const [jwt] = useAtom(jwtAtom);
+	const [jwtDecoded] = useAtom(jwtDecodedAtom);
 	const [searchQuery, setSearchQuery] = React.useState("");
 	const rooms1V1 = useRecoilValue(sChats1V1Rooms);
 	const filteredRooms1V1 = rooms1V1.filter((msg) =>

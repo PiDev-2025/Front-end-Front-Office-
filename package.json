@@ -70,7 +70,6 @@
     "nativewind": "^4.1.23",
     "pocketbase": "^0.25.2",
     "posthog-react-native": "^3.6.1",
-    "qct-cli": "file:elysia-client",
     "react": "18.3.1",
     "react-dom": "^19.0.0",
     "react-native": "0.76.2",
@@ -92,11 +91,11 @@
     "react-native-svg": "^15.11.2",
     "react-native-tab-view": "^4.0.5",
     "react-native-vector-icons": "^10.2.0",
-    "recoil": "^0.7.7",
     "styled-components": "^6.1.15",
     "surrealdb": "^1.2.1",
     "tailwind-merge": "^2.5.5",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "ts-elysia-client": "file:ts-elysia-client"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

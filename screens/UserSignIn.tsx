@@ -9,7 +9,7 @@ import { jwtDecode } from "jwt-decode";
 import { EyeIcon, EyeOffIcon, Mail, Lock, User } from "lucide-react-native";
 import React from "react";
 import { SafeAreaView, StyleSheet, Dimensions } from "react-native";
-import { APIClient } from "@/elysia-client/src/client";
+import { ElysiaClient } from "ts-elysia-client/src/client";
 import {
 	emailAtom,
 	jwtAtom,
@@ -31,9 +31,6 @@ interface CustomJwtPayload {
 	[key: string]: any;
 }
 
-// Initialize API client
-const apiClient = new APIClient(process.env.API_URL);
-
 function UserSignIn(): React.JSX.Element {
 	const navigation = useNavigation();
 	const [username, setUsername] = useAtom(usernameAtom);
@@ -45,6 +42,11 @@ function UserSignIn(): React.JSX.Element {
 	const [showPassword, setShowPassword] = React.useState(false);
 	const [error, setError] = React.useState<string | null>(null);
 	const [gradientStyle, setGradientStyle] = React.useState(getRandomProfessionalStyle());
+	const apiClient = React.useMemo(() => {
+		const client = ElysiaClient.getInstance();
+		client.setEnvironment('production');
+		return client;
+	}, []);
 
 	React.useEffect(() => {
 		// Change gradient every 5 seconds
@@ -63,8 +65,8 @@ function UserSignIn(): React.JSX.Element {
 		try {
 			if (email && password) {
 				console.log('Attempting to sign in with:', { email });
-				await apiClient.signIn({ email, password });
-				const token = apiClient.getToken();
+				const response = await apiClient.signIn(email, password);
+				const token = response.jwt;
 				if (token) {
 					setJwt(token);
 					const _jwtDecoded = jwtDecode<CustomJwtPayload>(token);

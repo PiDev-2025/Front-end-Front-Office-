@@ -1,18 +1,14 @@
-import { useFocusEffect, useRoute } from "@react-navigation/native";
-import React from "react";
-import {
-	KeyboardAvoidingView,
-	Platform,
-	ScrollView,
-	StyleSheet,
-	View,
-} from "react-native";
-import { APIClient } from "@/elysia-client/src/client";
-import { useAtom } from "jotai";
-import { jwtDecodedAtom, jwtAtom } from "../../states/user";
-import { ChatHeader } from "./ChatHeader";
-import { ChatInput } from "./ChatInput";
-import { Message } from "./Message";
+import React, { useEffect, useState, useRef } from 'react';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { useRoute } from '@react-navigation/native';
+import { ElysiaClient, ChatMessage } from 'ts-elysia-client';
+import { useAtom } from 'jotai';
+import { jwtDecodedAtom } from '../../states/user';
+import { Text } from "@/components/ui/text";
+import { Box } from "@/components/ui/box";
+import { Message } from './Message';
+import { ChatInput } from './ChatInput';
+import { ChatHeader } from './ChatHeader';
 
 interface RouteParams {
 	room: string;
@@ -21,73 +17,67 @@ interface RouteParams {
 	}>;
 }
 
-interface JwtDecoded {
-	ID: string;
-	[key: string]: any;
-}
-
-// Initialize API client
-const apiClient = new APIClient(process.env.API_URL);
+const client = ElysiaClient.getInstance();
 
 export const ChatScreen: React.FC = () => {
 	const route = useRoute();
 	const { room, usersInRoom } = route.params as RouteParams;
-	console.log(`roomId:${room}`);
-	const [jwt] = useAtom(jwtAtom);
-	console.log(`jwt:${jwt}`);
-	const [messages, setMessages] = React.useState<any[]>([]);
-	const [jwtDecoded, setJwtDecoded] = useAtom(jwtDecodedAtom);
-	const myUserId = jwtDecoded ? (jwtDecoded as JwtDecoded).ID.split(":")[1] : null;
+	const [messages, setMessages] = useState<ChatMessage[]>([]);
+	const [jwtDecoded] = useAtom(jwtDecodedAtom);
+	const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+	const scrollViewRef = useRef<ScrollView>(null);
+	const myUserId = jwtDecoded ? (jwtDecoded as any).ID.split(":")[1] : null;
 	const otherUserId = usersInRoom[0].userId2;
 	console.log(`myUserId:${myUserId}`, `otherUserId:${otherUserId}`);
-	const scrollViewRef = React.useRef<ScrollView>(null);
 
-	const handleSend = async (message: string) => {
-		if (!myUserId) {
-			console.error('User ID not available');
-			return;
-		}
+	useEffect(() => {
+		loadMessages();
+	}, [room]);
 
-		const now = new Date();
-		console.log(now, now.toISOString());
-		const msg = {
-			message,
-			isoTimeStamp: now.toISOString(),
-			senderId: myUserId,
-			timestamp: now.getTime(),
+	useEffect(() => {
+		const keyboardDidShowListener = Keyboard.addListener(
+			Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+			() => {
+				setKeyboardVisible(true);
+			}
+		);
+		const keyboardDidHideListener = Keyboard.addListener(
+			Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+			() => {
+				setKeyboardVisible(false);
+			}
+		);
+
+		return () => {
+			keyboardDidShowListener.remove();
+			keyboardDidHideListener.remove();
 		};
-		
+	}, []);
+
+	const loadMessages = async () => {
 		try {
-			const response = await apiClient.sendMessage(room, msg);
-			console.log('Message sent:', response);
-			setMessages(prev => [...prev, response]);
+			const msgs = await client.getMessages(room, 50, 0, 0);
+			setMessages(msgs);
 		} catch (error) {
-			console.error('Error sending message:', error);
+			console.error('Error loading messages:', error);
 		}
 	};
 
-	const [keyboardVisible, setKeyboardVisible] = React.useState(false);
+	const handleSend = async (message: string) => {
+		if (!message.trim() || !myUserId) return;
 
-	useFocusEffect(
-		React.useCallback(() => {
-			console.log("Component is focused");
-			const intervalId = setInterval(async () => {
-				await handleRefresh();
-			}, 4000);
-
-			return () => {
-				console.log("Component is unfocused");
-				clearInterval(intervalId);
-			};
-		}, [])
-	);
-
-	const handleRefresh = async () => {
 		try {
-			const newMessages = await apiClient.getMessages(room, 0, 50);
-			setMessages(newMessages);
+			const msg: ChatMessage = {
+				chatId: room,
+				senderId: myUserId,
+				message: message.trim(),
+				createdAt: new Date().toISOString()
+			};
+			const sentMsg = await client.sendMessage(msg);
+			setMessages(prev => [...prev, sentMsg]);
+			scrollViewRef.current?.scrollToEnd({ animated: true });
 		} catch (error) {
-			console.error('Error refreshing messages:', error);
+			console.error('Error sending message:', error);
 		}
 	};
 
@@ -100,26 +90,25 @@ export const ChatScreen: React.FC = () => {
 				onNotificationsPress={() => {}}
 				onMenuPress={() => {}}
 			/>
-			<ScrollView
-				onScroll={() => setKeyboardVisible(false)}
-				style={styles.content}
-				contentContainerStyle={{ flexGrow: 1 }}
-				ref={scrollViewRef}
-				onContentSizeChange={() =>
-					scrollViewRef.current?.scrollToEnd({ animated: true })
-				}
-			>
-				{messages.map((msg, index) => (
-					<Message key={index} {...msg} />
-				))}
-			</ScrollView>
-			<KeyboardAvoidingView
-				behavior={Platform.OS === "ios" ? "padding" : "height"}
-				style={styles.keyboardAvoidingView}
-				keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
-			>
+			<Box className="flex-1 bg-gray-50">
+				<ScrollView
+					ref={scrollViewRef}
+					className="flex-1 p-4"
+					onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+					onLayout={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+				>
+					{messages.map((msg, index) => (
+						<Message
+							key={index}
+							message={msg.message}
+							username={msg.senderId === myUserId ? "You" : `User ${msg.senderId}`}
+							timestamp={msg.createdAt}
+							isOutgoing={msg.senderId === myUserId}
+						/>
+					))}
+				</ScrollView>
 				<ChatInput onSend={handleSend} />
-			</KeyboardAvoidingView>
+			</Box>
 		</View>
 	);
 };
