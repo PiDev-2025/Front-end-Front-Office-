@@ -1,5 +1,5 @@
 import React, { memo, useState } from "react";
-import { StyleSheet, Platform, PermissionsAndroid, NativeModules, ScrollView } from "react-native";
+import { StyleSheet, Platform, PermissionsAndroid, NativeModules, ScrollView, Modal, View } from "react-native";
 import { useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import LinearGradient from 'react-native-linear-gradient';
@@ -34,7 +34,10 @@ import {
     Lightbulb,
     Coffee,
     Sparkles,
-    LucideIcon 
+    LucideIcon,
+    Pen,
+    Mic,
+    X
 } from "lucide-react-native";
 import { MoodChart } from './MoodChart';
 
@@ -120,6 +123,7 @@ const MoodLab = memo(() => {
     const [recordPath, setRecordPath] = useState('');
     const [textNote, setTextNote] = useState('');
     const [activeTab, setActiveTab] = useState<'good' | 'neutral' | 'bad'>('good');
+    const [showTextDialog, setShowTextDialog] = useState(false);
     const toast = useToast();
 
     const currentMoodStyle = getMoodStyle(currentMood);
@@ -405,29 +409,88 @@ const MoodLab = memo(() => {
                                         <Text size="sm" style={{ color: "#ffffff" }} className="mb-2">
                                             Note (optionnel)
                                         </Text>
-                                        <VStack space="sm">
-                                            <Input>
-                                                <InputField
-                                                    value={textNote}
-                                                    onChangeText={setTextNote}
-                                                    placeholder="Écrivez votre note ici..."
-                                                    style={{ color: "#ffffff" }}
-                                                    placeholderTextColor="#ffffff80"
-                                                />
-                                            </Input>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onPress={isRecording ? onStopRecord : onStartRecord}
-                                                style={{
-                                                    borderColor: "#ffffff",
-                                                }}
+                                        <HStack space="md" className="justify-center">
+                                            <Pressable
+                                                onPress={() => setShowTextDialog(true)}
+                                                className={`px-6 py-3 rounded-full ${textNote ? 'bg-white/20' : 'bg-white/10'}`}
+                                                style={{ minWidth: 100 }}
                                             >
-                                                <ButtonText style={{ color: "#ffffff" }}>
-                                                    {isRecording ? 'Arrêter l\'enregistrement' : 'Enregistrer une note vocale'}
-                                                </ButtonText>
-                                            </Button>
-                                        </VStack>
+                                                <HStack space="sm" style={{ alignItems: 'center' }}>
+                                                    <Pen size={20} color={textNote ? "#ffffff" : "#ffffff80"} />
+                                                    <Text size="md" style={{ color: textNote ? '#ffffff' : '#ffffff80' }}>
+                                                        Texte
+                                                    </Text>
+                                                </HStack>
+                                            </Pressable>
+                                            <Pressable
+                                                onPress={isRecording ? onStopRecord : onStartRecord}
+                                                className={`px-6 py-3 rounded-full ${isRecording ? 'bg-red-500/20' : 'bg-white/10'}`}
+                                                style={{ minWidth: 100 }}
+                                            >
+                                                <HStack space="sm" style={{ alignItems: 'center' }}>
+                                                    <Mic 
+                                                        size={20} 
+                                                        color={isRecording ? "#ef4444" : "#ffffff80"} 
+                                                    />
+                                                    <Text 
+                                                        size="md" 
+                                                        style={{ 
+                                                            color: isRecording ? '#ef4444' : '#ffffff80'
+                                                        }}
+                                                    >
+                                                        Audio
+                                                    </Text>
+                                                </HStack>
+                                            </Pressable>
+                                        </HStack>
+
+                                        {/* Text Note Modal */}
+                                        <Modal
+                                            visible={showTextDialog}
+                                            transparent
+                                            animationType="fade"
+                                            onRequestClose={() => setShowTextDialog(false)}
+                                        >
+                                            <View style={styles.modalOverlay}>
+                                                <Card className="p-6 rounded-xl bg-white" style={styles.modalContent}>
+                                                    <VStack space="md" style={{ height: '100%' }}>
+                                                        <HStack space="md" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                                                            <Text size="lg" style={{ color: "#1a1c2e" }}>
+                                                                Ajouter une note
+                                                            </Text>
+                                                            <Pressable onPress={() => setShowTextDialog(false)}>
+                                                                <X size={24} color="#1a1c2e" />
+                                                            </Pressable>
+                                                        </HStack>
+                                                        
+                                                        <Input style={{ flex: 1 }}>
+                                                            <InputField
+                                                                value={textNote}
+                                                                onChangeText={setTextNote}
+                                                                placeholder="Écrivez votre note ici..."
+                                                                multiline
+                                                                numberOfLines={4}
+                                                                style={{ 
+                                                                    color: "#1a1c2e",
+                                                                    textAlignVertical: 'top',
+                                                                    height: '100%'
+                                                                }}
+                                                                placeholderTextColor="#1a1c2e80"
+                                                            />
+                                                        </Input>
+
+                                                        <Button
+                                                            variant="outline"
+                                                            onPress={() => setShowTextDialog(false)}
+                                                        >
+                                                            <ButtonText style={{ color: "#1a1c2e" }}>
+                                                                Fermer
+                                                            </ButtonText>
+                                                        </Button>
+                                                    </VStack>
+                                                </Card>
+                                            </View>
+                                        </Modal>
                                     </Box>
 
                                     <Button
@@ -489,6 +552,20 @@ const styles = StyleSheet.create({
         top: 0,
         bottom: 0,
         zIndex: 0,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '100%',
+        height: '40%',
+        margin: 0,
+        borderRadius: 20,
+        position: 'absolute',
+        top: '30%',
     },
 });
 
