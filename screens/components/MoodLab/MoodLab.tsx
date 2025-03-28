@@ -1,9 +1,12 @@
 import React, { memo, useState } from "react";
-import { StyleSheet, Platform, PermissionsAndroid, NativeModules, Pressable } from "react-native";
+import { StyleSheet, Platform, PermissionsAndroid, NativeModules, ScrollView } from "react-native";
 import { useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import LinearGradient from 'react-native-linear-gradient';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+
+// Import styles
+import { moodOptions, emotionOptions, getMoodStyle, getEmotionStyle } from "@/screens/styles/moodLabStyles";
 
 // Individual GlueStack UI imports from components/ui
 import { Box } from "@/components/ui/box";
@@ -15,7 +18,7 @@ import { VStack } from "@/components/ui/vstack";
 import { Progress, ProgressFilledTrack } from "@/components/ui/progress";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Input, InputField } from "@/components/ui/input";
-import { Checkbox, CheckboxIndicator } from "@/components/ui/checkbox";
+import { Pressable } from "@/components/ui/pressable";
 import { 
     Smile, 
     Frown, 
@@ -32,6 +35,7 @@ import {
     Sparkles,
     LucideIcon 
 } from "lucide-react-native";
+import { MoodChart } from './MoodChart';
 
 // Types
 interface MoodEntry {
@@ -49,57 +53,14 @@ const currentMoodAtom = atomWithStorage<number>("currentMood", 50);
 // Audio recorder instance
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
-// Mood options with icons
-const MOOD_OPTIONS = [
-    { value: 0, icon: Angry, label: "Very Bad" },
-    { value: 20, icon: Frown, label: "Bad" },
-    { value: 40, icon: Meh, label: "Neutral" },
-    { value: 60, icon: Smile, label: "Good" },
-    { value: 80, icon: Laugh, label: "Very Good" },
-    { value: 100, icon: Heart, label: "Excellent" }
-];
-
-// Emotion options with icons
-const EMOTION_OPTIONS = [
-    { id: "smart", icon: Brain, label: "Smart" },
-    { id: "excited", icon: Zap, label: "Excited" },
-    { id: "energized", icon: Star, label: "Energized" },
-    { id: "focused", icon: Target, label: "Focused" },
-    { id: "creative", icon: Lightbulb, label: "Creative" },
-    { id: "calm", icon: Coffee, label: "Calm" },
-    { id: "happy", icon: Smile, label: "Happy" },
-    { id: "confident", icon: Sparkles, label: "Confident" },
-    { id: "peaceful", icon: Heart, label: "Peaceful" },
-    { id: "grateful", icon: Star, label: "Grateful" }
-];
-
 // Mood Card Component
 interface MoodCardProps {
     entry: MoodEntry;
 }
 
 const MoodCard = memo(({ entry }: MoodCardProps) => {
-    const getMoodIcon = (value: number) => {
-        if (value >= 70) return Smile;
-        if (value <= 30) return Frown;
-        return Meh;
-    };
-
-    const getMoodColor = (value: number) => {
-        if (value >= 70) return "#22C55E"; // Green
-        if (value <= 30) return "#EF4444"; // Red
-        return "#F59E0B"; // Yellow
-    };
-
-    const getMoodGradient = (value: number) => {
-        if (value >= 70) return ["#22C55E", "#16A34A", "#15803D"];
-        if (value <= 30) return ["#EF4444", "#DC2626", "#B91C1C"];
-        return ["#F59E0B", "#D97706", "#B45309"];
-    };
-
-    const Icon = getMoodIcon(entry.value);
-    const color = getMoodColor(entry.value);
-    const gradient = getMoodGradient(entry.value);
+    const moodStyle = getMoodStyle(entry.value);
+    const Icon = moodOptions.find(m => m.value === entry.value)?.icon || Meh;
 
     return (
         <Card className="py-5 pr-5 rounded-lg my-3 relative bg-white/10 border-white/20">
@@ -116,19 +77,19 @@ const MoodCard = memo(({ entry }: MoodCardProps) => {
                 <LinearGradient
                     start={{x: 0, y: 0}}
                     end={{x: 0, y: 1}}
-                    colors={gradient}
+                    colors={moodStyle.gradient}
                     style={StyleSheet.absoluteFill}
                 />
             </Box>
 
             <VStack space="md">
                 <HStack space="md" style={{ alignItems: 'center' }}>
-                    <Box className="p-2 rounded-full" style={{ backgroundColor: `${color}20` }}>
-                        <Icon size={24} color={color} />
+                    <Box className="p-2 rounded-full" style={{ backgroundColor: `${moodStyle.color}20` }}>
+                        <Icon size={24} color={moodStyle.color} />
                     </Box>
                     <VStack space="xs" style={{ flex: 1 }}>
                         <HStack space="sm" style={{ alignItems: 'center' }}>
-                            <Text size="sm" bold style={{ color: color }}>
+                            <Text size="sm" bold style={{ color: moodStyle.color }}>
                                 {entry.value}%
                             </Text>
                             <Text size="xs" style={{ color: "#ffffff80" }}>
@@ -157,6 +118,9 @@ const MoodLab = memo(() => {
     const [isRecording, setIsRecording] = useState(false);
     const [recordPath, setRecordPath] = useState('');
     const [textNote, setTextNote] = useState('');
+    const [activeTab, setActiveTab] = useState<'good' | 'neutral' | 'bad'>('good');
+
+    const currentMoodStyle = getMoodStyle(currentMood);
 
     const handleSaveMood = () => {
         const newEntry: MoodEntry = {
@@ -245,185 +209,247 @@ const MoodLab = memo(() => {
         });
     };
 
-    const getMoodColor = (value: number) => {
-        if (value >= 70) return "#22C55E"; // Green
-        if (value <= 30) return "#EF4444"; // Red
-        return "#F59E0B"; // Yellow
-    };
-
-    const getMoodGradient = (value: number) => {
-        if (value >= 70) return ["#22C55E", "#16A34A", "#15803D"];
-        if (value <= 30) return ["#EF4444", "#DC2626", "#B91C1C"];
-        return ["#F59E0B", "#D97706", "#B45309"];
-    };
-
-    const currentColor = getMoodColor(currentMood);
-    const currentGradient = getMoodGradient(currentMood);
-
     return (
-        <Box className="p-4">
-            <VStack space="xl">
-                {/* Current Mood Section */}
-                <Card className="p-6 rounded-xl bg-white/10 border-white/20">
-                    <VStack space="md">
-                        <Heading size="lg" style={{ color: "#ffffff" }}>
-                            Comment vous sentez-vous ?
-                        </Heading>
-                        
-                        <VStack space="md">
-                            <Box>
-                                <HStack space="sm" className="mb-2">
-                                    <Text size="sm" style={{ color: "#ffffff" }}>Mood:</Text>
-                                    <Text size="sm" bold style={{ color: currentColor }}>
-                                        {currentMood}%
-                                    </Text>
-                                </HStack>
-                                <Box style={{ position: 'relative' }}>
-                                    <Progress size="lg" value={100}>
-                                        <ProgressFilledTrack>
-                                            <LinearGradient
-                                                start={{x: 0, y: 0}}
-                                                end={{x: 1, y: 0}}
-                                                colors={["#EF4444", "#F59E0B", "#22C55E"]}
-                                                style={StyleSheet.absoluteFill}
-                                            />
-                                        </ProgressFilledTrack>
-                                    </Progress>
-                                    <Box style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
-                                        <Progress size="lg" value={currentMood}>
-                                            <ProgressFilledTrack>
-                                                <LinearGradient
-                                                    start={{x: 0, y: 0}}
-                                                    end={{x: 1, y: 0}}
-                                                    colors={currentGradient}
-                                                    style={StyleSheet.absoluteFill}
-                                                />
-                                            </ProgressFilledTrack>
-                                        </Progress>
-                                    </Box>
-                                </Box>
+        <Box style={styles.container}>
+            <LinearGradient
+                colors={['#1a1c2e', '#2d1b3d', '#1f2937']}
+                style={styles.backgroundGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+            />
+            <ScrollView 
+                style={styles.container}
+                contentContainerStyle={styles.contentContainer}
+                showsVerticalScrollIndicator={false}
+            >
+                <Box className="p-4">
+                    <VStack space="xl">
+                        {/* Current Mood Section */}
+                        <Card className="p-6 rounded-xl bg-white/10 border-white/20">
+                            <VStack space="md">
+                                <Heading size="lg" style={{ color: "#ffffff" }}>
+                                    Comment vous sentez-vous ?
+                                </Heading>
+                                
+                                <VStack space="md">
+                                    <Box>
+                                        <HStack space="sm" className="mb-2">
+                                            <Text size="sm" style={{ color: "#ffffff" }}>Mood:</Text>
+                                            <Text size="sm" bold style={{ color: currentMoodStyle.color }}>
+                                                {currentMood}%
+                                            </Text>
+                                        </HStack>
+                                        <Box style={{ position: 'relative' }}>
+                                            <Progress size="lg" value={100}>
+                                                <ProgressFilledTrack>
+                                                    <LinearGradient
+                                                        start={{x: 0, y: 0}}
+                                                        end={{x: 1, y: 0}}
+                                                        colors={["#EF4444", "#F59E0B", "#22C55E"]}
+                                                        style={StyleSheet.absoluteFill}
+                                                    />
+                                                </ProgressFilledTrack>
+                                            </Progress>
+                                            <Box style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+                                                <Progress size="lg" value={currentMood}>
+                                                    <ProgressFilledTrack>
+                                                        <LinearGradient
+                                                            start={{x: 0, y: 0}}
+                                                            end={{x: 1, y: 0}}
+                                                            colors={currentMoodStyle.gradient}
+                                                            style={StyleSheet.absoluteFill}
+                                                        />
+                                                    </ProgressFilledTrack>
+                                                </Progress>
+                                            </Box>
+                                        </Box>
 
-                                {/* Hidden Mood Selection Icons */}
-                                <HStack space="md" className="mt-4 justify-between">
-                                    {MOOD_OPTIONS.map((option) => {
-                                        const Icon = option.icon;
-                                        const isSelected = currentMood === option.value;
-                                        const iconColor = isSelected ? currentColor : "#ffffff80";
-                                        
-                                        return (
-                                            <Pressable
-                                                key={option.value}
-                                                onPress={() => setCurrentMood(option.value)}
-                                                className="p-2 rounded-full"
-                                                style={{
-                                                    backgroundColor: isSelected ? `${currentColor}20` : 'transparent',
-                                                    borderWidth: isSelected ? 1 : 0,
-                                                    borderColor: currentColor
-                                                }}
-                                            >
-                                                <Icon size={24} color={iconColor} />
-                                            </Pressable>
-                                        );
-                                    })}
-                                </HStack>
-                            </Box>
-
-                            <Box className="mt-4">
-                                <Text size="sm" style={{ color: "#ffffff" }} className="mb-2">
-                                    Sélectionnez jusqu'à 3 émotions
-                                </Text>
-                                <HStack space="md" style={{ flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                                    {EMOTION_OPTIONS.map((emotion) => {
-                                        const Icon = emotion.icon;
-                                        const isSelected = selectedEmotions.includes(emotion.id);
-                                        return (
-                                            <Checkbox
-                                                key={emotion.id}
-                                                value={isSelected ? "checked" : "unchecked"}
-                                                onChange={() => toggleEmotion(emotion.id)}
-                                                size="sm"
-                                                isDisabled={!isSelected && selectedEmotions.length >= 3}
-                                                style={{ borderWidth: 0 }}
-                                            >
-                                                <CheckboxIndicator style={{ borderWidth: 0 }}>
-                                                    <Box 
-                                                        className="p-2 rounded-full" 
-                                                        style={{ 
-                                                            backgroundColor: isSelected ? `${currentColor}20` : 'transparent',
+                                        {/* Hidden Mood Selection Icons */}
+                                        <HStack space="md" className="mt-4 justify-between">
+                                            {moodOptions.map((option) => {
+                                                const Icon = option.icon;
+                                                const isSelected = currentMood === option.value;
+                                                const style = option.style;
+                                                
+                                                return (
+                                                    <Pressable
+                                                        key={option.value}
+                                                        onPress={() => setCurrentMood(option.value)}
+                                                        className="p-2 rounded-full"
+                                                        style={{
+                                                            backgroundColor: isSelected ? `${style.color}20` : 'transparent',
                                                             borderWidth: isSelected ? 1 : 0,
-                                                            borderColor: currentColor
+                                                            borderColor: style.color
                                                         }}
                                                     >
-                                                        <Icon 
-                                                            size={24} 
-                                                            color={isSelected ? currentColor : "#ffffff80"} 
-                                                        />
-                                                    </Box>
-                                                </CheckboxIndicator>
-                                            </Checkbox>
-                                        );
-                                    })}
-                                </HStack>
-                            </Box>
+                                                        <Icon size={24} color={isSelected ? style.color : "#ffffff80"} />
+                                                    </Pressable>
+                                                );
+                                            })}
+                                        </HStack>
+                                    </Box>
 
-                            <Box>
-                                <Text size="sm" style={{ color: "#ffffff" }} className="mb-2">
-                                    Note (optionnel)
-                                </Text>
-                                <VStack space="sm">
-                                    <Input>
-                                        <InputField
-                                            value={textNote}
-                                            onChangeText={setTextNote}
-                                            placeholder="Écrivez votre note ici..."
-                                            style={{ color: "#ffffff" }}
-                                            placeholderTextColor="#ffffff80"
-                                        />
-                                    </Input>
+                                    <Box className="mt-4">
+                                        <Text size="sm" style={{ color: "#ffffff" }} className="mb-2">
+                                            Sélectionnez jusqu'à 3 émotions
+                                        </Text>
+                                        
+                                        {/* Emotion Category Tabs */}
+                                        <HStack space="sm" className="mb-4">
+                                            <Pressable
+                                                onPress={() => setActiveTab('good')}
+                                                className={`px-4 py-2 rounded-full ${activeTab === 'good' ? 'bg-white/20' : 'bg-white/10'}`}
+                                            >
+                                                <Text size="sm" style={{ color: activeTab === 'good' ? '#ffffff' : '#ffffff80' }}>
+                                                    Positives
+                                                </Text>
+                                            </Pressable>
+                                            <Pressable
+                                                onPress={() => setActiveTab('neutral')}
+                                                className={`px-4 py-2 rounded-full ${activeTab === 'neutral' ? 'bg-white/20' : 'bg-white/10'}`}
+                                            >
+                                                <Text size="sm" style={{ color: activeTab === 'neutral' ? '#ffffff' : '#ffffff80' }}>
+                                                    Neutres
+                                                </Text>
+                                            </Pressable>
+                                            <Pressable
+                                                onPress={() => setActiveTab('bad')}
+                                                className={`px-4 py-2 rounded-full ${activeTab === 'bad' ? 'bg-white/20' : 'bg-white/10'}`}
+                                            >
+                                                <Text size="sm" style={{ color: activeTab === 'bad' ? '#ffffff' : '#ffffff80' }}>
+                                                    Négatives
+                                                </Text>
+                                            </Pressable>
+                                        </HStack>
+
+                                        {/* Emotion Grid */}
+                                        <VStack space="sm">
+                                            {Array.from({ length: 5 }).map((_, rowIndex) => (
+                                                <HStack key={rowIndex} space="sm" style={{ justifyContent: 'space-between' }}>
+                                                    {emotionOptions[activeTab].slice(rowIndex * 2, rowIndex * 2 + 2).map((emotion) => {
+                                                        const Icon = emotion.icon;
+                                                        const isSelected = selectedEmotions.includes(emotion.id);
+                                                        const style = emotion.style;
+                                                        const gradient = isSelected ? style.gradient : ["#ffffff10", "#ffffff05"];
+                                                        
+                                                        return (
+                                                            <Pressable
+                                                                key={emotion.id}
+                                                                onPress={() => toggleEmotion(emotion.id)}
+                                                                style={{
+                                                                    flex: 1,
+                                                                    height: 60,
+                                                                    borderRadius: 12,
+                                                                    overflow: 'hidden',
+                                                                    opacity: !isSelected && selectedEmotions.length >= 3 ? 0.5 : 1,
+                                                                }}
+                                                            >
+                                                                <LinearGradient
+                                                                    start={{x: 0, y: 0}}
+                                                                    end={{x: 1, y: 0}}
+                                                                    colors={gradient}
+                                                                    style={StyleSheet.absoluteFill}
+                                                                />
+                                                                <HStack 
+                                                                    space="sm" 
+                                                                    style={{ 
+                                                                        flex: 1, 
+                                                                        alignItems: 'center', 
+                                                                        paddingHorizontal: 12,
+                                                                        borderWidth: isSelected ? 1 : 0,
+                                                                        borderColor: style.color,
+                                                                        borderRadius: 12,
+                                                                    }}
+                                                                >
+                                                                    <Icon 
+                                                                        size={24} 
+                                                                        color={isSelected ? style.color : "#ffffff80"} 
+                                                                    />
+                                                                    <Text 
+                                                                        size="sm" 
+                                                                        style={{ 
+                                                                            color: isSelected ? style.color : "#ffffff80",
+                                                                            flex: 1
+                                                                        }}
+                                                                    >
+                                                                        {emotion.label}
+                                                                    </Text>
+                                                                </HStack>
+                                                            </Pressable>
+                                                        );
+                                                    })}
+                                                </HStack>
+                                            ))}
+                                        </VStack>
+                                    </Box>
+
+                                    <Box>
+                                        <Text size="sm" style={{ color: "#ffffff" }} className="mb-2">
+                                            Note (optionnel)
+                                        </Text>
+                                        <VStack space="sm">
+                                            <Input>
+                                                <InputField
+                                                    value={textNote}
+                                                    onChangeText={setTextNote}
+                                                    placeholder="Écrivez votre note ici..."
+                                                    style={{ color: "#ffffff" }}
+                                                    placeholderTextColor="#ffffff80"
+                                                />
+                                            </Input>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onPress={isRecording ? onStopRecord : onStartRecord}
+                                                style={{
+                                                    borderColor: "#ffffff",
+                                                }}
+                                            >
+                                                <ButtonText style={{ color: "#ffffff" }}>
+                                                    {isRecording ? 'Arrêter l\'enregistrement' : 'Enregistrer une note vocale'}
+                                                </ButtonText>
+                                            </Button>
+                                        </VStack>
+                                    </Box>
+
                                     <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onPress={isRecording ? onStopRecord : onStartRecord}
+                                        variant="solid"
+                                        size="md"
+                                        onPress={handleSaveMood}
                                         style={{
-                                            borderColor: "#ffffff",
+                                            backgroundColor: "#ffffff",
                                         }}
                                     >
-                                        <ButtonText style={{ color: "#ffffff" }}>
-                                            {isRecording ? 'Arrêter l\'enregistrement' : 'Enregistrer une note vocale'}
+                                        <ButtonText style={{ color: "#6366f1" }}>
+                                            Enregistrer
                                         </ButtonText>
                                     </Button>
                                 </VStack>
-                            </Box>
+                            </VStack>
+                        </Card>
 
-                            <Button
-                                variant="solid"
-                                size="md"
-                                onPress={handleSaveMood}
-                                style={{
-                                    backgroundColor: "#ffffff",
-                                }}
-                            >
-                                <ButtonText style={{ color: "#6366f1" }}>
-                                    Enregistrer
-                                </ButtonText>
-                            </Button>
+                        {/* Mood History Section */}
+                        <VStack space="md">
+                            <Heading size="md" style={{ color: "#ffffff" }}>
+                                Historique
+                            </Heading>
+                            
+                            {/* Mood Chart */}
+                            <Card className="p-4 rounded-xl bg-white/10 border-white/20">
+                                <MoodChart moodEntries={moodEntries} />
+                            </Card>
+
+                            {/* Mood Entries List */}
+                            {moodEntries.map((entry) => (
+                                <MoodCard
+                                    key={entry.id}
+                                    entry={entry}
+                                />
+                            ))}
                         </VStack>
                     </VStack>
-                </Card>
-
-                {/* Mood History Section */}
-                <VStack space="md">
-                    <Heading size="md" style={{ color: "#ffffff" }}>
-                        Historique
-                    </Heading>
-                    {moodEntries.map((entry) => (
-                        <MoodCard
-                            key={entry.id}
-                            entry={entry}
-                        />
-                    ))}
-                </VStack>
-            </VStack>
+                </Box>
+            </ScrollView>
         </Box>
     );
 });
@@ -433,7 +459,18 @@ MoodLab.displayName = 'MoodLab';
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: 'transparent',
+    },
+    contentContainer: {
+        flexGrow: 1,
+    },
+    backgroundGradient: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        zIndex: 0,
     },
 });
 
