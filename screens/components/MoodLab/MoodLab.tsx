@@ -4,6 +4,7 @@ import { useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import LinearGradient from 'react-native-linear-gradient';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import { useToast } from "@/components/ui/toast";
 
 // Import styles
 import { moodOptions, emotionOptions, getMoodStyle, getEmotionStyle } from "@/screens/styles/moodLabStyles";
@@ -119,6 +120,7 @@ const MoodLab = memo(() => {
     const [recordPath, setRecordPath] = useState('');
     const [textNote, setTextNote] = useState('');
     const [activeTab, setActiveTab] = useState<'good' | 'neutral' | 'bad'>('good');
+    const toast = useToast();
 
     const currentMoodStyle = getMoodStyle(currentMood);
 
@@ -203,6 +205,16 @@ const MoodLab = memo(() => {
                 return prev.filter(id => id !== emotionId);
             }
             if (prev.length >= 3) {
+                toast.show({
+                    placement: "top",
+                    render: () => (
+                        <Box className="bg-white p-4 rounded-lg mx-4 mt-4 shadow-lg">
+                            <Text style={{ color: "#1a1c2e" }}>
+                                Vous ne pouvez sélectionner que 3 émotions maximum
+                            </Text>
+                        </Box>
+                    ),
+                });
                 return prev;
             }
             return [...prev, emotionId];
@@ -295,28 +307,31 @@ const MoodLab = memo(() => {
                                         </Text>
                                         
                                         {/* Emotion Category Tabs */}
-                                        <HStack space="sm" className="mb-4">
+                                        <HStack space="md" className="mb-4 justify-center">
                                             <Pressable
                                                 onPress={() => setActiveTab('good')}
-                                                className={`px-4 py-2 rounded-full ${activeTab === 'good' ? 'bg-white/20' : 'bg-white/10'}`}
+                                                className={`px-6 py-3 rounded-full ${activeTab === 'good' ? 'bg-white/20' : 'bg-white/10'}`}
+                                                style={{ minWidth: 100 }}
                                             >
-                                                <Text size="sm" style={{ color: activeTab === 'good' ? '#ffffff' : '#ffffff80' }}>
+                                                <Text size="md" style={{ color: activeTab === 'good' ? '#ffffff' : '#ffffff80' }}>
                                                     Positives
                                                 </Text>
                                             </Pressable>
                                             <Pressable
                                                 onPress={() => setActiveTab('neutral')}
-                                                className={`px-4 py-2 rounded-full ${activeTab === 'neutral' ? 'bg-white/20' : 'bg-white/10'}`}
+                                                className={`px-6 py-3 rounded-full ${activeTab === 'neutral' ? 'bg-white/20' : 'bg-white/10'}`}
+                                                style={{ minWidth: 100 }}
                                             >
-                                                <Text size="sm" style={{ color: activeTab === 'neutral' ? '#ffffff' : '#ffffff80' }}>
+                                                <Text size="md" style={{ color: activeTab === 'neutral' ? '#ffffff' : '#ffffff80' }}>
                                                     Neutres
                                                 </Text>
                                             </Pressable>
                                             <Pressable
                                                 onPress={() => setActiveTab('bad')}
-                                                className={`px-4 py-2 rounded-full ${activeTab === 'bad' ? 'bg-white/20' : 'bg-white/10'}`}
+                                                className={`px-6 py-3 rounded-full ${activeTab === 'bad' ? 'bg-white/20' : 'bg-white/10'}`}
+                                                style={{ minWidth: 100 }}
                                             >
-                                                <Text size="sm" style={{ color: activeTab === 'bad' ? '#ffffff' : '#ffffff80' }}>
+                                                <Text size="md" style={{ color: activeTab === 'bad' ? '#ffffff' : '#ffffff80' }}>
                                                     Négatives
                                                 </Text>
                                             </Pressable>
@@ -342,14 +357,9 @@ const MoodLab = memo(() => {
                                                                     borderRadius: 12,
                                                                     overflow: 'hidden',
                                                                     opacity: !isSelected && selectedEmotions.length >= 3 ? 0.5 : 1,
+                                                                    backgroundColor: 'transparent',
                                                                 }}
                                                             >
-                                                                <LinearGradient
-                                                                    start={{x: 0, y: 0}}
-                                                                    end={{x: 1, y: 0}}
-                                                                    colors={gradient}
-                                                                    style={StyleSheet.absoluteFill}
-                                                                />
                                                                 <HStack 
                                                                     space="sm" 
                                                                     style={{ 
@@ -359,12 +369,20 @@ const MoodLab = memo(() => {
                                                                         borderWidth: isSelected ? 1 : 0,
                                                                         borderColor: style.color,
                                                                         borderRadius: 12,
+                                                                        backgroundColor: 'transparent',
                                                                     }}
                                                                 >
-                                                                    <Icon 
-                                                                        size={24} 
-                                                                        color={isSelected ? style.color : "#ffffff80"} 
-                                                                    />
+                                                                    <Box 
+                                                                        className="p-2 rounded-full"
+                                                                        style={{
+                                                                            backgroundColor: isSelected ? `${style.color}20` : 'transparent',
+                                                                        }}
+                                                                    >
+                                                                        <Icon 
+                                                                            size={24} 
+                                                                            color={isSelected ? style.color : "#ffffff80"} 
+                                                                        />
+                                                                    </Box>
                                                                     <Text 
                                                                         size="sm" 
                                                                         style={{ 
