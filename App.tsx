@@ -53,11 +53,50 @@ const DARK_THEME: Theme = {
 // });
 const Stack = createStackNavigator();
 const TabUser = createBottomTabNavigator();
+import { LogIn, Mail, User } from "lucide-react-native";
+
+
 function UserTabs() {
 	return (
-		<TabUser.Navigator>
-			<TabUser.Screen name="UserSignIn" component={UserSignInScreen} />
-			<TabUser.Screen name="UserSignUp" component={UserSignUpScreen} />
+		<TabUser.Navigator
+			screenOptions={{
+				tabBarStyle: {
+					backgroundColor: 'rgba(255, 255, 255, 0.9)',
+					borderTopWidth: 0,
+					elevation: 0,
+					height: 60,
+					paddingBottom: 8,
+				},
+				tabBarActiveTintColor: '#6366f1',
+				tabBarInactiveTintColor: '#94a3b8',
+				tabBarLabelStyle: {
+					fontSize: 12,
+					fontWeight: '500',
+				},
+			}}
+		>
+			<TabUser.Screen 
+				name="UserSignIn" 
+				component={UserSignInScreen} 
+				options={{ 
+					headerShown: false,
+					tabBarLabel: 'Connexion',
+					tabBarIcon: ({ color }) => (
+						<LogIn size={24} color={color} />
+					),
+				}}
+			/>
+			<TabUser.Screen 
+				name="UserSignUp" 
+				component={UserSignUpScreen} 
+				options={{ 
+					headerShown: false,
+					tabBarLabel: 'Enregistrement', 
+					tabBarIcon: ({ color }) => (
+						<User size={24} color={color} />
+					),
+				}}
+			/>
 		</TabUser.Navigator>
 	);
 }
@@ -166,7 +205,7 @@ export default function App(): React.JSX.Element {
 										name="User"
 										component={UserTabs}
 										options={{
-											headerShown: true,
+											headerShown: false,
 										}}
 									/>
 									{/* <Stack.Screen

@@ -6,9 +6,9 @@ import { VStack } from "@/components/ui/vstack";
 import { useNavigation } from "@react-navigation/native";
 import { useAtom } from "jotai";
 import { jwtDecode } from "jwt-decode";
-import { EyeIcon, EyeOffIcon } from "lucide-react-native";
+import { EyeIcon, EyeOffIcon, Mail, Lock, User } from "lucide-react-native";
 import React from "react";
-import { SafeAreaView, Text } from "react-native";
+import { SafeAreaView, StyleSheet, Dimensions } from "react-native";
 import { userSignIn } from "./apis/User";
 import {
 	emailAtom,
@@ -18,6 +18,19 @@ import {
 	userIDAtom,
 	usernameAtom,
 } from "./states/user";
+import LinearGradient from 'react-native-linear-gradient';
+import { Heading } from "@/components/ui/heading";
+import { Text } from "@/components/ui/text";
+import { HStack } from "@/components/ui/hstack";
+import { Card } from "@/components/ui/card";
+import { getRandomProfessionalStyle } from "./styles/professionalStyles";
+
+// Custom interface for JWT payload
+interface CustomJwtPayload {
+	ID: string;
+	[key: string]: any;
+}
+
 function UserSignIn(): React.JSX.Element {
 	const navigation = useNavigation();
 	const [username, setUsername] = useAtom(usernameAtom);
@@ -27,9 +40,22 @@ function UserSignIn(): React.JSX.Element {
 	const [jwt, setJwt] = useAtom(jwtAtom);
 	const [jwtDecoded, setJwtDecoded] = useAtom(jwtDecodedAtom);
 	const [showPassword, setShowPassword] = React.useState(false);
+	const [error, setError] = React.useState<string | null>(null);
+	const [gradientStyle, setGradientStyle] = React.useState(getRandomProfessionalStyle());
+
+	React.useEffect(() => {
+		// Change gradient every 5 seconds
+		const interval = setInterval(() => {
+			setGradientStyle(getRandomProfessionalStyle());
+		}, 5000);
+
+		return () => clearInterval(interval);
+	}, []);
+
 	const handleState = () => {
 		setShowPassword((showState) => !showState);
 	};
+
 	const signinUser = async () => {
 		try {
 			if (username && email && password) {
@@ -37,73 +63,132 @@ function UserSignIn(): React.JSX.Element {
 				if (!data) {
 					throw new Error("Failed to sign in");
 				} else {
-					// console.log(data);
 					setJwt(data);
 					if (data) {
-						const _jwtDecoded = jwtDecode(data);
+						const _jwtDecoded = jwtDecode<CustomJwtPayload>(data);
 						setJwtDecoded(_jwtDecoded);
-						// console.log("jwtDecoded", _jwtDecoded);
 						if (_jwtDecoded.ID) {
 							setUserID(_jwtDecoded.ID);
-							console.log(`userID:${userId}`);
-							// await AsyncStorage.setItem("userID", userID);
 						}
 					}
 				}
-				navigation.navigate("SympathyWorld", {});
+				navigation.navigate("SympathyWorld" as never);
 			} else {
-				console.error("userID cannot be null");
+				setError("Please fill in all fields");
 			}
 		} catch (error) {
-			console.error("Error fetching more items:", error);
+			console.error("Error signing in:", error);
+			setError("Invalid email or password");
 		}
 	};
 
 	return (
-		<SafeAreaView>
-			<Box className="justify-center h-full ">
-				<FormControl className="p-4 border border-outline-300">
+		<SafeAreaView style={styles.container}>
+			{/* Background Gradient */}
+			<Box style={StyleSheet.absoluteFill}>
+				<LinearGradient
+					colors={['#6366f1', '#818cf8', '#a5b4fc']}
+					style={StyleSheet.absoluteFill}
+					start={{ x: 0, y: 0 }}
+					end={{ x: 1, y: 1 }}
+				/>
+			</Box>
+
+			{/* Content */}
+			<Box className="flex-1 justify-center items-center px-4">
+				<Card className="w-full max-w-md p-6 rounded-xl bg-white/10 border-white/20">
 					<VStack space="xl">
-						<VStack space="xs">
-							<Text className="text-typography-500">Email</Text>
-							<Input className="min-w-[250px]">
-								<InputField
-									type="text"
-									value={email || ""}
-									onChangeText={(text) => setEmail(text)}
-								/>
-							</Input>
-						</VStack>
-						<VStack space="xs">
-							<Text className="text-typography-500">
-								Password
+						<VStack space="sm" className="items-center">
+							<Heading size="xl" className="text-center" style={{ color: "#ffffff" }}>
+								Bienvenue
+							</Heading>
+							<Text size="sm" className="text-white/80 text-center">
+								{/* Sign in to continue your journey */}
 							</Text>
-							<Input className="text-center">
-								<InputField
-									type={showPassword ? "text" : "password"}
-									value={password || ""}
-									onChangeText={(text) => setPassword(text)}
-								/>
-								<InputSlot
-									className="pr-3"
-									onPress={handleState}
-								>
-									<InputIcon
-										as={showPassword ? EyeIcon : EyeOffIcon}
-									/>
-								</InputSlot>
-							</Input>
 						</VStack>
-						<Button
-							variant="solid"
-							className="mt-2"
-							onPress={signinUser}
-						>
-							<ButtonText>SignIn</ButtonText>
-						</Button>
+
+						<VStack space="md">
+							<FormControl>
+								<VStack space="xs">
+									<Text size="sm" className="text-white" style={{ color: "#ffffff" }}>Email</Text>
+									<Input>
+										<InputField
+											type="text"
+											value={email || ""}
+											onChangeText={(text) => setEmail(text)}
+											placeholder="Enter your email"
+											style={{ color: "#ffffff" }}
+											placeholderTextColor="#ffffff80"
+										/>
+										{/* <InputSlot className="pr-3">
+											<InputIcon as={Mail} style={{ color: "#ffffff" }} />
+										</InputSlot> */}
+									</Input>
+								</VStack>
+							</FormControl>
+
+							<FormControl>
+								<VStack space="xs">
+									<Text size="sm" className="text-white" style={{ color: "#ffffff" }}>Password</Text>
+									<Input>
+										<InputField
+											type={showPassword ? "text" : "password"}
+											value={password || ""}
+											onChangeText={(text) => setPassword(text)}
+											placeholder="Enter your password"
+											style={{ color: "#ffffff" }}
+											placeholderTextColor="#ffffff80"
+										/>
+										{/* <InputSlot className="pr-3">
+											<InputIcon as={Lock} style={{ color: "#ffffff" }} />
+										</InputSlot> */}
+										<InputSlot
+											className="pr-3"
+											onPress={handleState}
+										>
+											<InputIcon
+												as={showPassword ? EyeIcon : EyeOffIcon}
+												style={{ color: "#ffffff" }}
+											/>
+										</InputSlot>
+									</Input>
+								</VStack>
+							</FormControl>
+
+							{error && (
+								<Text size="sm" style={{ color: '#EF4444' }}>
+									{error}
+								</Text>
+							)}
+
+							<Button
+								variant="solid"
+								size="md"
+								className="mt-4"
+								onPress={signinUser}
+								style={{
+									backgroundColor: "#ffffff",
+								}}
+							>
+								<ButtonText style={{ color: "#6366f1" }}>Connexion</ButtonText>
+							</Button>
+
+							<HStack space="sm" className="justify-center mt-4">
+								{/* <Text size="xs" className="text-gray-500">
+									Vous n'avez pas de compte ?
+								</Text> */}
+								<Button
+									variant="link"
+									onPress={() => navigation.navigate("UserSignUp" as never)}
+								>
+									<ButtonText size="xs" style={{ color: "#ffffff" }}>
+										Vous n'avez pas de compte ? Enregistrez-vous
+									</ButtonText>
+								</Button>
+							</HStack>
+						</VStack>
 					</VStack>
-				</FormControl>
-				{/* <Text> {jwt}</Text> */}
+				</Card>
 			</Box>
 		</SafeAreaView>
 	);
@@ -111,11 +196,14 @@ function UserSignIn(): React.JSX.Element {
 
 // Main screen
 function UserSignInScreen(): React.JSX.Element {
-	return (
-		<SafeAreaView style={{ flex: 1, padding: 20 }}>
-			<UserSignIn />
-		</SafeAreaView>
-	);
+	return <UserSignIn />;
 }
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: "#f5f5f5",
+	},
+});
 
 export default UserSignInScreen;

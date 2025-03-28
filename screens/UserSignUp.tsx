@@ -6,9 +6,9 @@ import { VStack } from "@/components/ui/vstack";
 import { useNavigation } from "@react-navigation/native";
 import { useAtom } from "jotai";
 import { jwtDecode } from "jwt-decode";
-import { EyeIcon, EyeOffIcon } from "lucide-react-native";
+import { EyeIcon, EyeOffIcon, Mail, Lock, User } from "lucide-react-native";
 import React from "react";
-import { SafeAreaView, Text } from "react-native";
+import { SafeAreaView, StyleSheet } from "react-native";
 import { userSignUp } from "./apis/User";
 import {
 	emailAtom,
@@ -17,6 +17,18 @@ import {
 	passwordAtom,
 	usernameAtom,
 } from "./states/user";
+import LinearGradient from 'react-native-linear-gradient';
+import { Heading } from "@/components/ui/heading";
+import { Text } from "@/components/ui/text";
+import { HStack } from "@/components/ui/hstack";
+import { Card } from "@/components/ui/card";
+import { getRandomProfessionalStyle } from "./styles/professionalStyles";
+
+// Custom interface for JWT payload
+interface CustomJwtPayload {
+	ID: string;
+	[key: string]: any;
+}
 
 function UserSignUp(): React.JSX.Element {
 	const navigation = useNavigation();
@@ -26,94 +38,183 @@ function UserSignUp(): React.JSX.Element {
 	const [jwt, setJwt] = useAtom(jwtAtom);
 	const [jwtDecoded, setJwtDecoded] = useAtom(jwtDecodedAtom);
 	const [showPassword, setShowPassword] = React.useState(false);
+	const [error, setError] = React.useState<string | null>(null);
+	const [gradientStyle, setGradientStyle] = React.useState(getRandomProfessionalStyle());
+
+	React.useEffect(() => {
+		// Change gradient every 5 seconds
+		const interval = setInterval(() => {
+			setGradientStyle(getRandomProfessionalStyle());
+		}, 5000);
+
+		return () => clearInterval(interval);
+	}, []);
+
 	const handleState = () => {
 		setShowPassword((showState) => !showState);
 	};
+
 	const signupUser = async () => {
 		try {
 			if (username && email && password) {
 				const data = await userSignUp(username, email, password);
-				setJwt(data);
-				setJwtDecoded(jwtDecode(data));
-				navigation.navigate("UserProfile", {
-					screen: "UserProfile",
-				});
+				if (!data) {
+					throw new Error("Failed to sign up");
+				} else {
+					setJwt(data);
+					if (data) {
+						const _jwtDecoded = jwtDecode<CustomJwtPayload>(data);
+						setJwtDecoded(_jwtDecoded);
+					}
+					navigation.navigate("UserProfile" as never);
+				}
 			} else {
-				console.error("userID cannot be null");
+				setError("Please fill in all fields");
 			}
 		} catch (error) {
-			console.error("Error fetching more items:", error);
+			console.error("Error signing up:", error);
+			setError("Failed to create account");
 		}
 	};
 
 	return (
-		<SafeAreaView>
-			<Box className="justify-center h-full">
-				<FormControl className="p-4 border border-outline-300">
+		<SafeAreaView style={styles.container}>
+			{/* Background Gradient */}
+			<Box style={StyleSheet.absoluteFill}>
+				<LinearGradient
+					colors={['#6366f1', '#818cf8', '#a5b4fc']}
+					style={StyleSheet.absoluteFill}
+					start={{ x: 0, y: 0 }}
+					end={{ x: 1, y: 1 }}
+				/>
+			</Box>
+
+			{/* Content */}
+			<Box className="flex-1 justify-center items-center px-4">
+				<Card className="w-full max-w-md p-6 rounded-xl bg-white/10 border-white/20">
 					<VStack space="xl">
-						<VStack space="xs">
-							<Text className="text-typography-500">
-								Username
+						<VStack space="sm" className="items-center">
+							<Heading size="xl" className="text-center" style={{ color: "#ffffff" }}>
+								Créer un compte
+							</Heading>
+							<Text size="sm" className="text-white/80 text-center">
+								{/* Sign up to start your journey */}
 							</Text>
-							<Input className="min-w-[250px]">
-								<InputField
-									type="text"
-									value={username || ""}
-									onChangeText={(text) => setUsername(text)}
-								/>
-							</Input>
 						</VStack>
-						<VStack space="xs">
-							<Text className="text-typography-500">Email</Text>
-							<Input className="min-w-[250px]">
-								<InputField
-									type="text"
-									value={email || ""}
-									onChangeText={(text) => setEmail(text)}
-								/>
-							</Input>
-						</VStack>
-						<VStack space="xs">
-							<Text className="text-typography-500">
-								Password
-							</Text>
-							<Input className="text-center">
-								<InputField
-									type={showPassword ? "text" : "password"}
-									value={password || ""}
-									onChangeText={(text) => setPassword(text)}
-								/>
-								<InputSlot
-									className="pr-3"
-									onPress={handleState}
+
+						<VStack space="md">
+							<FormControl>
+								<VStack space="xs">
+									<Text size="sm" className="text-white" style={{ color: "#ffffff" }}>Nom d'utilisateur</Text>
+									<Input>
+										<InputField
+											type="text"
+											value={username || ""}
+											onChangeText={(text) => setUsername(text)}
+											placeholder="Enter your username"
+											style={{ color: "#ffffff" }}
+											placeholderTextColor="#ffffff80"
+										/>
+										<InputSlot className="pr-3">
+											{/* <InputIcon as={User} style={{ color: "#ffffff" }} /> */}
+										</InputSlot>
+									</Input>
+								</VStack>
+							</FormControl>
+
+							<FormControl>
+								<VStack space="xs">
+									<Text size="sm" className="text-white" style={{ color: "#ffffff" }}>Email</Text>
+									<Input>
+										<InputField
+											type="text"
+											value={email || ""}
+											onChangeText={(text) => setEmail(text)}
+											placeholder="Enter your email"
+											style={{ color: "#ffffff" }}
+											placeholderTextColor="#ffffff80"
+										/>
+										<InputSlot className="pr-3">
+											{/* <InputIcon as={Mail} style={{ color: "#ffffff" }} /> */}
+										</InputSlot>
+									</Input>
+								</VStack>
+							</FormControl>
+
+							<FormControl>
+								<VStack space="xs">
+									<Text size="sm" className="text-white" style={{ color: "#ffffff" }}>Mot de passe</Text>
+									<Input>
+										<InputField
+											type={showPassword ? "text" : "password"}
+											value={password || ""}
+											onChangeText={(text) => setPassword(text)}
+											placeholder="Enter your password"
+											style={{ color: "#ffffff" }}
+											placeholderTextColor="#ffffff80"
+										/>
+										<InputSlot className="pr-3">
+											{/* <InputIcon as={Lock} style={{ color: "#ffffff" }} /> */}
+										</InputSlot>
+										<InputSlot
+											className="pr-3"
+											onPress={handleState}
+										>
+											<InputIcon
+												as={showPassword ? EyeIcon : EyeOffIcon}
+												style={{ color: "#ffffff" }}
+											/>
+										</InputSlot>
+									</Input>
+								</VStack>
+							</FormControl>
+
+							{error && (
+								<Text size="sm" style={{ color: '#EF4444' }}>
+									{error}
+								</Text>
+							)}
+
+							<Button
+								variant="solid"
+								size="md"
+								className="mt-4"
+								onPress={signupUser}
+								style={{
+									backgroundColor: "#ffffff",
+								}}
+							>
+								<ButtonText style={{ color: "#6366f1" }}>S'inscrire</ButtonText>
+							</Button>
+
+							<HStack space="sm" className="justify-center mt-4">
+								<Button
+									variant="link"
+									onPress={() => navigation.navigate("UserSignIn" as never)}
 								>
-									<InputIcon
-										as={showPassword ? EyeIcon : EyeOffIcon}
-									/>
-								</InputSlot>
-							</Input>
+									<ButtonText size="xs" style={{ color: "#ffffff" }}>
+										Déjà un compte ? Connectez-vous
+									</ButtonText>
+								</Button>
+							</HStack>
 						</VStack>
-						<Button
-							variant="solid"
-							className="mt-2"
-							onPress={signupUser}
-						>
-							<ButtonText>SignUp</ButtonText>
-						</Button>
 					</VStack>
-				</FormControl>
-				{/* <Text> {jwt}</Text> */}
+				</Card>
 			</Box>
 		</SafeAreaView>
 	);
 }
+
 // Main screen
 function UserSignUpScreen(): React.JSX.Element {
-	return (
-		<SafeAreaView style={{ flex: 1, padding: 20 }}>
-			<UserSignUp />
-		</SafeAreaView>
-	);
+	return <UserSignUp />;
 }
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: "#f5f5f5",
+	},
+});
 
 export default UserSignUpScreen;
