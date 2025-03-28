@@ -22,7 +22,7 @@ import QCTScreen from "./screens/QCTScreen";
 // import UserProfile from "./screens/UserProfile";
 import UserSignInScreen from "./screens/UserSignIn";
 import UserSignUpScreen from "./screens/UserSignUp";
-// import ChatList from "./screens/components/Chat/ChatList";
+import { ChatList } from "./screens/components/Chat/ChatList";
 import ChatScreen from "./screens/components/Chat/ChatScreen";
 // import NewChat from "./screens/components/Chat/NewChat";
 import ProScreen from "./screens/components/Pro/ProScreen";
@@ -181,6 +181,14 @@ export default function App(): React.JSX.Element {
 										component={ChatScreen}
 										options={{
 											headerShown: false,
+										}}
+									/>
+									<Stack.Screen
+										name="ChatList"
+										component={ChatList}
+										options={{
+											headerShown: true,
+											title: "Conversations",
 										}}
 									/>
 									{/* <Stack.Screen

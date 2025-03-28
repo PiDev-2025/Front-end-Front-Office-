@@ -11,6 +11,7 @@ import { Colors } from "react-native/Libraries/NewAppScreen";
 
 import Section from "./components/Section";
 import Program from "./components/Program/Program";
+import { ChatSection } from "./components/Chat/ChatSection";
 
 // import {
 // 	animated,
@@ -128,9 +129,10 @@ function QCTScreen(): React.JSX.Element {
 					<Section title="Programs"/>
 					{/* <Section title="UserProfile" /> */}
 					<Section title="Pro" />
-					{/* <Section title="ChatList" /> */}
+					<Section title="ChatList" />
 					<Section title="Map" />
 					<Section title="MoodLab" />
+					<ChatSection />
 					{/* <Section title="ProfessionalProfile" /> */}
 					{/* <Section title="VideoChat" /> */}
 					{/* <Section title="Chats" /> */}
