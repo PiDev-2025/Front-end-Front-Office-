@@ -53,5 +53,7 @@
 	<string>Microphone permission description</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Photo library permission description</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need microphone access to record audio</string>
 </dict>
 </plist>

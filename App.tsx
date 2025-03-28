@@ -27,6 +27,7 @@ import ChatScreen from "./screens/components/Chat/ChatScreen";
 // import NewChat from "./screens/components/Chat/NewChat";
 import ProScreen from "./screens/components/Pro/ProScreen";
 import Program from "./screens/components/Program/Program";
+import MoodLabScreen from "./screens/components/MoodLab/MoodLabScreen";
 import { jwtAtom } from "./screens/states/user";
 
 const LIGHT_THEME: Theme = {
@@ -232,6 +233,13 @@ export default function App(): React.JSX.Element {
 									<Stack.Screen
 										name="Programs"
 										component={Program}
+										options={{
+											headerShown: true,
+										}}
+									/>
+									<Stack.Screen
+										name="MoodLab"
+										component={MoodLabScreen}
 										options={{
 											headerShown: true,
 										}}
