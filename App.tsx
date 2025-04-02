@@ -24,7 +24,7 @@ import UserSignInScreen from "./screens/UserSignIn";
 import UserSignUpScreen from "./screens/UserSignUp";
 import { ChatList } from "./screens/components/Chat/ChatList";
 import ChatScreen from "./screens/components/Chat/ChatScreen";
-// import NewChat from "./screens/components/Chat/NewChat";
+import NewChat from "./screens/components/Chat/NewChat";
 import ProScreen from "./screens/components/Pro/ProScreen";
 import Program from "./screens/components/Program/Program";
 import MoodLabScreen from "./screens/components/MoodLab/MoodLabScreen";
@@ -191,18 +191,14 @@ export default function App(): React.JSX.Element {
 											title: "Conversations",
 										}}
 									/>
-									{/* <Stack.Screen
-										name="VideoChat"
-										component={VideoChatScreen}
-									/> */}
-									{/* <Stack.Screen
-										name="ChatList"
-										component={ChatList}
-									/>
 									<Stack.Screen
 										name="NewChat"
 										component={NewChat}
-									/> */}
+										options={{
+											headerShown: true,
+											title: "New Chat",
+										}}
+									/>
 									<Stack.Screen
 										name="ChatScreen"
 										component={ChatScreen}
