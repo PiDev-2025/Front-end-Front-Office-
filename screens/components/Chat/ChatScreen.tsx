@@ -21,17 +21,30 @@ const client = ElysiaClient.getInstance();
 
 export const ChatScreen: React.FC = () => {
 	const route = useRoute();
-	const { room, usersInRoom } = route.params as RouteParams;
+	console.log('Full route object:', route);
+	const params = route.params as RouteParams;
+	console.log('Route params:', params);
+	
+	const room = params?.room;
+	const usersInRoom = params?.usersInRoom || [];
+	
+	if (!room) {
+		console.error('Room ID is missing from route params');
+		return null;
+	}
+
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [jwtDecoded] = useAtom(jwtDecodedAtom);
 	const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 	const scrollViewRef = useRef<ScrollView>(null);
 	const myUserId = jwtDecoded ? (jwtDecoded as any).ID.split(":")[1] : null;
-	const otherUserId = usersInRoom[0].userId2;
-	console.log(`myUserId:${myUserId}`, `otherUserId:${otherUserId}`);
+	const otherUserId = usersInRoom[0]?.userId2;
+	console.log(`myUserId:${myUserId}`, `otherUserId:${otherUserId}`, `room:${room}`);
 
 	useEffect(() => {
-		loadMessages();
+		if (room) {
+			loadMessages();
+		}
 	}, [room]);
 
 	useEffect(() => {
@@ -56,6 +69,10 @@ export const ChatScreen: React.FC = () => {
 
 	const loadMessages = async () => {
 		try {
+			if (!room) {
+				console.error('Room ID is missing');
+				return;
+			}
 			const msgs = await client.getMessages(room, 50, 0, 0);
 			setMessages(msgs);
 		} catch (error) {
@@ -64,7 +81,10 @@ export const ChatScreen: React.FC = () => {
 	};
 
 	const handleSend = async (message: string) => {
-		if (!message.trim() || !myUserId) return;
+		if (!message.trim() || !myUserId || !room) {
+			console.error('Missing required data:', { message: message.trim(), myUserId, room });
+			return;
+		}
 
 		try {
 			const msg: ChatMessage = {
@@ -73,6 +93,7 @@ export const ChatScreen: React.FC = () => {
 				message: message.trim(),
 				createdAt: new Date().toISOString()
 			};
+			console.log('Sending message:', msg);
 			const sentMsg = await client.sendMessage(msg);
 			setMessages(prev => [...prev, sentMsg]);
 			scrollViewRef.current?.scrollToEnd({ animated: true });

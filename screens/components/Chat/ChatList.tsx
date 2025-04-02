@@ -38,6 +38,7 @@ export const ChatList: React.FC = () => {
 		try {
 			if (myUserId) {
 				const rooms = await client.getUserChats(myUserId);
+				console.log('Loaded chat rooms:', rooms);
 				setChatRooms(rooms);
 			}
 		} catch (error) {
@@ -51,16 +52,26 @@ export const ChatList: React.FC = () => {
 		setRefreshing(false);
 	};
 
-	const renderItem = ({ item }: { item: Chat }) => {
-		const otherUserId = item.participants.find(id => id !== myUserId) || '';
+	const renderItem = ({ item }: { item: Chat }): React.ReactElement | null => {
+		if (!item) return null;
+		
+		console.log('Rendering chat item:', item);
+		const otherUserId = item.usersInRoom[0].userId2;
 		const lastMessage = item.lastMessage;
+
+		const handlePress = () => {
+			const navigationParams = {
+				room: item.room,
+				usersInRoom: item.usersInRoom
+			};
+			console.log('Navigating to chat with params:', navigationParams);
+			navigation.navigate('Chat', navigationParams);
+		};
 
 		return (
 			<Pressable
-				onPress={() => navigation.navigate('Chat', {
-					room: item.id,
-					usersInRoom: [{ userId2: otherUserId }]
-				})}
+				key={item.room}
+				onPress={handlePress}
 				className="flex-row items-center space-x-3 p-4 bg-white border-b border-gray-100"
 			>
 				<Box className="w-10 h-10 rounded-full bg-indigo-100 items-center justify-center">
@@ -91,7 +102,7 @@ export const ChatList: React.FC = () => {
 			<FlatList
 				data={chatRooms}
 				renderItem={renderItem}
-				keyExtractor={(item) => item.id}
+				keyExtractor={(item) => item.room}
 				contentContainerStyle={styles.list}
 				refreshControl={
 					<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
