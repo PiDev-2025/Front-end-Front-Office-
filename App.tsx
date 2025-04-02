@@ -180,7 +180,7 @@ export default function App(): React.JSX.Element {
 										name="Chat"
 										component={ChatScreen}
 										options={{
-											headerShown: false,
+											headerShown: true,
 										}}
 									/>
 									<Stack.Screen
@@ -208,6 +208,9 @@ export default function App(): React.JSX.Element {
 										component={ChatScreen}
 										initialParams={{
 											roomId: "1337",
+										}}
+										options={{
+											headerShown: true,
 										}}
 									/>
 									<Stack.Screen

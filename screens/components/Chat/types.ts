@@ -1,6 +1,6 @@
 export interface MessageProps {
   avatar?: string;
-  username: string;
+  username?: string;
   message: string;
   timestamp: string;
   isOutgoing?: boolean;
