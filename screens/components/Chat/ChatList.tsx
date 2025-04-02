@@ -96,7 +96,7 @@ export const ChatList: React.FC = () => {
 
 	return (
 		<View style={styles.container}>
-			<Box className="p-4 border-b border-gray-100">
+			<Box className="p-4 border-b border-gray-100 pt-12">
 				<Text className="text-xl font-semibold">Conversations</Text>
 			</Box>
 			<FlatList
