@@ -7,12 +7,13 @@ import { useAtom } from 'jotai';
 import { jwtDecodedAtom } from '../../states/user';
 import { Text } from "@/components/ui/text";
 import { Box } from "@/components/ui/box";
-import { MessageSquare, User, Users, MessageCircle, ComponentIcon, HashIcon, UserRoundIcon, TargetIcon } from 'lucide-react-native';
+import { MessageSquare, User, Users, MessageCircle, ComponentIcon, HashIcon, UserRoundIcon, TargetIcon, UserPlus, Users2, Hash, Briefcase, BookOpen, LifeBuoy } from 'lucide-react-native';
 import { Button, ButtonText } from "@/components/ui/button";
 import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
 import { Badge, BadgeIcon, BadgeText } from "@/components/ui/badge";
 import { Grid, GridItem } from "@/components/ui/grid";
+import { Input, InputField } from "@/components/ui/input";
 import { ChatListItemProps } from "./types";
 
 type RootStackParamList = {
@@ -34,12 +35,14 @@ type UserChatResponse = {
 	usersInRoom: Array<{
 		userId2: string;
 	}>;
-	type?: '1v1' | 'group' | 'thematic';
+	type?: '1v1' | 'group' | 'thematic' | 'professional';
 	name?: string;
 	theme?: string;
 	lastMessage?: string;
 	messageCount?: number;
 	activityType?: string;
+	professionalType?: string;
+	rating?: number;
 };
 
 const client = ElysiaClient.getInstance();
@@ -54,47 +57,44 @@ const RoomItem: React.FC<{ item: UserChatResponse & { myUserId: string } }> = ({
 
 	return (
 		<Pressable onPress={goToChat}>
-			<Box className="mb-6">
-				<HStack space="md" className="items-center">
-					<Image
-						resizeMode="contain"
-						source={{
-							uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/d9e5323e3e31cdede93efcaa8bc9c2188f50e166bcf77987bf0ce0ce300bea47?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-						}}
-						className="w-10 h-10 mr-3"
-					/>
-					<Grid className="flex-1 gap-y-2 gap-x-2 grid-cols-2" _extra={{ className: "grid-cols-2" }}>
-						<GridItem className="bg-background-50 text-center col-span-1" _extra={{ className: "col-span-1" }}>
-							<Badge size="md" variant="solid" action="success">
-								<BadgeIcon as={UserRoundIcon} className="ml-2" />
-								<BadgeText className="ml-4">
-									{usersInRoom[0].userId2}
-								</BadgeText>
-							</Badge>
-						</GridItem>
-						<GridItem className="bg-background-50 text-center col-span-1" _extra={{ className: "col-span-1" }}>
-							<Grid className="gap-y-1 gap-x-6 grid-cols-6" _extra={{ className: "grid-cols-6" }}>
-								<GridItem className="bg-background-50 text-center col-span-2" _extra={{ className: "col-span-2" }}>
-									<Badge size="md" variant="solid" action="muted">
-										<BadgeIcon as={MessageSquare} className="ml-2" />
-										<BadgeText className="ml-4">98</BadgeText>
-									</Badge>
-								</GridItem>
-								<GridItem className="bg-background-50 text-center col-span-4" _extra={{ className: "col-span-4" }}>
-									<Badge size="md" variant="solid" action="muted">
-										<BadgeIcon as={TargetIcon} className="ml-2" />
-										<BadgeText className="ml-4">Entraide</BadgeText>
-									</Badge>
-								</GridItem>
-							</Grid>
-						</GridItem>
-						{/* <GridItem className="bg-background-50 rounded-md text-center col-span-2" _extra={{ className: "col-span-2" }}>
-							<Text className="text-sm">
-								C'était super de se rencontrer à la librairie, on remets çà!
-							</Text>
-						</GridItem> */}
-					</Grid>
-				</HStack>
+			<Box className="mb-6 rounded-xl bg-blue-50">
+				<Box className="p-4">
+					<HStack space="md" className="items-center">
+						<Image
+							resizeMode="contain"
+							source={{
+								uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/d9e5323e3e31cdede93efcaa8bc9c2188f50e166bcf77987bf0ce0ce300bea47?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
+							}}
+							className="w-10 h-10 mr-3"
+						/>
+						<Grid className="flex-1 gap-y-2 gap-x-2 grid-cols-1" _extra={{ className: "grid-cols-1" }}>
+							<GridItem className="bg-white/50 text-center col-span-1 rounded-lg" _extra={{ className: "col-span-1" }}>
+								<Badge size="md" variant="solid" action="success">
+									<BadgeIcon as={UserRoundIcon} className="ml-2" />
+									<BadgeText className="ml-2">
+										{usersInRoom[0].userId2}
+									</BadgeText>
+								</Badge>
+							</GridItem>
+							<GridItem className="bg-white/50 text-center col-span-1 rounded-lg" _extra={{ className: "col-span-1" }}>
+								<Grid className="grid-cols-2 gap-x-2" _extra={{ className: "grid-cols-2" }}>
+									<GridItem _extra={{ className: "col-span-1" }}>
+										<Badge size="md" variant="solid" action="muted">
+											<BadgeIcon as={MessageSquare} className="ml-2" />
+											<BadgeText className="ml-2">3/98</BadgeText>
+										</Badge>
+									</GridItem>
+									<GridItem _extra={{ className: "col-span-1" }}>
+										<Badge size="md" variant="solid" action="muted">
+											<BadgeIcon as={TargetIcon} className="ml-2" />
+											<BadgeText className="ml-2">Entraide</BadgeText>
+										</Badge>
+									</GridItem>
+								</Grid>
+							</GridItem>
+						</Grid>
+					</HStack>
+				</Box>
 			</Box>
 		</Pressable>
 	);
@@ -110,47 +110,44 @@ const RoomGroupItem: React.FC<{ item: UserChatResponse & { myUserId: string } }>
 
 	return (
 		<Pressable onPress={goToChat}>
-			<Box className="mb-6">
-				<HStack space="md" className="items-center">
-					<Image
-						resizeMode="contain"
-						source={{
-							uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/25dc4628ffcc6716804f6e4b7af7a397e929de8848169610fb83686d0cb418d2?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-						}}
-						className="w-10 h-10 mr-3"
-					/>
-					<Grid className="flex-1 gap-y-2 gap-x-2 grid-cols-2" _extra={{ className: "grid-cols-2" }}>
-						<GridItem className="bg-background-50 text-center col-span-2" _extra={{ className: "col-span-2" }}>
-							<VStack space="sm">
+			<Box className="mb-6 rounded-xl bg-blue-50">
+				<Box className="p-4">
+					<HStack space="md" className="items-center">
+						<Image
+							resizeMode="contain"
+							source={{
+								uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/25dc4628ffcc6716804f6e4b7af7a397e929de8848169610fb83686d0cb418d2?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
+							}}
+							className="w-10 h-10 mr-3"
+						/>
+						<Grid className="flex-1 gap-y-2 gap-x-2 grid-cols-1" _extra={{ className: "grid-cols-1" }}>
+							<GridItem className="bg-white/50 text-center col-span-1 rounded-lg" _extra={{ className: "col-span-1" }}>
 								<Badge size="md" variant="solid" action="warning">
 									<BadgeIcon as={ComponentIcon} className="ml-2" />
-									<BadgeText className="ml-4">
+									<BadgeText className="ml-2">
 										{name || "L'équipe Cool de Montpel"}
 									</BadgeText>
 								</Badge>
-								<Grid className="gap-x-2 grid-cols-2" _extra={{ className: "grid-cols-2" }}>
-									<GridItem>
+							</GridItem>
+							<GridItem className="bg-white/50 text-center col-span-1 rounded-lg" _extra={{ className: "col-span-1" }}>
+								<Grid className="grid-cols-2 gap-x-2" _extra={{ className: "grid-cols-2" }}>
+									<GridItem _extra={{ className: "col-span-1" }}>
 										<Badge size="md" variant="solid" action="muted">
 											<BadgeIcon as={MessageSquare} className="ml-2" />
-											<BadgeText className="ml-4">{messageCount || 0} </BadgeText>
+											<BadgeText className="ml-2">12/{messageCount || 0}</BadgeText>
 										</Badge>
 									</GridItem>
-									<GridItem>
+									<GridItem _extra={{ className: "col-span-1" }}>
 										<Badge size="md" variant="solid" action="muted">
 											<BadgeIcon as={Users} className="ml-2" />
-											<BadgeText className="ml-4">{usersInRoom?.length || 0} membres</BadgeText>
+											<BadgeText className="ml-2">{usersInRoom?.length || 0} membres</BadgeText>
 										</Badge>
 									</GridItem>
 								</Grid>
-							</VStack>
-						</GridItem>
-						{/* <GridItem className="bg-background-50 rounded-md text-center col-span-2" _extra={{ className: "col-span-2" }}>
-							<Text className="text-sm">
-								{lastMessage || "Aucun message"}
-							</Text>
-						</GridItem> */}
-					</Grid>
-				</HStack>
+							</GridItem>
+						</Grid>
+					</HStack>
+				</Box>
 			</Box>
 		</Pressable>
 	);
@@ -166,39 +163,91 @@ const RoomThemeItem: React.FC<{ item: UserChatResponse & { myUserId: string } }>
 
 	return (
 		<Pressable onPress={goToChat}>
-			<Box className="mb-6">
-				<HStack space="md" className="items-center">
-					<Image
-						resizeMode="contain"
-						source={{
-							uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/7949539254f43c9e57fd6c3131b3fcccb6596f0d9adbc61b0c91439ee01689d4?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-						}}
-						className="w-10 h-10 mr-3"
-					/>
-					<Grid className="flex-1 gap-y-2 gap-x-2 grid-cols-1" _extra={{ className: "grid-cols-1" }}>
-						<GridItem className="bg-background-50 text-center col-span-1" _extra={{ className: "col-span-1" }}>
-							<Badge size="md" variant="solid" action="info">
-								<BadgeIcon as={HashIcon} className="ml-2" />
-								<BadgeText className="ml-4">
-									{theme || "difficulte_professionnelle"}
-								</BadgeText>
-							</Badge>
-						</GridItem>
-						<GridItem className="bg-background-50 text-center col-span-1" _extra={{ className: "col-span-1" }}>
-							<VStack space="sm">
-								<Badge size="md" variant="solid" action="muted">
-									<BadgeIcon as={MessageSquare} className="ml-2" />
-									<BadgeText className="ml-4">{messageCount || 0}</BadgeText>
+			<Box className="mb-6 rounded-xl bg-blue-50">
+				<Box className="p-4">
+					<HStack space="md" className="items-center">
+						<Image
+							resizeMode="contain"
+							source={{
+								uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/7949539254f43c9e57fd6c3131b3fcccb6596f0d9adbc61b0c91439ee01689d4?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
+							}}
+							className="w-10 h-10 mr-3"
+						/>
+						<Grid className="flex-1 gap-y-2 gap-x-2 grid-cols-1" _extra={{ className: "grid-cols-1" }}>
+							<GridItem className="bg-white/50 text-center col-span-1 rounded-lg" _extra={{ className: "col-span-1" }}>
+								<Badge size="md" variant="solid" action="info">
+									<BadgeIcon as={HashIcon} className="ml-2" />
+									<BadgeText className="ml-2">
+										{theme || "difficulte_professionnelle"}
+									</BadgeText>
 								</Badge>
-							</VStack>
-						</GridItem>
-						{/* <GridItem className="bg-background-50 rounded-md text-center col-span-2" _extra={{ className: "col-span-2" }}>
-							<Text className="text-sm">
-								{lastMessage || "Aucun message"}
-							</Text>
-						</GridItem> */}
-					</Grid>
-				</HStack>
+							</GridItem>
+							<GridItem className="bg-white/50 text-center col-span-1 rounded-lg" _extra={{ className: "col-span-1" }}>
+								<Grid className="grid-cols-1 gap-x-2" _extra={{ className: "grid-cols-1" }}>
+									<GridItem _extra={{ className: "col-span-1" }}>
+										<Badge size="md" variant="solid" action="muted">
+											<BadgeIcon as={MessageSquare} className="ml-2" />
+											<BadgeText className="ml-2">5/{messageCount || 0}</BadgeText>
+										</Badge>
+									</GridItem>
+								</Grid>
+							</GridItem>
+						</Grid>
+					</HStack>
+				</Box>
+			</Box>
+		</Pressable>
+	);
+};
+
+const RoomProfessionalItem: React.FC<{ item: UserChatResponse & { myUserId: string } }> = ({ item }) => {
+	const navigation = useNavigation<NavigationProp>();
+	const { room, usersInRoom, name, lastMessage, messageCount, professionalType, rating } = item;
+
+	const goToChat = () => {
+		navigation.navigate('Chat' as never, { room, usersInRoom } as never);
+	};
+
+	return (
+		<Pressable onPress={goToChat}>
+			<Box className="mb-6 rounded-xl bg-blue-50">
+				<Box className="p-4">
+					<HStack space="md" className="items-center">
+						<Image
+							resizeMode="contain"
+							source={{
+								uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/7949539254f43c9e57fd6c3131b3fcccb6596f0d9adbc61b0c91439ee01689d4?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
+							}}
+							className="w-10 h-10 mr-3"
+						/>
+						<Grid className="flex-1 gap-y-2 gap-x-2 grid-cols-1" _extra={{ className: "grid-cols-1" }}>
+							<GridItem className="bg-white/50 text-center col-span-1 rounded-lg" _extra={{ className: "col-span-1" }}>
+								<Badge size="md" variant="solid" action="info" className="bg-indigo-500">
+									<BadgeIcon as={UserRoundIcon} className="ml-2" />
+									<BadgeText className="ml-2">
+										{name || "Dr. Smith"}
+									</BadgeText>
+								</Badge>
+							</GridItem>
+							<GridItem className="bg-white/50 text-center col-span-1 rounded-lg" _extra={{ className: "col-span-1" }}>
+								<Grid className="grid-cols-2 gap-x-2" _extra={{ className: "grid-cols-2" }}>
+									<GridItem _extra={{ className: "col-span-1" }}>
+										<Badge size="md" variant="solid" action="muted" className="bg-indigo-400">
+											<BadgeIcon as={MessageSquare} className="ml-2" />
+											<BadgeText className="ml-2">2/{messageCount || 0}</BadgeText>
+										</Badge>
+									</GridItem>
+									<GridItem _extra={{ className: "col-span-1" }}>
+										<Badge size="md" variant="solid" action="muted" className="bg-indigo-300">
+											<BadgeIcon as={TargetIcon} className="ml-2" />
+											<BadgeText className="ml-2">{professionalType || "Psychologue"}</BadgeText>
+										</Badge>
+									</GridItem>
+								</Grid>
+							</GridItem>
+						</Grid>
+					</HStack>
+				</Box>
 			</Box>
 		</Pressable>
 	);
@@ -207,6 +256,26 @@ const RoomThemeItem: React.FC<{ item: UserChatResponse & { myUserId: string } }>
 interface JwtDecoded {
 	ID: string;
 }
+
+const ChatTypeButton: React.FC<{
+	icon: React.ReactNode;
+	title: string;
+	onPress: () => void;
+}> = ({ icon, title, onPress }) => {
+	return (
+		<Button
+			variant="outline"
+			size="sm"
+			className="flex-1 mx-1 mb-2"
+			onPress={onPress}
+		>
+			<HStack space="xs" className="items-center">
+				{icon}
+				<ButtonText className="text-xs">{title}</ButtonText>
+			</HStack>
+		</Button>
+	);
+};
 
 export function ChatList(): React.JSX.Element {
 	const navigation = useNavigation<NavigationProp>();
@@ -297,8 +366,34 @@ export function ChatList(): React.JSX.Element {
 				}
 			];
 
-			// Combine real and fake chats
-			const allChats = [...processedChats, ...fakeGroupChats, ...fakeThematicChats];
+			// Add fake data for professional chats
+			const fakeProfessionalChats = [
+				{
+					room: "prof_1",
+					usersInRoom: [{ userId2: "prof1" }],
+					type: "professional" as const,
+					name: "Dr. Marie Laurent",
+					myUserId,
+					lastMessage: "Je vous propose un rendez-vous le 15/03 à 14h.",
+					messageCount: 45,
+					professionalType: "Psychologue",
+					rating: 4.8
+				},
+				{
+					room: "prof_2",
+					usersInRoom: [{ userId2: "prof2" }],
+					type: "professional" as const,
+					name: "Dr. Jean Dupont",
+					myUserId,
+					lastMessage: "Voici votre plan de suivi personnalisé.",
+					messageCount: 32,
+					professionalType: "Coach",
+					rating: 4.9
+				}
+			];
+
+			// Combine all chats
+			const allChats = [...processedChats, ...fakeGroupChats, ...fakeThematicChats, ...fakeProfessionalChats];
 			console.log('Final processed chats:', allChats);
 			setChats(allChats);
 		} catch (error) {
@@ -319,6 +414,9 @@ export function ChatList(): React.JSX.Element {
 			case 'thematic':
 				return (chat.theme || "difficulte_professionnelle").toLowerCase().includes(searchLower) ||
 					chat.room?.toLowerCase().includes(searchLower);
+			case 'professional':
+				return (chat.name || "Dr. Smith").toLowerCase().includes(searchLower) ||
+					chat.room?.toLowerCase().includes(searchLower);
 			default:
 				return chat.room?.toLowerCase().includes(searchLower);
 		}
@@ -330,43 +428,80 @@ export function ChatList(): React.JSX.Element {
 				return <RoomGroupItem item={item} />;
 			case 'thematic':
 				return <RoomThemeItem item={item} />;
+			case 'professional':
+				return <RoomProfessionalItem item={item} />;
 			default:
 				return <RoomItem item={item} />;
 		}
 	};
 
 	return (
-		<Box className="flex-1 bg-white p-4">
-			<Text className="text-xl mb-4">{jwtDecoded?.ID}</Text>
-			<TextInput
-				className="border border-gray-300 rounded-md p-2 mb-4"
-				placeholder="Rechercher un contact"
-				placeholderTextColor="rgba(145, 145, 145, 1)"
-				value={searchQuery}
-				onChangeText={setSearchQuery}
-			/>
-			<FlatList
-				data={filteredChats}
-				renderItem={renderItem}
-				keyExtractor={(item) => item.room}
-				contentContainerStyle={styles.listContent}
-				refreshControl={
-					<RefreshControl refreshing={refreshing} onRefresh={loadChats} />
-				}
-				ListEmptyComponent={() => (
-					<Box className="flex-1 items-center justify-center p-4">
-						<Text className="text-gray-500 text-center">No chats available</Text>
-					</Box>
-				)}
-			/>
-			<Button
-				variant="solid"
-				size="md"
-				className="m-4"
-				onPress={() => navigation.navigate('NewChat' as never)}
-			>
-				<ButtonText>+ Nouvelle Conversation</ButtonText>
-			</Button>
+		<Box className="flex-1 bg-slate-50">
+			<Box className="flex-1 p-4">
+				<Input
+					size="md"
+					className="mb-4"
+				>
+					<InputField
+						placeholder="Rechercher un contact"
+						value={searchQuery}
+						onChangeText={setSearchQuery}
+					/>
+				</Input>
+				<FlatList
+					data={filteredChats}
+					renderItem={renderItem}
+					keyExtractor={(item) => item.room}
+					contentContainerStyle={styles.listContent}
+					refreshControl={
+						<RefreshControl refreshing={refreshing} onRefresh={loadChats} />
+					}
+					ListEmptyComponent={() => (
+						<Box className="flex-1 items-center justify-center p-4">
+							<Text className="text-gray-500 text-center">No chats available</Text>
+						</Box>
+					)}
+				/>
+				<Box className="mt-4 mb-8">
+					<Text className="text-sm font-semibold mb-2">Nouvelle Conversation</Text>
+					<VStack space="xs">
+						<HStack space="xs">
+							<ChatTypeButton
+								icon={<UserPlus size={16} />}
+								title="1v1"
+								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+							/>
+							<ChatTypeButton
+								icon={<Users2 size={16} />}
+								title="Groupe"
+								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+							/>
+							<ChatTypeButton
+								icon={<Hash size={16} />}
+								title="Thématique"
+								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+							/>
+						</HStack>
+						<HStack space="xs">
+							<ChatTypeButton
+								icon={<Briefcase size={16} />}
+								title="Pro"
+								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+							/>
+							<ChatTypeButton
+								icon={<BookOpen size={16} />}
+								title="Dédié"
+								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+							/>
+							<ChatTypeButton
+								icon={<LifeBuoy size={16} />}
+								title="Support"
+								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+							/>
+						</HStack>
+					</VStack>
+				</Box>
+			</Box>
 		</Box>
 	);
 }
@@ -374,5 +509,6 @@ export function ChatList(): React.JSX.Element {
 const styles = StyleSheet.create({
 	listContent: {
 		paddingTop: 16,
+		paddingBottom: 16,
 	},
 });

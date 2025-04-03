@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, TextInput, Image } from 'react-native';
+import { View, ScrollView, StyleSheet, TextInput, Image, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ElysiaClient, ChatMessage } from 'ts-elysia-client';
 import { useAtom } from 'jotai';
 import { jwtDecodedAtom } from '../../states/user';
 import { Text } from "@/components/ui/text";
 import { Box } from "@/components/ui/box";
-import { MessageSquare, User, Users, MessageCircle, ComponentIcon, HashIcon, UserRoundIcon, TargetIcon, CodeIcon, GlobeIcon, List, PinIcon, Square } from 'lucide-react-native';
+import { MessageSquare, User, Users, MessageCircle, ComponentIcon, HashIcon, UserRoundIcon, TargetIcon, CodeIcon, GlobeIcon, List, PinIcon, Square, UserPlus, Users2, Hash, Briefcase, BookOpen, LifeBuoy, MessageCirclePlus } from 'lucide-react-native';
 import { Button, ButtonText } from "@/components/ui/button";
 import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
@@ -273,9 +273,33 @@ const NewChat_ItemProfile: React.FC<{ profile: Profile }> = ({ profile }) => {
 	);
 };
 
+const ChatSection: React.FC<{
+	icon: React.ReactNode;
+	title: string;
+	description: string;
+	onPress: () => void;
+}> = ({ icon, title, description, onPress }) => {
+	return (
+		<Pressable onPress={onPress}>
+			<Card className="p-4 mb-4">
+				<HStack space="md" className="items-center">
+					<Box className="w-12 h-12 rounded-full bg-primary-100 items-center justify-center">
+						{icon}
+					</Box>
+					<VStack className="flex-1">
+						<Text className="text-lg font-semibold">{title}</Text>
+						<Text className="text-sm text-gray-500">{description}</Text>
+					</VStack>
+					<MessageCirclePlus className="text-gray-400" />
+				</HStack>
+			</Card>
+		</Pressable>
+	);
+};
+
 export default function NewChat(): React.JSX.Element {
+	const navigation = useNavigation<NavigationProp>();
 	const [jwtDecoded] = useAtom(jwtDecodedAtom) as [JwtDecoded | null, (value: JwtDecoded | null) => void];
-	const [searchQuery, setSearchQuery] = useState("");
 	const [profiles, setProfiles] = useState<Profile[]>([]);
 	const apiClient = React.useMemo(() => {
 		const client = ElysiaClient.getInstance();
@@ -296,7 +320,6 @@ export default function NewChat(): React.JSX.Element {
 
 			const myUserId = jwtDecoded.ID.split(":")[1];
 			const response = await apiClient.getUserInformation();
-			// Filter out the current user and transform the response to match our Profile type
 			const filteredProfiles = response
 				.filter(user => user.user_id !== myUserId)
 				.map(user => ({
@@ -305,11 +328,11 @@ export default function NewChat(): React.JSX.Element {
 					picture: user.pictures_public[0] || "https://via.placeholder.com/150",
 					localization_code: user.localization_code.toString(),
 					localization_country: user.localization_country,
-					distance: 0, // This would need to be calculated based on user locations
-					commonTheme: user.themes.length, // Using the number of themes as a proxy for common themes
+					distance: 0,
+					commonTheme: user.themes.length,
 					mantra: {
 						sc: "",
-						fr: "" // No mantra in UserInformation
+						fr: ""
 					}
 				}));
 			setProfiles(filteredProfiles);
@@ -318,26 +341,64 @@ export default function NewChat(): React.JSX.Element {
 		}
 	};
 
-	const filteredProfiles = profiles.filter(profile =>
-		profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-		profile.localization_code.toLowerCase().includes(searchQuery.toLowerCase())
-	);
-
 	return (
-		<Box className="flex-1 bg-white p-4">
-			<Text className="text-xl mb-4">{jwtDecoded?.ID}</Text>
-			<TextInput
-				className="border border-gray-300 rounded-md p-2 mb-4"
-				placeholder="Rechercher un contact"
-				placeholderTextColor="rgba(145, 145, 145, 1)"
-				value={searchQuery}
-				onChangeText={setSearchQuery}
-			/>
-			<ScrollView>
-				{filteredProfiles.map((profile) => (
-					<NewChat_ItemProfile key={profile.id} profile={profile} />
-				))}
+		<Box className="flex-1 bg-white">
+			<ScrollView className="flex-1 p-4">
+				<ChatSection
+					icon={<UserPlus className="text-primary-600" size={24} />}
+					title="Chat 1v1"
+					description="Discutez en privé avec un utilisateur"
+					onPress={() => navigation.navigate('NewChat1v1', { room: '', usersInRoom: [] })}
+				/>
+
+				<ChatSection
+					icon={<Users2 className="text-primary-600" size={24} />}
+					title="Groupe de discussion"
+					description="Créez ou rejoignez un groupe de discussion"
+					onPress={() => navigation.navigate('NewGroupChat', { room: '', usersInRoom: [] })}
+				/>
+
+				<ChatSection
+					icon={<Hash className="text-primary-600" size={24} />}
+					title="Chat thématique"
+					description="Participez à des discussions sur des thèmes spécifiques"
+					onPress={() => navigation.navigate('NewThemeChat', { room: '', usersInRoom: [] })}
+				/>
+
+				<ChatSection
+					icon={<Briefcase className="text-primary-600" size={24} />}
+					title="Chat professionnel"
+					description="Échangez avec des professionnels"
+					onPress={() => navigation.navigate('NewProChat', { room: '', usersInRoom: [] })}
+				/>
+
+				<ChatSection
+					icon={<BookOpen className="text-primary-600" size={24} />}
+					title="Chat dédié"
+					description="Accédez à des ressources spécifiques et échangez avec des experts"
+					onPress={() => navigation.navigate('NewDedicatedChat', { room: '', usersInRoom: [] })}
+				/>
+
+				<ChatSection
+					icon={<LifeBuoy className="text-primary-600" size={24} />}
+					title="Support"
+					description="Obtenez de l'aide et des réponses à vos questions"
+					onPress={() => navigation.navigate('NewSupportChat', { room: '', usersInRoom: [] })}
+				/>
+
+				<Box className="h-20" /> {/* Spacer for bottom button */}
 			</ScrollView>
+
+			<Box className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200">
+				<Button
+					variant="solid"
+					size="lg"
+					className="w-full"
+					onPress={() => navigation.navigate('NewChat1v1', { room: '', usersInRoom: [] })}
+				>
+					<ButtonText>Nouvelle Conversation</ButtonText>
+				</Button>
+			</Box>
 		</Box>
 	);
 }

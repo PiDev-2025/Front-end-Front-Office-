@@ -1,1117 +1,243 @@
-// src/components/ProfessionalProfile.jsx
-import React, { useEffect, useCallback, memo } from "react";
-import { ScrollView, StyleSheet, Pressable } from "react-native";
-import { useAtom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
+import React from 'react';
+import { StyleSheet, ScrollView } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Surreal from "surrealdb";
+import { 
+    UserRoundIcon, 
+    Star, 
+    MessageSquare, 
+    Target, 
+    Clock, 
+    MapPin, 
+    Phone, 
+    Mail,
+    Calendar,
+    GraduationCap,
+    Award,
+    Heart
+} from 'lucide-react-native';
 
-// Individual GlueStack UI imports from components/ui
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Badge, BadgeIcon, BadgeText } from "@/components/ui/badge";
+// Import UI components
 import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
-import { Progress, ProgressFilledTrack } from "@/components/ui/progress";
-import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
+import { Button, ButtonText } from "@/components/ui/button";
+import { Badge, BadgeIcon, BadgeText } from "@/components/ui/badge";
+import { Grid, GridItem } from "@/components/ui/grid";
 
-// Lucide icons
-import { 
-	Briefcase, 
-	Code, 
-	Palette, 
-	UserCog, 
-	MapPin, 
-	Mail, 
-	Brain,
-	Heart,
-	Smile,
-	Users,
-	Clock,
-	Target,
-	Lightbulb,
-	Coffee,
-	Sparkles,
-	LucideIcon,
-	ChevronDown,
-	Apple,
-	Flower,
-	Star,
-	PenTool,
-	Magnet,
-	Leaf,
-	Music,
-	Hash,
-	BrainCircuit,
-	Hand,
-	Activity,
-	Eye,
-	Zap,
-	Dumbbell,
-	CalendarPlus,
-	Clapperboard
-} from "lucide-react-native";
-
-// Types
-interface Professional {
-	id: string;
-	name: string;
-	type: ProfessionalType;
-	location: string;
-	distance: string;
-	bio: string;
-	avatar: string;
-	compatibility: number;
-	satisfaction: number;
-	experience: string;
-	specialties: string;
-	languages: string;
-	[key: string]: unknown;
+interface ProfessionalProfileProps {
+    name: string;
+    title: string;
+    rating: number;
+    reviewCount: number;
+    specialties: string[];
+    experience: number;
+    location: string;
+    phone: string;
+    email: string;
+    availability: string;
+    education: string[];
+    certifications: string[];
+    bio: string;
+    onContact: () => void;
+    onBook: () => void;
 }
 
-// Jotai atoms
-const professionalsAtom = atomWithStorage<Professional[]>("professionals", []);
-const loadingAtom = atomWithStorage<boolean>("loading", false);
-const errorAtom = atomWithStorage<string | null>("error", null);
+export function ProfessionalProfile({
+    name,
+    title,
+    rating,
+    reviewCount,
+    specialties,
+    experience,
+    location,
+    phone,
+    email,
+    availability,
+    education,
+    certifications,
+    bio,
+    onContact,
+    onBook
+}: ProfessionalProfileProps): React.JSX.Element {
+    return (
+        <Box style={styles.container}>
+            <LinearGradient
+                colors={['#1a1c2e', '#2d1b3d', '#1f2937']}
+                style={styles.backgroundGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+            />
+            <ScrollView 
+                style={styles.container}
+                contentContainerStyle={styles.contentContainer}
+                showsVerticalScrollIndicator={false}
+            >
+                <Box className="p-4">
+                    <VStack space="xl">
+                        {/* Profile Header */}
+                        <Card className="p-6 rounded-xl bg-white/10 border-white/20">
+                            <VStack space="md">
+                                <HStack space="md" className="items-center">
+                                    <Box className="p-2 rounded-full bg-white/10">
+                                        <UserRoundIcon size={24} color="#ffffff" />
+                                    </Box>
+                                    <VStack space="xs">
+                                        <Heading size="lg" style={{ color: "#ffffff" }}>
+                                            {name}
+                                        </Heading>
+                                        <Text size="sm" style={{ color: "#ffffff80" }}>
+                                            {title}
+                                        </Text>
+                                    </VStack>
+                                </HStack>
+                                
+                                <HStack space="md" className="items-center">
+                                    <Badge size="md" variant="solid" action="warning">
+                                        <BadgeIcon as={Star} className="ml-2" />
+                                        <BadgeText className="ml-2">{rating.toFixed(1)}</BadgeText>
+                                    </Badge>
+                                    <Text size="sm" style={{ color: "#ffffff80" }}>
+                                        ({reviewCount} avis)
+                                    </Text>
+                                </HStack>
+                            </VStack>
+                        </Card>
 
-// Professional types enum
-const ProfessionalTypes = {
-	DIETETICIEN: "Diététicien",
-	SOPHROLOGUE: "Sophrologue",
-	AROMATHERAPEUTE: "Aromathérapeute",
-	COACH_VIE: "Coach de vie",
-	COACH_SEDUCTION: "Coach en séduction",
-	COACH_SPORTIF: "Coach sportif",
-	ASTROLOGUE: "Astrologue",
-	GRAPHOLOGUE: "Graphologue",
-	MAGNETISEUR: "Magnétiseur",
-	NATUROPATHE: "Naturopathe",
-	MUSICOTHERAPEUTE: "Musicothérapeute",
-	NUMEROLOGUE: "Numérologue",
-	PSYCHANALYSTE: "Psychanalyste",
-	PSYCHOLOGUE: "Psychologue",
-	PSYCHOPRATICIEN: "Psycho praticien",
-	BIO_ENERGETICIEN: "Bio énergéticien",
-	REIKI: "Reiki",
-	SHIATSU: "Shiatsu",
-	YOGA_THERAPEUTE: "Yoga thérapeute",
-	HYPNOTISEUR: "Hypnotiseur",
-	PHYTOTHERAPEUTE: "Phytothérapeute",
-} as const;
+                        {/* Specialties */}
+                        <Card className="p-6 rounded-xl bg-white/10 border-white/20">
+                            <VStack space="md">
+                                <Heading size="md" style={{ color: "#ffffff" }}>
+                                    Spécialités
+                                </Heading>
+                                <Grid className="gap-2 grid-cols-2" _extra={{ className: "grid-cols-2" }}>
+                                    {specialties.map((specialty, index) => (
+                                        <GridItem key={index} _extra={{ className: "col-span-1" }}>
+                                            <Badge size="md" variant="solid" action="info">
+                                                <BadgeIcon as={Target} className="ml-2" />
+                                                <BadgeText className="ml-2">{specialty}</BadgeText>
+                                            </Badge>
+                                        </GridItem>
+                                    ))}
+                                </Grid>
+                            </VStack>
+                        </Card>
 
-type ProfessionalType = typeof ProfessionalTypes[keyof typeof ProfessionalTypes];
+                        {/* Contact Information */}
+                        <Card className="p-6 rounded-xl bg-white/10 border-white/20">
+                            <VStack space="md">
+                                <Heading size="md" style={{ color: "#ffffff" }}>
+                                    Informations de contact
+                                </Heading>
+                                <VStack space="sm">
+                                    <HStack space="md" className="items-center">
+                                        <MapPin size={20} color="#ffffff80" />
+                                        <Text style={{ color: "#ffffff" }}>{location}</Text>
+                                    </HStack>
+                                    <HStack space="md" className="items-center">
+                                        <Phone size={20} color="#ffffff80" />
+                                        <Text style={{ color: "#ffffff" }}>{phone}</Text>
+                                    </HStack>
+                                    <HStack space="md" className="items-center">
+                                        <Mail size={20} color="#ffffff80" />
+                                        <Text style={{ color: "#ffffff" }}>{email}</Text>
+                                    </HStack>
+                                    <HStack space="md" className="items-center">
+                                        <Clock size={20} color="#ffffff80" />
+                                        <Text style={{ color: "#ffffff" }}>{availability}</Text>
+                                    </HStack>
+                                </VStack>
+                            </VStack>
+                        </Card>
 
-// Color and icon mappings for each professional type
-const professionalStyles = {
-	DIETETICIEN: {
-		icon: Apple,
-		color: "#0ca4a5",
-		gradient: ["#0892a5", "#06908f", "#0ca4a5"],
-		text: "#FFFFFF" // Luminance: ~94 (dark color)
-	},
-	SOPHROLOGUE: {
-		icon: Brain,
-		color: "#0ca4a5",
-		gradient: ["#f84aa7", "#a74482", "#0ca4a5"],
-		text: "#FFFFFF" // Luminance: ~94 (dark color)
-	},
-	AROMATHERAPEUTE: {
-		icon: Flower,
-		color: "#d6a184",
-		gradient: ["#fec196", "#ffa686", "#d6a184"],
-		text: "#333333" // Luminance: ~171 (light color)
-	},
-	COACH_VIE: {
-		icon: Heart,
-		color: "#cad178",
-		gradient: ["#c7aa74", "#d3d57c", "#cad178"],
-		text: "#333333" // Luminance: ~188 (light color)
-	},
-	COACH_SEDUCTION: {
-		icon: Sparkles,
-		color: "#e8d7f1",
-		gradient: ["#a167a5", "#d3bccc", "#e8d7f1"],
-		text: "#333333" // Luminance: ~219 (light color)
-	},
-	COACH_SPORTIF: {
-		icon: Dumbbell,
-		color: "#ff9505",
-		gradient: ["#ffc971", "#ffb627", "#ff9505"],
-		text: "#333333" // Luminance: ~165 (light color)
-	},
-	ASTROLOGUE: {
-		icon: Star,
-		color: "#21295c",
-		gradient: ["#065a82", "#1b3b6f", "#21295c"],
-		text: "#FFFFFF" // Luminance: ~38 (dark color)
-	},
-	GRAPHOLOGUE: {
-		icon: PenTool,
-		color: "#ecf8f8",
-		gradient: ["#e7d8c9", "#eee4e1", "#ecf8f8"],
-		text: "#333333" // Luminance: ~241 (light color)
-	},
-	MAGNETISEUR: {
-		icon: Magnet,
-		color: "#cce3de",
-		gradient: ["#f6fff8", "#eaf4f4", "#cce3de"],
-		text: "#333333" // Luminance: ~215 (light color)
-	},
-	NATUROPATHE: {
-		icon: Leaf,
-		color: "#6b9080",
-		gradient: ["#cce3de", "#a4c3b2", "#6b9080"],
-		text: "#FFFFFF" // Luminance: ~132 (slightly dark, but close to threshold)
-	},
-	MUSICOTHERAPEUTE: {
-		icon: Music,
-		color: "#87bfff",
-		gradient: ["#2667ff", "#3f8efc", "#87bfff"],
-		text: "#333333" // Luminance: ~175 (light color)
-	},
-	NUMEROLOGUE: {
-		icon: Hash,
-		color: "#fbf7f0",
-		gradient: ["#a47c41", "#f1e5d7", "#fbf7f0"],
-		text: "#FFFFFF" // Luminance: ~245 (light color)
-	},
-	PSYCHANALYSTE: {
-		icon: BrainCircuit,
-		color: "#3f020b",
-		gradient: ["#e60b43", "#670117", "#3f020b"],
-		text: "#FFFFFF" // Luminance: ~19 (dark color)
-	},
-	PSYCHOLOGUE: {
-		icon: Brain,
-		color: "#e0e2db",
-		gradient: ["#b8bdb5", "#d2d4c8", "#e0e2db"],
-		text: "#333333" // Luminance: ~225 (light color)
-	},
-	PSYCHOPRATICIEN: {
-		icon: Brain,
-		color: "#fdffe8",
-		gradient: ["#fff9c5", "#ffdcc6", "#fdffe8"],
-		text: "#333333" // Luminance: ~252 (light color)
-	},
-	BIO_ENERGETICIEN: {
-		icon: Zap,
-		color: "#7bdff2",
-		gradient: ["#eff7f6", "#b2f7ef", "#7bdff2"],
-		text: "#333333" // Luminance: ~198 (light color)
-	},
-	REIKI: {
-		icon: Sparkles,
-		color: "#e3f2fd",
-		gradient: ["#90caf9", "#bbdefb", "#e3f2fd"],
-		text: "#333333" // Luminance: ~235 (light color)
-	},
-	SHIATSU: {
-		icon: Hand,
-		color: "#ff8500",
-		gradient: ["#ff9e00", "#ff9100", "#ff8500"],
-		text: "#333333" // Luminance: ~149 (light color)
-	},
-	YOGA_THERAPEUTE: {
-		icon: Activity,
-		color: "#240046",
-		gradient: ["#5a189a", "#3c096c", "#240046"],
-		text: "#FFFFFF" // Luminance: ~15 (dark color)
-	},
-	HYPNOTISEUR: {
-		icon: Eye,
-		color: "#590d22",
-		gradient: ["#a4133c", "#800f2f", "#590d22"],
-		text: "#FFFFFF" // Luminance: ~34 (dark color)
-	},
-	PHYTOTHERAPEUTE: {
-		icon: Leaf,
-		color: "#355070",
-		gradient: ["#b56576", "#6d597a", "#355070"],
-		text: "#FFFFFF" // Luminance: ~74 (dark color)
-	}
-  } as const;
+                        {/* Experience & Education */}
+                        <Card className="p-6 rounded-xl bg-white/10 border-white/20">
+                            <VStack space="md">
+                                <Heading size="md" style={{ color: "#ffffff" }}>
+                                    Expérience & Formation
+                                </Heading>
+                                <VStack space="md">
+                                    <HStack space="md" className="items-center">
+                                        <GraduationCap size={20} color="#ffffff80" />
+                                        <Text style={{ color: "#ffffff" }}>{experience} ans d'expérience</Text>
+                                    </HStack>
+                                    {education.map((edu, index) => (
+                                        <HStack key={index} space="md" className="items-center">
+                                            <GraduationCap size={20} color="#ffffff80" />
+                                            <Text style={{ color: "#ffffff" }}>{edu}</Text>
+                                        </HStack>
+                                    ))}
+                                </VStack>
+                            </VStack>
+                        </Card>
 
+                        {/* Certifications */}
+                        <Card className="p-6 rounded-xl bg-white/10 border-white/20">
+                            <VStack space="md">
+                                <Heading size="md" style={{ color: "#ffffff" }}>
+                                    Certifications
+                                </Heading>
+                                <VStack space="sm">
+                                    {certifications.map((cert, index) => (
+                                        <HStack key={index} space="md" className="items-center">
+                                            <Award size={20} color="#ffffff80" />
+                                            <Text style={{ color: "#ffffff" }}>{cert}</Text>
+                                        </HStack>
+                                    ))}
+                                </VStack>
+                            </VStack>
+                        </Card>
 
-interface Skill {
-	name: string;
-	icon: LucideIcon;
-	color: string;
+                        {/* Bio */}
+                        <Card className="p-6 rounded-xl bg-white/10 border-white/20">
+                            <VStack space="md">
+                                <Heading size="md" style={{ color: "#ffffff" }}>
+                                    À propos
+                                </Heading>
+                                <Text style={{ color: "#ffffff" }}>{bio}</Text>
+                            </VStack>
+                        </Card>
+
+                        {/* Action Buttons */}
+                        <HStack space="md">
+                            <Button
+                                variant="solid"
+                                size="md"
+                                className="flex-1"
+                                onPress={onContact}
+                            >
+                                <ButtonText>Contacter</ButtonText>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="md"
+                                className="flex-1"
+                                onPress={onBook}
+                            >
+                                <ButtonText>Prendre RDV</ButtonText>
+                            </Button>
+                        </HStack>
+                    </VStack>
+                </Box>
+            </ScrollView>
+        </Box>
+    );
 }
-
-interface SkillMap {
-	[key: string]: Skill[];
-}
-
-interface ProfessionalCardProps {
-	professional: Professional;
-	isExpanded: boolean;
-	onToggle: (expanded: boolean) => void;
-}
-
-const ProfessionalCard = memo(({ 
-	professional, 
-	isExpanded, 
-	onToggle 
-}: ProfessionalCardProps) => {
-	const getBadgeColor = useCallback((type: ProfessionalType) => {
-		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === type)?.[0];
-		return key ? professionalStyles[key as keyof typeof professionalStyles]?.color : "#666";
-	}, []);
-
-	const getBadgeIcon = useCallback((type: ProfessionalType) => {
-		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === type)?.[0];
-		return key ? professionalStyles[key as keyof typeof professionalStyles]?.icon : Briefcase;
-	}, []);
-
-	const getGradientColors = useCallback(() => {
-		const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
-		return key ? [...professionalStyles[key as keyof typeof professionalStyles]?.gradient] : ['#22C55E', '#0EA5E9'];
-	}, [professional.type]);
-
-	const getSkillBadges = (): Skill[] => {
-		const skillsMap: SkillMap = {
-			DEVELOPER: [
-				{ name: "Problem Solving", icon: Brain, color: "#22C55E" },
-				{ name: "Anxiety", icon: Heart, color: "#EF4444" },
-				{ name: "Depression", icon: Smile, color: "#F59E0B" },
-				{ name: "Group Therapy", icon: Users, color: "#0EA5E9" },
-				{ name: "Crisis Management", icon: Target, color: "#EF4444" }
-			],
-			DESIGNER: [
-				{ name: "Emotional Design", icon: Heart, color: "#EF4444" },
-				{ name: "Mindfulness", icon: Brain, color: "#22C55E" },
-				{ name: "Stress Relief", icon: Coffee, color: "#F59E0B" },
-				{ name: "Creative Therapy", icon: Palette, color: "#0EA5E9" },
-				{ name: "Positive Thinking", icon: Sparkles, color: "#22C55E" }
-			],
-			MANAGER: [
-				{ name: "Leadership", icon: UserCog, color: "#F59E0B" },
-				{ name: "Team Building", icon: Users, color: "#0EA5E9" },
-				{ name: "Time Management", icon: Clock, color: "#22C55E" },
-				{ name: "Crisis Support", icon: Target, color: "#EF4444" },
-				{ name: "Innovation", icon: Lightbulb, color: "#F59E0B" }
-			],
-			CONSULTANT: [
-				{ name: "Strategy", icon: Target, color: "#EF4444" },
-				{ name: "Mentoring", icon: Users, color: "#0EA5E9" },
-				{ name: "Quick Response", icon: Clock, color: "#22C55E" },
-				{ name: "Solutions", icon: Lightbulb, color: "#F59E0B" },
-				{ name: "Empathy", icon: Heart, color: "#EF4444" }
-			]
-		};
-
-		return skillsMap[professional.type] || skillsMap.CONSULTANT;
-	};
-
-	return (
-		<Card className="py-5 pr-5 rounded-lg my-3 relative">
-			<Box
-				style={{
-					position: 'absolute',
-					left: 0,
-					bottom: 0,
-					width: 3,
-					top: 0,
-					overflow: 'hidden',
-				}}
-			>
-				<LinearGradient
-					start={{x: 0, y: 0}}
-					end={{x: 0, y: 1}}
-					colors={getGradientColors()}
-					style={StyleSheet.absoluteFill}
-				/>
-			</Box>
-			<Box
-				style={{
-					position: 'absolute',
-					left: 0,
-					bottom: 0,
-					right: 0,
-					height: 2,
-					overflow: 'hidden',
-				}}
-			>
-				{/* <LinearGradient
-					start={{x: 0, y: 0}}
-					end={{x: 1, y: 0}}
-					colors={(() => {
-						const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
-						return key ? [...professionalStyles[key as keyof typeof professionalStyles]?.gradient] : ['#22C55E', '#0EA5E9'];
-					})()}
-					style={StyleSheet.absoluteFill}
-				/> */}
-			</Box>
-			{/* Top Section */}
-			<VStack space="md">
-				<HStack space="md" style={{ alignItems: 'flex-start' }}>
-					<VStack space="xs" style={{ width: 110 }}>
-						<Avatar size="2xl">
-							<AvatarImage
-								source={{
-									uri: professional.avatar || "https://via.placeholder.com/150",
-								}}
-								alt={`${professional.name}'s avatar`}
-							/>
-						</Avatar>
-						<VStack space="xs" style={{ width: '100%', gap: 2 }}>
-							<HStack 
-								space="xs" 
-								style={{ 
-									alignItems: 'center',
-									justifyContent: 'flex-start',
-									width: '100%',
-									gap: 5
-								}}
-							>
-								<Button
-									size="sm"
-									variant="link"
-									style={{
-										borderColor: getBadgeColor(professional.type),
-										padding: 2
-									}}
-								>
-									<Target size={14} color={getBadgeColor(professional.type)} />
-								</Button>
-								<Text size="xs" italic>see my programs</Text>
-							</HStack>
-							<HStack 
-								space="xs" 
-								style={{ 
-									alignItems: 'center',
-									justifyContent: 'flex-start',
-									width: '100%',
-									gap: 4
-								}}
-							>
-								<Button
-									size="sm"
-									variant="link"
-									style={{
-										borderColor: getBadgeColor(professional.type),
-										padding: 2
-									}}
-								>
-									<Clapperboard size={14} color={getBadgeColor(professional.type)} />
-								</Button>
-								<Text size="xs" italic>see my content</Text>
-							</HStack>
-							<HStack 
-								space="xs" 
-								style={{ 
-									alignItems: 'center',
-									justifyContent: 'flex-start',
-									width: '100%',
-									gap: 4
-								}}
-							>
-								<Button
-									size="sm"
-									variant="link"
-									style={{
-										borderColor: getBadgeColor(professional.type),
-										padding: 2
-									}}
-								>
-									<Mail size={14} color={getBadgeColor(professional.type)} />
-								</Button>
-								<Text size="xs" italic>chat with me</Text>
-							</HStack>
-							<HStack 
-								space="xs" 
-								style={{ 
-									alignItems: 'center',
-									justifyContent: 'flex-start',
-									width: '100%',
-									gap: 4
-								}}
-							>
-								<Button
-									size="sm"
-									variant="link"
-									style={{
-										borderColor: getBadgeColor(professional.type),
-										padding: 2
-									}}
-								>
-									<MapPin size={14} color={getBadgeColor(professional.type)} />
-								</Button>
-								<Text size="xs" italic>locate me</Text>
-							</HStack>
-
-
-
-						</VStack>
-					</VStack>
-					<VStack space="xs" style={{ flex: 1 }}>
-						<Heading 
-							size="md" 
-						>
-							{professional.name}
-						</Heading>
-						<VStack space="sm">
-							<Badge
-								size="sm"
-								variant="solid"
-								style={{
-									backgroundColor: getBadgeColor(professional.type)
-								}}
-							>
-								<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
-									<BadgeIcon 
-										as={getBadgeIcon(professional.type)} 
-										size="sm"
-										color={(() => {
-											const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
-											return key ? professionalStyles[key as keyof typeof professionalStyles]?.text : '#FFFFFF';
-										})()}
-									/>
-									<Box style={{ width: 4 }} />
-									<BadgeText style={{ 
-										color: (() => {
-											const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
-											return key ? professionalStyles[key as keyof typeof professionalStyles]?.text : '#FFFFFF';
-										})()
-									}}>{professional.type}</BadgeText>
-								</Box>
-							</Badge>
-							<HStack space="xs" style={{ width: '100%' }}>
-								<Badge 
-									size="sm" 
-									variant="outline" 
-									style={{ 
-										borderColor: '#666',
-										flex: 4
-									}}
-								>
-									<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
-										<BadgeIcon as={MapPin} size="sm" color="#666" />
-										<Box style={{ width: 4 }} />
-										<BadgeText style={{ color: '#666' }}>{professional.location.split(',')[0]}</BadgeText>
-									</Box>
-								</Badge>
-								<Badge 
-									size="sm" 
-									variant="outline" 
-									style={{ 
-										borderColor: '#666',
-										flex: 2
-									}}
-								>
-									<Box style={{ flexDirection: 'row', alignItems: 'center' }}>
-										<BadgeIcon as={Target} size="sm" color="#666" />
-										<Box style={{ width: 4 }} />
-										<BadgeText style={{ color: '#666' }}>{professional.distance} km</BadgeText>
-									</Box>
-								</Badge>
-							</HStack>
-						</VStack>
-						<Box className="bg-gray-50 rounded-lg p-2 mt-1">
-							<Text size="sm" italic>
-								{professional.bio}
-							</Text>
-						</Box>
-						<Box className="mt-2">
-							<VStack space="xs">
-								<Box>
-									<HStack space="xs" className="mb-1">
-										<Text size="xs" bold>Compatibility:</Text>
-										<Text size="xs">{professional.compatibility || 85}%</Text>
-									</HStack>
-									<Box style={{ position: 'relative' }}>
-										<Progress size="sm" value={100}>
-											<ProgressFilledTrack>
-												<LinearGradient
-													start={{x: 0, y: 0}}
-													end={{x: 1, y: 0}}
-													colors={['#E5E7EB', '#D1D5DB']}
-													style={StyleSheet.absoluteFill}
-												/>
-											</ProgressFilledTrack>
-										</Progress>
-										<Box style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
-											<Progress size="sm" value={professional.compatibility || 85}>
-												<ProgressFilledTrack>
-													<LinearGradient
-														start={{x: 0, y: 0}}
-														end={{x: 1, y: 0}}
-														colors={(() => {
-															const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
-															const gradient = key ? professionalStyles[key as keyof typeof professionalStyles]?.gradient : ['#22C55E', '#0EA5E9'];
-															return [...gradient];
-														})()}
-														style={StyleSheet.absoluteFill}
-													/>
-												</ProgressFilledTrack>
-											</Progress>
-										</Box>
-									</Box>
-								</Box>
-								<Box>
-									<HStack space="xs" className="mb-1">
-										<Text size="xs" bold>Satisfaction:</Text>
-										<Text size="xs">{professional.satisfaction || 90}%</Text>
-									</HStack>
-									<Box style={{ position: 'relative' }}>
-										<Progress size="sm" value={100}>
-											<ProgressFilledTrack>
-												<LinearGradient
-													start={{x: 0, y: 0}}
-													end={{x: 1, y: 0}}
-													colors={['#E5E7EB', '#D1D5DB']}
-													style={StyleSheet.absoluteFill}
-												/>
-											</ProgressFilledTrack>
-										</Progress>
-										<Box style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
-											<Progress size="sm" value={professional.satisfaction || 90}>
-												<ProgressFilledTrack>
-													<LinearGradient
-														start={{x: 0, y: 0}}
-														end={{x: 1, y: 0}}
-														colors={(() => {
-															const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
-															return key ? [...professionalStyles[key as keyof typeof professionalStyles]?.gradient] : ['#22C55E', '#0EA5E9'];
-														})()}
-														style={StyleSheet.absoluteFill}
-													/>
-												</ProgressFilledTrack>
-											</Progress>
-										</Box>
-									</Box>
-								</Box>
-								<Box>
-									<HStack space="xs" className="mb-1">
-										<Text size="xs" bold>Accompanied:</Text>
-										<Text size="xs">{professional.satisfaction || 90} / total_accompanied</Text>
-									</HStack>
-									<Box style={{ position: 'relative' }}>
-										<Progress size="sm" value={100}>
-											<ProgressFilledTrack>
-												<LinearGradient
-													start={{x: 0, y: 0}}
-													end={{x: 1, y: 0}}
-													colors={['#E5E7EB', '#D1D5DB']}
-													style={StyleSheet.absoluteFill}
-												/>
-											</ProgressFilledTrack>
-										</Progress>
-										<Box style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
-											<Progress size="sm" value={professional.satisfaction || 90}>
-												<ProgressFilledTrack>
-													<LinearGradient
-														start={{x: 0, y: 0}}
-														end={{x: 1, y: 0}}
-														colors={(() => {
-															const key = Object.entries(ProfessionalTypes).find(([_, value]) => value === professional.type)?.[0];
-															return key ? [...professionalStyles[key as keyof typeof professionalStyles]?.gradient] : ['#22C55E', '#0EA5E9'];
-														})()}
-														style={StyleSheet.absoluteFill}
-													/>
-												</ProgressFilledTrack>
-											</Progress>
-										</Box>
-									</Box>
-								</Box>
-							</VStack>
-						</Box>
-					</VStack>
-				</HStack>
-
-				{/* Expandable Section */}
-				{isExpanded && (
-					<Box className="bg-gray-50 rounded-lg p-4 mt-2">
-						<VStack space="md">
-							<HStack space="md">
-								<Text size="sm" bold style={{ width: 100 }}>Experience:</Text>
-								<Text size="sm">{professional.experience}</Text>
-							</HStack>
-							<HStack space="md" style={{ alignItems: 'flex-start' }}>
-								<Text size="sm" bold style={{ width: 100 }}>Specialties:</Text>
-								<Text size="sm" style={{ flex: 1 }}>{professional.specialties}</Text>
-							</HStack>
-							<HStack space="md">
-								<Text size="sm" bold style={{ width: 100 }}>Languages:</Text>
-								<Text size="sm">{professional.languages}</Text>
-							</HStack>
-							{/* <HStack space="md">
-								<Text size="sm" bold style={{ width: 100 }}>Availability:</Text>
-								<Text size="sm">{professional.availability}</Text>
-							</HStack> */}
-						</VStack>
-					</Box>
-				)}
-			</VStack>
-
-			{/* Expand/Collapse Button */}
-			<Box style={{ 
-				position: 'absolute',
-				left: 0,
-				right: 0,
-				bottom: -12,
-				alignItems: 'center',
-				zIndex: 10
-			}}>
-				<Pressable 
-					onPress={() => onToggle(!isExpanded)}
-					style={{
-						backgroundColor: 'white',
-						borderRadius: 15,
-						padding: 2,
-						shadowColor: "#000",
-						shadowOffset: {
-							width: 0,
-							height: 2,
-						},
-						shadowOpacity: 0.15,
-						shadowRadius: 3,
-						elevation: 3,
-					}}
-				>
-					<ChevronDown
-						size={20}
-						color="#666"
-						style={{
-							transform: [{ rotate: isExpanded ? '180deg' : '0deg' }]
-						}}
-					/>
-				</Pressable>
-			</Box>
-		</Card>
-	);
-});
-
-ProfessionalCard.displayName = 'ProfessionalCard';
-
-// API fetch function
-const fetchProfessionalsFromDB = async (): Promise<Professional[]> => {
-	try {
-		const response = await fetch('http://127.0.0.1:8000/professionals');
-		if (!response.ok) {
-			throw new Error('Failed to fetch professionals');
-		}
-		const data = await response.json();
-		return data as Professional[];
-	} catch (error) {
-		console.error('Error fetching professionals:', error);
-		return [];
-	}
-};
-
-// Main Professional Profile Component
-const ProfessionalProfile = memo(() => {
-	const [professionals, setProfessionals] = useAtom(professionalsAtom);
-	const [loading, setLoading] = useAtom(loadingAtom);
-	const [error, setError] = useAtom(errorAtom);
-	const [expandedCards, setExpandedCards] = React.useState<Set<string>>(new Set());
-
-	const loadProfessionals = useCallback(async () => {
-		setLoading(true);
-		try {
-			const data = await fetchProfessionalsFromDB();
-			setProfessionals(data);
-			setError(null);
-		} catch (err) {
-			if (err instanceof Error) {
-				setError(err.message);
-			} else {
-				setError('An unknown error occurred');
-			}
-		} finally {
-			setLoading(false);
-		}
-	}, [setProfessionals, setLoading, setError]);
-
-	useEffect(() => {
-		if (!professionals.length) {
-			loadProfessionals();
-		}
-	}, [professionals.length, loadProfessionals]);
-
-	const handleCardToggle = useCallback((id: string, expanded: boolean) => {
-		setExpandedCards(prev => {
-			const newSet = new Set(prev);
-			if (expanded) {
-				newSet.add(id);
-			} else {
-				newSet.delete(id);
-			}
-			return newSet;
-		});
-	}, []);
-
-	// Mock data for development
-	const mockProfessionals: Professional[] = [
-		{
-			id: "1",
-			name: "Marie Dubois",
-			type: ProfessionalTypes.DIETETICIEN,
-			location: "Paris, FR",
-			distance: "2.5",
-			bio: "Diététicienne spécialisée en rééquilibrage alimentaire et nutrition sportive",
-			avatar: "https://randomuser.me/api/portraits/women/1.jpg",
-			compatibility: 88,
-			satisfaction: 92,
-			experience: "8 ans",
-			specialties: "Nutrition sportive, Rééquilibrage alimentaire, Allergies alimentaires",
-			languages: "Français, Anglais"
-		},
-		{
-			id: "2",
-			name: "Sophie Martin",
-			type: ProfessionalTypes.SOPHROLOGUE,
-			location: "Lyon, FR",
-			distance: "5.8",
-			bio: "Sophrologue certifiée, spécialisée en gestion du stress et sommeil",
-			avatar: "https://randomuser.me/api/portraits/women/2.jpg",
-			compatibility: 92,
-			satisfaction: 95,
-			experience: "12 ans",
-			specialties: "Gestion du stress, Troubles du sommeil, Préparation mentale",
-			languages: "Français, Espagnol"
-		},
-		{
-			id: "3",
-			name: "Lucas Bernard",
-			type: ProfessionalTypes.AROMATHERAPEUTE,
-			location: "Nice, FR",
-			distance: "8.3",
-			bio: "Aromathérapeute passionné par les huiles essentielles et le bien-être naturel",
-			avatar: "https://randomuser.me/api/portraits/men/3.jpg",
-			compatibility: 75,
-			satisfaction: 88,
-			experience: "6 ans",
-			specialties: "Huiles essentielles, Phytothérapie, Massages aromatiques",
-			languages: "Français, Italien"
-		},
-		{
-			id: "4",
-			name: "Emma Petit",
-			type: ProfessionalTypes.COACH_VIE,
-			location: "Bordeaux, FR",
-			distance: "12.1",
-			bio: "Coach de vie certifiée, spécialisée en développement personnel et professionnel",
-			avatar: "https://randomuser.me/api/portraits/women/4.jpg",
-			compatibility: 95,
-			satisfaction: 90,
-			experience: "10 ans",
-			specialties: "Développement personnel, Coaching professionnel, Gestion des transitions",
-			languages: "Français, Anglais, Espagnol"
-		},
-		{
-			id: "5",
-			name: "Thomas Moreau",
-			type: ProfessionalTypes.COACH_SEDUCTION,
-			location: "Paris, FR",
-			distance: "3.2",
-			bio: "Expert en développement des relations et confiance en soi",
-			avatar: "https://randomuser.me/api/portraits/men/5.jpg",
-			compatibility: 70,
-			satisfaction: 85,
-			experience: "7 ans",
-			specialties: "Confiance en soi, Communication, Relations interpersonnelles",
-			languages: "Français, Anglais"
-		},
-		{
-			id: "6",
-			name: "Julie Leroy",
-			type: ProfessionalTypes.COACH_SPORTIF,
-			location: "Marseille, FR",
-			distance: "15.7",
-			bio: "Coach sportive spécialisée en remise en forme et nutrition sportive",
-			avatar: "https://randomuser.me/api/portraits/women/6.jpg",
-			compatibility: 85,
-			satisfaction: 90,
-			experience: "9 ans",
-			specialties: "Remise en forme, Musculation, Course à pied",
-			languages: "Français, Anglais"
-		},
-		{
-			id: "7",
-			name: "Antoine Roux",
-			type: ProfessionalTypes.ASTROLOGUE,
-			location: "Toulouse, FR",
-			distance: "9.4",
-			bio: "Astrologue professionnel, expert en thèmes natals et synastries",
-			avatar: "https://randomuser.me/api/portraits/men/7.jpg",
-			compatibility: 78,
-			satisfaction: 85,
-			experience: "15 ans",
-			specialties: "Thème natal, Synastrie, Transits planétaires",
-			languages: "Français, Anglais"
-		},
-		{
-			id: "8",
-			name: "Claire Fontaine",
-			type: ProfessionalTypes.GRAPHOLOGUE,
-			location: "Nantes, FR",
-			distance: "7.6",
-			bio: "Graphologue experte en analyse d'écriture et développement personnel",
-			avatar: "https://randomuser.me/api/portraits/women/8.jpg",
-			compatibility: 72,
-			satisfaction: 80,
-			experience: "11 ans",
-			specialties: "Analyse d'écriture, Orientation professionnelle, Développement personnel",
-			languages: "Français, Allemand"
-		},
-		{
-			id: "9",
-			name: "Pierre Dupont",
-			type: ProfessionalTypes.MAGNETISEUR,
-			location: "Strasbourg, FR",
-			distance: "11.2",
-			bio: "Magnétiseur expérimenté, pratique les soins énergétiques depuis 15 ans",
-			avatar: "https://randomuser.me/api/portraits/men/9.jpg",
-			compatibility: 82,
-			satisfaction: 88,
-			experience: "15 ans",
-			specialties: "Soins énergétiques, Magnétisme curatif, Rééquilibrage",
-			languages: "Français, Allemand"
-		},
-		{
-			id: "10",
-			name: "Sarah Lambert",
-			type: ProfessionalTypes.NATUROPATHE,
-			location: "Lille, FR",
-			distance: "6.9",
-			bio: "Naturopathe holistique, spécialisée en nutrition et plantes médicinales",
-			avatar: "https://randomuser.me/api/portraits/women/10.jpg",
-			compatibility: 89,
-			satisfaction: 90,
-			experience: "13 ans",
-			specialties: "Nutrition naturelle, Phytothérapie, Iridologie",
-			languages: "Français, Anglais"
-		},
-		{
-			id: "11",
-			name: "Marc Girard",
-			type: ProfessionalTypes.MUSICOTHERAPEUTE,
-			location: "Montpellier, FR",
-			distance: "13.5",
-			bio: "Musicothérapeute certifié, utilisant la musique comme outil thérapeutique",
-			avatar: "https://randomuser.me/api/portraits/men/11.jpg",
-			compatibility: 77,
-			satisfaction: 85,
-			experience: "8 ans",
-			specialties: "Thérapie par la musique, Relaxation sonore, Expression musicale",
-			languages: "Français, Espagnol"
-		},
-		{
-			id: "12",
-			name: "Isabelle Blanc",
-			type: ProfessionalTypes.NUMEROLOGUE,
-			location: "Rennes, FR",
-			distance: "4.8",
-			bio: "Numérologue passionnée par les nombres et leur influence sur notre vie",
-			avatar: "https://randomuser.me/api/portraits/women/12.jpg",
-			compatibility: 68,
-			satisfaction: 75,
-			experience: "6 ans",
-			specialties: "Numérologie karmique, Analyse des cycles, Prédictions",
-			languages: "Français, Anglais"
-		},
-		{
-			id: "13",
-			name: "François Rousseau",
-			type: ProfessionalTypes.PSYCHANALYSTE,
-			location: "Grenoble, FR",
-			distance: "10.3",
-			bio: "Psychanalyste formé à l'approche freudienne et jungienne",
-			avatar: "https://randomuser.me/api/portraits/men/13.jpg",
-			compatibility: 91,
-			satisfaction: 90,
-			experience: "20 ans",
-			specialties: "Psychanalyse freudienne, Psychanalyse jungienne, Thérapie analytique",
-			languages: "Français, Anglais, Allemand"
-		},
-		{
-			id: "14",
-			name: "Aurélie Durand",
-			type: ProfessionalTypes.PSYCHOLOGUE,
-			location: "Tours, FR",
-			distance: "8.7",
-			bio: "Psychologue clinicienne spécialisée en thérapie cognitive et comportementale",
-			avatar: "https://randomuser.me/api/portraits/women/14.jpg",
-			compatibility: 93,
-			satisfaction: 90,
-			experience: "14 ans",
-			specialties: "TCC, Thérapie des traumatismes, Thérapie de couple",
-			languages: "Français, Anglais"
-		},
-		{
-			id: "15",
-			name: "Laurent Martin",
-			type: ProfessionalTypes.PSYCHOPRATICIEN,
-			location: "Dijon, FR",
-			distance: "14.2",
-			bio: "Psychopraticien intégratif, combinant différentes approches thérapeutiques",
-			avatar: "https://randomuser.me/api/portraits/men/15.jpg",
-			compatibility: 87,
-			satisfaction: 85,
-			experience: "12 ans",
-			specialties: "Thérapie intégrative, Gestalt-thérapie, Psychothérapie humaniste",
-			languages: "Français, Anglais"
-		},
-		{
-			id: "16",
-			name: "Céline Robert",
-			type: ProfessionalTypes.BIO_ENERGETICIEN,
-			location: "Angers, FR",
-			distance: "7.1",
-			bio: "Bio-énergéticienne expérimentée en rééquilibrage énergétique",
-			avatar: "https://randomuser.me/api/portraits/women/16.jpg",
-			compatibility: 79,
-			satisfaction: 80,
-			experience: "10 ans",
-			specialties: "Bioénergie, Rééquilibrage énergétique, Thérapie vibratoire",
-			languages: "Français, Espagnol"
-		},
-		{
-			id: "17",
-			name: "Nicolas Mercier",
-			type: ProfessionalTypes.REIKI,
-			location: "Le Mans, FR",
-			distance: "5.5",
-			bio: "Maître Reiki certifié, pratiquant les soins énergétiques traditionnels",
-			avatar: "https://randomuser.me/api/portraits/men/17.jpg",
-			compatibility: 83,
-			satisfaction: 85,
-			experience: "16 ans",
-			specialties: "Reiki Usui, Reiki Karuna, Soins énergétiques",
-			languages: "Français, Anglais"
-		},
-		{
-			id: "18",
-			name: "Émilie Fournier",
-			type: ProfessionalTypes.SHIATSU,
-			location: "Clermont-Ferrand, FR",
-			distance: "16.8",
-			bio: "Praticienne en Shiatsu certifiée, experte en médecine traditionnelle japonaise",
-			avatar: "https://randomuser.me/api/portraits/women/18.jpg",
-			compatibility: 86,
-			satisfaction: 88,
-			experience: "13 ans",
-			specialties: "Shiatsu thérapeutique, Médecine traditionnelle japonaise, Acupression",
-			languages: "Français, Japonais"
-		},
-		{
-			id: "19",
-			name: "David Simon",
-			type: ProfessionalTypes.YOGA_THERAPEUTE,
-			location: "Aix-en-Provence, FR",
-			distance: "17.3",
-			bio: "Professeur de yoga thérapeutique, spécialisé dans la gestion du stress",
-			avatar: "https://randomuser.me/api/portraits/men/19.jpg",
-			compatibility: 90,
-			satisfaction: 90,
-			experience: "11 ans",
-			specialties: "Yoga thérapeutique, Méditation, Gestion du stress",
-			languages: "Français, Anglais, Sanskrit"
-		},
-		{
-			id: "20",
-			name: "Mathilde Leroux",
-			type: ProfessionalTypes.HYPNOTISEUR,
-			location: "Reims, FR",
-			distance: "18.9",
-			bio: "Hypnothérapeute certifiée, spécialisée en gestion des phobies et addictions",
-			avatar: "https://randomuser.me/api/portraits/women/20.jpg",
-			compatibility: 84,
-			satisfaction: 85,
-			experience: "9 ans",
-			specialties: "Hypnose ericksonienne, Gestion des phobies, Arrêt du tabac",
-			languages: "Français, Anglais"
-		},
-		{
-			id: "21",
-			name: "Philippe Gauthier",
-			type: ProfessionalTypes.PHYTOTHERAPEUTE,
-			location: "Orléans, FR",
-			distance: "9.8",
-			bio: "Phytothérapeute expert en plantes médicinales et remèdes naturels",
-			avatar: "https://randomuser.me/api/portraits/men/21.jpg",
-			compatibility: 81,
-			satisfaction: 80,
-			experience: "17 ans",
-			specialties: "Plantes médicinales, Herboristerie, Aromathérapie",
-			languages: "Français, Latin"
-		}
-	];
-
-	if (loading) {
-		return (
-			<Box className="flex-1 justify-center items-center">
-				<Spinner size="large" />
-			</Box>
-		);
-	}
-
-	return (
-		<ScrollView 
-			style={styles.container}
-			removeClippedSubviews={true}
-			showsVerticalScrollIndicator={false}
-			contentContainerStyle={{ paddingBottom: 20 }}
-		>
-			<Box className="p-4">
-				<VStack space="md">
-					{(professionals.length > 0
-						? professionals
-						: mockProfessionals
-					).map((professional) => (
-						<ProfessionalCard
-							key={professional.id}
-							professional={professional}
-							isExpanded={expandedCards.has(professional.id)}
-							onToggle={(expanded) => handleCardToggle(professional.id, expanded)}
-						/>
-					))}
-				</VStack>
-			</Box>
-		</ScrollView>
-	);
-});
-
-ProfessionalProfile.displayName = 'ProfessionalProfile';
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: "#f5f5f5",
-	},
+    container: {
+        flex: 1,
+    },
+    backgroundGradient: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+    },
+    contentContainer: {
+        paddingBottom: 24,
+    },
 });
-
-export default ProfessionalProfile;
-// Optional: Function to seed initial data (run this separately or on first load)
-// const seedDatabase = async () => {
-// 	try {
-// 		await db.connect();
-// 		await db.signin({
-// 			user: "root",
-// 			pass: "root",
-// 		});
-// 		await db.use("namespace", "database");
-
-// 		const seedData = [
-// 			{
-// 				id: "professional:1",
-// 				name: "John Doe",
-// 				type: ProfessionalTypes.DEVELOPER,
-// 				location: "San Francisco, CA",
-// 				bio: "Senior Full-Stack Developer with 8+ years of experience",
-// 				avatar: "https://randomuser.me/api/portraits/men/1.jpg",
-// 			},
-// 			// Add more seed data as needed
-// 		];
-
-// 		await db.create("professional", seedData);
-// 	} catch (error) {
-// 		console.error("Failed to seed database:", error);
-// 	}
-// };
-
