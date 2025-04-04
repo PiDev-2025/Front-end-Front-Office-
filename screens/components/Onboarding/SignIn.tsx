@@ -9,7 +9,7 @@ import { jwtDecode } from "jwt-decode";
 import { EyeIcon, EyeOffIcon } from "lucide-react-native";
 import React from "react";
 import { SafeAreaView, StyleSheet } from "react-native";
-import { ElysiaClient } from "ts-elysia-client/src/client";
+import { ElysiaClient } from "ts-elysia-client";
 import {
 	emailAtom,
 	jwtAtom,
