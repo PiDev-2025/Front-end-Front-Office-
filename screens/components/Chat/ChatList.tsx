@@ -57,21 +57,24 @@ const RoomItem: React.FC<{ item: UserChatResponse & { myUserId: string } }> = ({
 
 	return (
 		<Pressable onPress={goToChat}>
-			<Box className="mb-6 rounded-xl bg-blue-50">
-				<Box className="p-4">
+			<Box className="mb-3 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow duration-200">
+				<Box className="p-3">
 					<HStack space="md" className="items-center">
-						<Image
-							resizeMode="contain"
-							source={{
-								uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/d9e5323e3e31cdede93efcaa8bc9c2188f50e166bcf77987bf0ce0ce300bea47?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
-							}}
-							className="w-10 h-10 mr-3"
-						/>
-						<Grid className="flex-1 gap-y-2 gap-x-2 grid-cols-1" _extra={{ className: "grid-cols-1" }}>
+						<Box className="relative">
+							<Image
+								resizeMode="cover"
+								source={{
+									uri: "https://cdn.builder.io/api/v1/image/assets/TEMP/d9e5323e3e31cdede93efcaa8bc9c2188f50e166bcf77987bf0ce0ce300bea47?placeholderIfAbsent=true&apiKey=6dcac0f27775456c9f3cdecc44b5bd12",
+								}}
+								className="w-12 h-12 rounded-full border-2 border-blue-100"
+							/>
+							<Box className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+						</Box>
+						<Grid className="flex-1 gap-y-1 gap-x-2 grid-cols-1" _extra={{ className: "grid-cols-1" }}>
 							<GridItem className="bg-white/50 text-center col-span-1 rounded-lg" _extra={{ className: "col-span-1" }}>
-								<Badge size="md" variant="solid" action="success">
+								<Badge size="md" variant="solid" action="success" className="bg-blue-500">
 									<BadgeIcon as={UserRoundIcon} className="ml-2" />
-									<BadgeText className="ml-2">
+									<BadgeText className="ml-2 text-white">
 										{usersInRoom[0].userId2}
 									</BadgeText>
 								</Badge>
@@ -79,15 +82,15 @@ const RoomItem: React.FC<{ item: UserChatResponse & { myUserId: string } }> = ({
 							<GridItem className="bg-white/50 text-center col-span-1 rounded-lg" _extra={{ className: "col-span-1" }}>
 								<Grid className="grid-cols-2 gap-x-2" _extra={{ className: "grid-cols-2" }}>
 									<GridItem _extra={{ className: "col-span-1" }}>
-										<Badge size="md" variant="solid" action="muted">
-											<BadgeIcon as={MessageSquare} className="ml-2" />
-											<BadgeText className="ml-2">3/98</BadgeText>
+										<Badge size="md" variant="solid" action="muted" className="bg-gray-100">
+											<BadgeIcon as={MessageSquare} className="ml-2 text-gray-600" />
+											<BadgeText className="ml-2 text-gray-600">3/98</BadgeText>
 										</Badge>
 									</GridItem>
 									<GridItem _extra={{ className: "col-span-1" }}>
-										<Badge size="md" variant="solid" action="muted">
-											<BadgeIcon as={TargetIcon} className="ml-2" />
-											<BadgeText className="ml-2">Entraide</BadgeText>
+										<Badge size="md" variant="solid" action="muted" className="bg-gray-100">
+											<BadgeIcon as={TargetIcon} className="ml-2 text-gray-600" />
+											<BadgeText className="ml-2 text-gray-600">Entraide</BadgeText>
 										</Badge>
 									</GridItem>
 								</Grid>
@@ -306,19 +309,33 @@ export function ChatList(): React.JSX.Element {
 			const response = await apiClient.getUserChats(myUserId);
 			const userChats = response as unknown as UserChatResponse[];
 			console.log('Raw user chats response:', userChats);
+			// Pull room details for each chat
+			for (const chat of userChats) {
+				try {
+					const roomDetails = await apiClient.getChat(chat.room);
+					console.log('Room details for', chat.room, ':', roomDetails);
+				} catch (error) {
+					console.error('Error fetching room details for', chat.room, ':', error);
+				}
+			}
 			
 			if (!Array.isArray(userChats)) {
 				console.error('userChats is not an array:', userChats);
 				return;
 			}
 
-			const validChats = userChats.filter(chat => chat && chat.room && chat.usersInRoom);
-			console.log('Valid chats after filtering:', validChats);
-			
-			const processedChats = validChats.map(chat => ({
-				...chat,
-				myUserId,
-				type: chat.type || '1v1' // Default to 1v1 if type not specified
+			const processedChats = userChats.map(chat => ({
+				room: chat.room,
+				usersInRoom: chat.usersInRoom || [],
+				type: chat.type || '1v1',
+				name: chat.name,
+				theme: chat.theme,
+				lastMessage: chat.lastMessage,
+				messageCount: chat.messageCount || 0,
+				activityType: chat.activityType,
+				professionalType: chat.professionalType,
+				rating: chat.rating,
+				myUserId
 			}));
 
 			// Add fake data for group and thematic chats
@@ -366,7 +383,6 @@ export function ChatList(): React.JSX.Element {
 				}
 			];
 
-			// Add fake data for professional chats
 			const fakeProfessionalChats = [
 				{
 					room: "prof_1",
@@ -436,16 +452,17 @@ export function ChatList(): React.JSX.Element {
 	};
 
 	return (
-		<Box className="flex-1 bg-slate-50">
-			<Box className="flex-1 p-4">
+		<Box className="flex-1 bg-gray-50">
+			<Box className="flex-1 p-2">
 				<Input
 					size="md"
-					className="mb-4"
+					className="mb-3 rounded-lg bg-white shadow-sm"
 				>
 					<InputField
 						placeholder="Rechercher un contact"
 						value={searchQuery}
 						onChangeText={setSearchQuery}
+						className="py-2"
 					/>
 				</Input>
 				<FlatList
@@ -461,40 +478,41 @@ export function ChatList(): React.JSX.Element {
 							<Text className="text-gray-500 text-center">No chats available</Text>
 						</Box>
 					)}
+					showsVerticalScrollIndicator={false}
 				/>
-				<Box className="mt-4 mb-8">
-					<Text className="text-sm font-semibold mb-2">Nouvelle Conversation</Text>
+				<Box className="mt-3 mb-4">
+					<Text className="text-sm font-semibold mb-2 text-gray-700">Nouvelle Conversation</Text>
 					<VStack space="xs">
 						<HStack space="xs">
 							<ChatTypeButton
-								icon={<UserPlus size={16} />}
+								icon={<UserPlus size={16} className="text-blue-500" />}
 								title="1v1"
 								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
 							/>
 							<ChatTypeButton
-								icon={<Users2 size={16} />}
+								icon={<Users2 size={16} className="text-green-500" />}
 								title="Groupe"
 								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
 							/>
 							<ChatTypeButton
-								icon={<Hash size={16} />}
+								icon={<Hash size={16} className="text-purple-500" />}
 								title="Thématique"
 								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
 							/>
 						</HStack>
 						<HStack space="xs">
 							<ChatTypeButton
-								icon={<Briefcase size={16} />}
+								icon={<Briefcase size={16} className="text-orange-500" />}
 								title="Pro"
 								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
 							/>
 							<ChatTypeButton
-								icon={<BookOpen size={16} />}
+								icon={<BookOpen size={16} className="text-red-500" />}
 								title="Dédié"
 								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
 							/>
 							<ChatTypeButton
-								icon={<LifeBuoy size={16} />}
+								icon={<LifeBuoy size={16} className="text-teal-500" />}
 								title="Support"
 								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
 							/>
@@ -508,7 +526,7 @@ export function ChatList(): React.JSX.Element {
 
 const styles = StyleSheet.create({
 	listContent: {
-		paddingTop: 16,
-		paddingBottom: 16,
+		paddingTop: 8,
+		paddingBottom: 8,
 	},
 });
