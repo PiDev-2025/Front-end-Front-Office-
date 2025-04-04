@@ -487,34 +487,34 @@ export function ChatList(): React.JSX.Element {
 							<ChatTypeButton
 								icon={<UserPlus size={16} className="text-blue-500" />}
 								title="1v1"
-								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+								onPress={() => navigation.navigate('NewChat' as never)}
 							/>
 							<ChatTypeButton
 								icon={<Users2 size={16} className="text-green-500" />}
 								title="Groupe"
-								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+								onPress={() => navigation.navigate('NewChat' as never)}
 							/>
 							<ChatTypeButton
 								icon={<Hash size={16} className="text-purple-500" />}
 								title="Thématique"
-								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+								onPress={() => navigation.navigate('NewChat' as never)}
 							/>
 						</HStack>
 						<HStack space="xs">
 							<ChatTypeButton
 								icon={<Briefcase size={16} className="text-orange-500" />}
 								title="Pro"
-								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+								onPress={() => navigation.navigate('NewChat' as never)}
 							/>
 							<ChatTypeButton
 								icon={<BookOpen size={16} className="text-red-500" />}
 								title="Dédié"
-								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+								onPress={() => navigation.navigate('NewChat' as never)}
 							/>
 							<ChatTypeButton
 								icon={<LifeBuoy size={16} className="text-teal-500" />}
 								title="Support"
-								onPress={() => navigation.navigate('Chat' as never, { room: '', usersInRoom: [] })}
+								onPress={() => navigation.navigate('NewChat' as never)}
 							/>
 						</HStack>
 					</VStack>

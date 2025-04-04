@@ -1,5 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Box } from "@/components/ui/box";
+import { Text as GluestackText } from "@/components/ui/text";
+import { User } from 'lucide-react-native';
 
 interface MessageBubbleProps {
     message: string;
@@ -38,33 +41,51 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     };
 
     return (
-        <View style={[
-            styles.container,
-            isOutgoing ? styles.outgoingContainer : styles.incomingContainer
-        ]}>
-            {!isOutgoing && username && (
-                <View style={styles.userInfo}>
-                    <Text style={styles.username}>{username}</Text>
-                </View>
+        <Box className={`flex-row items-end space-x-2 ${isOutgoing ? 'justify-end' : 'justify-start'} mb-3 px-4`}>
+            {!isOutgoing && (
+                <Box className="relative">
+                    <Box className="w-8 h-8 rounded-full bg-indigo-100 items-center justify-center">
+                        <User size={16} color="#6366f1" />
+                    </Box>
+                    <Box className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                </Box>
             )}
-            <View style={[
-                styles.bubble,
-                isOutgoing ? styles.outgoingBubble : styles.incomingBubble
-            ]}>
-                <Text style={[
-                    styles.messageText,
-                    isOutgoing ? styles.outgoingText : styles.incomingText
-                ]}>
-                    {message}
-                </Text>
-                <Text style={[
-                    styles.timestamp,
-                    isOutgoing ? styles.outgoingTimestamp : styles.incomingTimestamp
-                ]}>
-                    {formatTimestamp(timestamp)}
-                </Text>
-            </View>
-        </View>
+            <Box className={`max-w-[80%] ${isOutgoing ? 'items-end' : 'items-start'}`}>
+                {!isOutgoing && username && (
+                    <GluestackText className="text-xs text-gray-500 mb-1">{username}</GluestackText>
+                )}
+                <Box 
+                    className={`px-4 py-3 rounded-2xl ${
+                        isOutgoing 
+                            ? 'bg-blue-500 rounded-tr-none' 
+                            : 'bg-gray-100 rounded-tl-none'
+                    } shadow-sm`}
+                >
+                    <GluestackText 
+                        className={`text-base ${
+                            isOutgoing ? 'text-white' : 'text-gray-800'
+                        }`}
+                    >
+                        {message}
+                    </GluestackText>
+                    <GluestackText 
+                        className={`text-xs mt-1 ${
+                            isOutgoing ? 'text-blue-100' : 'text-gray-500'
+                        }`}
+                    >
+                        {formatTimestamp(timestamp)}
+                    </GluestackText>
+                </Box>
+            </Box>
+            {isOutgoing && (
+                <Box className="relative">
+                    <Box className="w-8 h-8 rounded-full bg-blue-100 items-center justify-center">
+                        <User size={16} color="#3b82f6" />
+                    </Box>
+                    <Box className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                </Box>
+            )}
+        </Box>
     );
 };
 
