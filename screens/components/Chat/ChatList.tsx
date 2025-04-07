@@ -349,60 +349,8 @@ export const ChatList: React.FC = () => {
 
 	return (
 		<Box className="flex-1 bg-gray-50">
-			<Box className="flex-1 p-2">
-				<Input
-					size="md"
-					className="mb-3 rounded-lg bg-white shadow-sm"
-				>
-					<InputField
-						placeholder="Rechercher un contact"
-						className="py-2"
-						value={searchQuery}
-						onChangeText={setSearchQuery}
-					/>
-				</Input>
-				<FlatList
-					data={filteredChats}
-					renderItem={({ item }) => (
-						<ChatListItem
-							key={item.id}
-							chat={item}
-							onPress={() => handleChatPress(item)}
-							myUserId={jwtDecoded.ID}
-						/>
-					)}
-					keyExtractor={(item) => item.id}
-					contentContainerStyle={styles.listContent}
-					ListEmptyComponent={() => (
-						<Box className="flex-1 items-center justify-center p-4">
-							{error ? (
-								<VStack space="sm" className="items-center">
-									<Text className="text-red-500 text-center">{error}</Text>
-									<Button
-										variant="outline"
-										size="sm"
-										onPress={fetchChats}
-										className="mt-2"
-									>
-										<ButtonText>Retry</ButtonText>
-									</Button>
-								</VStack>
-							) : (
-								<Text className="text-gray-500 text-center">
-									{searchQuery ? 'No chats found' : 'No chats available'}
-								</Text>
-							)}
-						</Box>
-					)}
-					refreshControl={
-						<RefreshControl
-							refreshing={refreshing}
-							onRefresh={onRefresh}
-						/>
-					}
-					showsVerticalScrollIndicator={false}
-				/>
-				<Box className="mt-3 mb-4">
+			<Box className="flex-1">
+				<Box className="p-2 bg-white shadow-sm">
 					<Text className="text-sm font-semibold mb-2 text-gray-700">Nouvelle Conversation</Text>
 					<VStack space="xs">
 						<HStack space="xs">
@@ -440,6 +388,62 @@ export const ChatList: React.FC = () => {
 							/>
 						</HStack>
 					</VStack>
+				</Box>
+
+				<Box className="p-2">
+					<Input
+						size="md"
+						className="mb-3 rounded-lg bg-white shadow-sm"
+					>
+						<InputField
+							placeholder="Rechercher un contact"
+							className="py-2"
+							value={searchQuery}
+							onChangeText={setSearchQuery}
+						/>
+					</Input>
+
+					<FlatList
+						data={filteredChats}
+						renderItem={({ item }) => (
+							<ChatListItem
+								key={item.id}
+								chat={item}
+								onPress={() => handleChatPress(item)}
+								myUserId={jwtDecoded.ID}
+							/>
+						)}
+						keyExtractor={(item) => item.id}
+						contentContainerStyle={styles.listContent}
+						ListEmptyComponent={() => (
+							<Box className="flex-1 items-center justify-center p-4">
+								{error ? (
+									<VStack space="sm" className="items-center">
+										<Text className="text-red-500 text-center">{error}</Text>
+										<Button
+											variant="outline"
+											size="sm"
+											onPress={fetchChats}
+											className="mt-2"
+										>
+											<ButtonText>Retry</ButtonText>
+										</Button>
+									</VStack>
+								) : (
+									<Text className="text-gray-500 text-center">
+										{searchQuery ? 'No chats found' : 'No chats available'}
+									</Text>
+								)}
+							</Box>
+						)}
+						refreshControl={
+							<RefreshControl
+								refreshing={refreshing}
+								onRefresh={onRefresh}
+							/>
+						}
+						showsVerticalScrollIndicator={false}
+					/>
 				</Box>
 			</Box>
 		</Box>
