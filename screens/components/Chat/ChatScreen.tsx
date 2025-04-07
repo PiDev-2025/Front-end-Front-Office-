@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback, ScrollView, StyleSheet } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { ElysiaClient, ChatMessage } from 'ts-elysia-client';
+import { api, ChatMessage } from '../../../libs/api';
 import { useAtom } from 'jotai';
 import { jwtDecodedAtom } from '../../states/user';
 import { Text } from "@/components/ui/text";
@@ -20,8 +20,6 @@ type RouteParams = {
 	name?: string;
 	theme?: string;
 };
-
-const client = ElysiaClient.getInstance();
 
 const ChatHeader: React.FC<{ 
 	otherUserId: string; 
@@ -101,7 +99,7 @@ export const ChatScreen: React.FC = () => {
 
 	const loadMessages = async () => {
 		try {
-			const chatMessages = await client.getMessages(room, 50, 0, 0);
+			const chatMessages = await api.getMessages(room, 50, 0, 0);
 			setMessages(chatMessages);
 		} catch (error) {
 			console.error('Error loading messages:', error);
@@ -121,7 +119,10 @@ export const ChatScreen: React.FC = () => {
 				timestamp: new Date().toISOString()
 			};
 			console.log('Sending message:', msg);
-			await client.sendMessage(room, msg);
+			const response = await api.chat.message.post({
+				content: msg.content,
+				chatId: room
+			});
 			loadMessages();
 		} catch (error) {
 			console.error('Error sending message:', error);

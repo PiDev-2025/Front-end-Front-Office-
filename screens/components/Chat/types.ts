@@ -1,11 +1,12 @@
-import { ChatMessage } from "ts-elysia-client/src/client";
+import { ChatMessage } from '../../../libs/api';
 
 export interface MessageProps {
   avatar?: string;
   username?: string;
-  message: string;
+  message: ChatMessage;
   timestamp: string;
   isOutgoing?: boolean;
+  isCurrentUser: boolean;
 }
 
 export interface ChatHeaderProps {

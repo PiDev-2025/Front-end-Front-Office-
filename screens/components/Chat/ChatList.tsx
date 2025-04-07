@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, Pressable, RefreshControl, TextInput, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { ElysiaClient, Chat } from 'ts-elysia-client';
-import { ChatGroup } from 'ts-elysia-client/src/client';
+import { api } from '../../../libs/api';
 import { useAtom } from 'jotai';
 import { jwtDecodedAtom } from '../../states/user';
 import { Text } from "@/components/ui/text";
@@ -14,15 +13,15 @@ import { VStack } from "@/components/ui/vstack";
 import { Badge, BadgeIcon, BadgeText } from "@/components/ui/badge";
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Input, InputField } from "@/components/ui/input";
-import { ChatListItemProps } from "./types";
+import { ChatListItem } from './ChatListItem';
 
 type RootStackParamList = {
 	Chat: {
 		room: string;
-		usersInRoom: Array<{
-			userId2: string;
-		}>;
+		usersInRoom: any[];
+		type: string;
 	};
+	NewChat: undefined;
 };
 
 type NavigationProp = {
@@ -44,8 +43,6 @@ type UserChatResponse = {
 	professionalType?: string;
 	rating?: number;
 };
-
-const client = ElysiaClient.getInstance();
 
 const RoomItem: React.FC<{ item: UserChatResponse & { myUserId: string } }> = ({ item }) => {
 	const navigation = useNavigation<NavigationProp>();
@@ -258,6 +255,15 @@ const RoomProfessionalItem: React.FC<{ item: UserChatResponse & { myUserId: stri
 
 interface JwtDecoded {
 	ID: string;
+	[key: string]: any;
+}
+
+interface Chat {
+	id: string;
+	name?: string;
+	type: string;
+	users: any[];
+	lastMessage?: string;
 }
 
 const ChatTypeButton: React.FC<{
@@ -280,176 +286,45 @@ const ChatTypeButton: React.FC<{
 	);
 };
 
-export function ChatList(): React.JSX.Element {
+export const ChatList: React.FC = () => {
 	const navigation = useNavigation<NavigationProp>();
-	const [jwtDecoded] = useAtom(jwtDecodedAtom) as [JwtDecoded | null, (value: JwtDecoded | null) => void];
-	const [refreshing, setRefreshing] = useState(false);
-	const [searchQuery, setSearchQuery] = useState("");
-	const myUserId = jwtDecoded ? jwtDecoded.ID.split(":")[1] : null;
-	const [chats, setChats] = React.useState<(UserChatResponse & { myUserId: string })[]>([]);
-	const apiClient = React.useMemo(() => {
-		const client = ElysiaClient.getInstance();
-		client.setEnvironment('production');
-		return client;
-	}, []);
+	const [jwtDecoded] = useAtom(jwtDecodedAtom) as [JwtDecoded, any];
+	const [chats, setChats] = useState<Chat[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
-		console.log('ChatList mounted, myUserId:', myUserId);
-		loadChats();
-	}, [myUserId]);
+		fetchChats();
+	}, []);
 
-	const loadChats = async () => {
+	const fetchChats = async () => {
 		try {
-			if (!myUserId) {
-				console.log('No myUserId available, skipping chat load');
-				return;
-			}
-
-			console.log('Loading chats for user:', myUserId);
-			const response = await apiClient.getUserChats(myUserId);
-			const userChats = response as unknown as UserChatResponse[];
-			console.log('Raw user chats response:', userChats);
-			// Pull room details for each chat
-			for (const chat of userChats) {
-				try {
-					const roomDetails = await apiClient.getChat(chat.room);
-					console.log('Room details for', chat.room, ':', roomDetails);
-				} catch (error) {
-					console.error('Error fetching room details for', chat.room, ':', error);
-				}
-			}
-			
-			if (!Array.isArray(userChats)) {
-				console.error('userChats is not an array:', userChats);
-				return;
-			}
-
-			const processedChats = userChats.map(chat => ({
-				room: chat.room,
-				usersInRoom: chat.usersInRoom || [],
-				type: chat.type || '1v1',
-				name: chat.name,
-				theme: chat.theme,
-				lastMessage: chat.lastMessage,
-				messageCount: chat.messageCount || 0,
-				activityType: chat.activityType,
-				professionalType: chat.professionalType,
-				rating: chat.rating,
-				myUserId
-			}));
-
-			// Add fake data for group and thematic chats
-			const fakeGroupChats = [
-				{
-					room: "group_1",
-					usersInRoom: [{ userId2: "user1" }, { userId2: "user2" }, { userId2: "user3" }],
-					type: "group" as const,
-					name: "L'équipe Cool de Montpellier",
-					myUserId,
-					lastMessage: "RDV Au fitzpatrick à 16H le dernier arrivé paye le billard.",
-					messageCount: 204,
-					activityType: "Sortir"
-				},
-				{
-					room: "group_2",
-					usersInRoom: [{ userId2: "user4" }, { userId2: "user5" }],
-					type: "group" as const,
-					name: "Les Amis du Cinéma",
-					myUserId,
-					lastMessage: "Qui veut aller voir le dernier film Marvel ce weekend ?",
-					messageCount: 156,
-					activityType: "Culture"
-				}
-			];
-
-			const fakeThematicChats = [
-				{
-					room: "theme_1",
-					usersInRoom: [{ userId2: "user6" }, { userId2: "user7" }, { userId2: "user8" }],
-					type: "thematic" as const,
-					theme: "difficulte_professionnelle",
-					myUserId,
-					lastMessage: "Le prochain webinar est le 12/02 à 14h prenez soin de vous!",
-					messageCount: 1503
-				},
-				{
-					room: "theme_2",
-					usersInRoom: [{ userId2: "user9" }, { userId2: "user10" }],
-					type: "thematic" as const,
-					theme: "sport_et_bien_etre",
-					myUserId,
-					lastMessage: "Quelqu'un veut faire une session de yoga ensemble ?",
-					messageCount: 892
-				}
-			];
-
-			const fakeProfessionalChats = [
-				{
-					room: "prof_1",
-					usersInRoom: [{ userId2: "prof1" }],
-					type: "professional" as const,
-					name: "Dr. Marie Laurent",
-					myUserId,
-					lastMessage: "Je vous propose un rendez-vous le 15/03 à 14h.",
-					messageCount: 45,
-					professionalType: "Psychologue",
-					rating: 4.8
-				},
-				{
-					room: "prof_2",
-					usersInRoom: [{ userId2: "prof2" }],
-					type: "professional" as const,
-					name: "Dr. Jean Dupont",
-					myUserId,
-					lastMessage: "Voici votre plan de suivi personnalisé.",
-					messageCount: 32,
-					professionalType: "Coach",
-					rating: 4.9
-				}
-			];
-
-			// Combine all chats
-			const allChats = [...processedChats, ...fakeGroupChats, ...fakeThematicChats, ...fakeProfessionalChats];
-			console.log('Final processed chats:', allChats);
-			setChats(allChats);
+			setLoading(true);
+			const response = await api.chat.get();
+			setChats(response);
 		} catch (error) {
-			console.error('Error loading chats:', error);
+			console.error('Error fetching chats:', error);
+			setError('Failed to load chats');
+		} finally {
+			setLoading(false);
 		}
 	};
 
-	const filteredChats = chats.filter(chat => {
-		const searchLower = searchQuery.toLowerCase();
-		
-		switch (chat.type) {
-			case '1v1':
-				return chat.usersInRoom[0]?.userId2?.toLowerCase().includes(searchLower) ||
-					chat.room?.toLowerCase().includes(searchLower);
-			case 'group':
-				return (chat.name || "L'équipe Cool de Montpel").toLowerCase().includes(searchLower) ||
-					chat.room?.toLowerCase().includes(searchLower);
-			case 'thematic':
-				return (chat.theme || "difficulte_professionnelle").toLowerCase().includes(searchLower) ||
-					chat.room?.toLowerCase().includes(searchLower);
-			case 'professional':
-				return (chat.name || "Dr. Smith").toLowerCase().includes(searchLower) ||
-					chat.room?.toLowerCase().includes(searchLower);
-			default:
-				return chat.room?.toLowerCase().includes(searchLower);
-		}
-	});
-
-	const renderItem = ({ item }: { item: UserChatResponse & { myUserId: string } }) => {
-		switch (item.type) {
-			case 'group':
-				return <RoomGroupItem item={item} />;
-			case 'thematic':
-				return <RoomThemeItem item={item} />;
-			case 'professional':
-				return <RoomProfessionalItem item={item} />;
-			default:
-				return <RoomItem item={item} />;
-		}
+	const handleChatPress = (chat: Chat) => {
+		navigation.navigate('Chat', {
+			room: chat.id,
+			usersInRoom: chat.users,
+			type: chat.type
+		});
 	};
+
+	if (loading) {
+		return <Text>Loading...</Text>;
+	}
+
+	if (error) {
+		return <Text style={{ color: 'red' }}>{error}</Text>;
+	}
 
 	return (
 		<Box className="flex-1 bg-gray-50">
@@ -460,19 +335,21 @@ export function ChatList(): React.JSX.Element {
 				>
 					<InputField
 						placeholder="Rechercher un contact"
-						value={searchQuery}
-						onChangeText={setSearchQuery}
 						className="py-2"
 					/>
 				</Input>
 				<FlatList
-					data={filteredChats}
-					renderItem={renderItem}
-					keyExtractor={(item) => item.room}
+					data={chats}
+					renderItem={({ item }) => (
+						<ChatListItem
+							key={item.id}
+							chat={item}
+							onPress={() => handleChatPress(item)}
+							myUserId={jwtDecoded.ID}
+						/>
+					)}
+					keyExtractor={(item) => item.id}
 					contentContainerStyle={styles.listContent}
-					refreshControl={
-						<RefreshControl refreshing={refreshing} onRefresh={loadChats} />
-					}
 					ListEmptyComponent={() => (
 						<Box className="flex-1 items-center justify-center p-4">
 							<Text className="text-gray-500 text-center">No chats available</Text>
@@ -522,11 +399,10 @@ export function ChatList(): React.JSX.Element {
 			</Box>
 		</Box>
 	);
-}
+};
 
 const styles = StyleSheet.create({
 	listContent: {
-		paddingTop: 8,
-		paddingBottom: 8,
+		paddingBottom: 20,
 	},
 });

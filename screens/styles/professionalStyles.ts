@@ -58,7 +58,6 @@ export const ProfessionalTypes = {
     YOGA_THERAPEUTE: "Yoga thérapeute",
     HYPNOTISEUR: "Hypnotiseur",
     PHYTOTHERAPEUTE: "Phytothérapeute",
-    PSYCHOLOGUE: "Psychologue",
     SAGE_FEMME: "Sage-femme",
     PUERICULTRICE: "Puéricultrice",
     KINESITHERAPEUTE: "Kinésithérapeute",
@@ -308,6 +307,10 @@ export const professionalStyles = {
 // Helper function to get random professional style
 export const getRandomProfessionalStyle = () => {
     const styles = Object.values(professionalStyles);
-    // return styles[Math.floor(Math.random() * styles.length)];
-    return styles[2]
+    const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+    return {
+        colors: randomStyle.gradient,
+        start: { x: 0, y: 0 },
+        end: { x: 1, y: 1 }
+    };
 }; 

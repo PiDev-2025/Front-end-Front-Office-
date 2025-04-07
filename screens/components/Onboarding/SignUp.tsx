@@ -9,7 +9,6 @@ import { jwtDecode } from "jwt-decode";
 import { EyeIcon, EyeOffIcon } from "lucide-react-native";
 import React from "react";
 import { SafeAreaView, StyleSheet } from "react-native";
-import { ElysiaClient } from "ts-elysia-client/src/client";
 import {
 	emailAtom,
 	jwtAtom,
@@ -23,6 +22,7 @@ import { Text } from "@/components/ui/text";
 import { HStack } from "@/components/ui/hstack";
 import { Card } from "@/components/ui/card";
 import { getRandomProfessionalStyle } from "../../styles/professionalStyles";
+import { api } from '../../../libs/api';
 
 // Custom interface for JWT payload
 interface CustomJwtPayload {
@@ -40,11 +40,6 @@ export function SignUp(): React.JSX.Element {
 	const [showPassword, setShowPassword] = React.useState(false);
 	const [error, setError] = React.useState<string | null>(null);
 	const [gradientStyle, setGradientStyle] = React.useState(getRandomProfessionalStyle());
-	const apiClient = React.useMemo(() => {
-		const client = ElysiaClient.getInstance();
-		client.setEnvironment('production');
-		return client;
-	}, []);
 
 	React.useEffect(() => {
 		// Change gradient every 5 seconds
@@ -62,7 +57,7 @@ export function SignUp(): React.JSX.Element {
 	const signupUser = async () => {
 		try {
 			if (username && email && password) {
-				const response = await apiClient.signUp(email, password);
+				const response = await api.signUp(email, password);
 				if (response.jwt) {
 					setJwt(response.jwt);
 					const _jwtDecoded = jwtDecode<CustomJwtPayload>(response.jwt);
@@ -82,119 +77,56 @@ export function SignUp(): React.JSX.Element {
 
 	return (
 		<SafeAreaView style={styles.container}>
-			{/* Background Gradient */}
-			<Box style={StyleSheet.absoluteFill}>
-				<LinearGradient
-					colors={['#6366f1', '#818cf8', '#a5b4fc']}
-					style={StyleSheet.absoluteFill}
-					start={{ x: 0, y: 0 }}
-					end={{ x: 1, y: 1 }}
-				/>
-			</Box>
-
-			{/* Content */}
-			<Box className="flex-1 justify-center items-center px-4">
-				<Card className="w-full max-w-md p-6 rounded-xl bg-white/10 border-white/20">
-					<VStack space="xl">
-						<VStack space="sm" className="items-center">
-							<Heading size="xl" className="text-center" style={{ color: "#ffffff" }}>
-								Créer un compte
-							</Heading>
-							<Text size="sm" className="text-white/80 text-center">
-								{/* Sign up to start your journey */}
-							</Text>
-						</VStack>
-
-						<VStack space="md">
-							<FormControl>
-								<VStack space="xs">
-									<Text size="sm" className="text-white" style={{ color: "#ffffff" }}>Nom d'utilisateur</Text>
-									<Input>
-										<InputField
-											type="text"
-											value={username || ""}
-											onChangeText={(text) => setUsername(text)}
-											placeholder="Enter your username"
-											style={{ color: "#ffffff" }}
-											placeholderTextColor="#ffffff80"
-										/>
-									</Input>
-								</VStack>
-							</FormControl>
-
-							<FormControl>
-								<VStack space="xs">
-									<Text size="sm" className="text-white" style={{ color: "#ffffff" }}>Email</Text>
-									<Input>
-										<InputField
-											type="text"
-											value={email || ""}
-											onChangeText={(text) => setEmail(text)}
-											placeholder="Enter your email"
-											style={{ color: "#ffffff" }}
-											placeholderTextColor="#ffffff80"
-										/>
-									</Input>
-								</VStack>
-							</FormControl>
-
-							<FormControl>
-								<VStack space="xs">
-									<Text size="sm" className="text-white" style={{ color: "#ffffff" }}>Mot de passe</Text>
-									<Input>
-										<InputField
-											type={showPassword ? "text" : "password"}
-											value={password || ""}
-											onChangeText={(text) => setPassword(text)}
-											placeholder="Enter your password"
-											style={{ color: "#ffffff" }}
-											placeholderTextColor="#ffffff80"
-										/>
-										<InputSlot
-											className="pr-3"
-											onPress={handleState}
-										>
-											<InputIcon
-												as={showPassword ? EyeIcon : EyeOffIcon}
-												style={{ color: "#ffffff" }}
-											/>
-										</InputSlot>
-									</Input>
-								</VStack>
-							</FormControl>
-
-							{error && (
-								<Text size="sm" style={{ color: '#EF4444' }}>
-									{error}
-								</Text>
-							)}
-
-							<Button
-								variant="solid"
-								size="md"
-								className="mt-4"
-								onPress={signupUser}
-								style={{
-									backgroundColor: "#ffffff",
-								}}
-							>
-								<ButtonText style={{ color: "#6366f1" }}>S'inscrire</ButtonText>
-							</Button>
-
-							<HStack space="sm" className="justify-center mt-4">
-								<Button
-									variant="link"
-									onPress={() => navigation.navigate("UserSignIn" as never)}
-								>
-									<ButtonText size="xs" style={{ color: "#ffffff" }}>
-										Déjà un compte ? Connectez-vous
-									</ButtonText>
-								</Button>
-							</HStack>
-						</VStack>
+			<LinearGradient
+				colors={gradientStyle.colors}
+				start={gradientStyle.start}
+				end={gradientStyle.end}
+				style={styles.gradient}
+			>
+				<Card style={styles.card}>
+					<VStack space="md" style={styles.form}>
+						<Heading size="xl" style={styles.title}>Sign Up</Heading>
+						{error && <Text style={styles.error}>{error}</Text>}
+						<FormControl>
+							<Input>
+								<InputField
+									placeholder="Username"
+									value={username}
+									onChangeText={setUsername}
+									autoCapitalize="none"
+								/>
+							</Input>
+						</FormControl>
+						<FormControl>
+							<Input>
+								<InputField
+									placeholder="Email"
+									value={email}
+									onChangeText={setEmail}
+									autoCapitalize="none"
+									keyboardType="email-address"
+								/>
+							</Input>
+						</FormControl>
+						<FormControl>
+							<Input>
+								<InputField
+									placeholder="Password"
+									value={password}
+									onChangeText={setPassword}
+									secureTextEntry={!showPassword}
+								/>
+								<InputSlot onPress={handleState}>
+									<InputIcon as={showPassword ? EyeOffIcon : EyeIcon} />
+								</InputSlot>
+							</Input>
+						</FormControl>
+						<Button onPress={signupUser}>
+							<ButtonText>Sign Up</ButtonText>
+						</Button>
 					</VStack>
 				</Card>
-			</Box>
+			</LinearGradient>
 		</SafeAreaView>
 	);
 }
@@ -202,6 +134,27 @@ export function SignUp(): React.JSX.Element {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#f5f5f5",
+	},
+	gradient: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	card: {
+		width: '90%',
+		maxWidth: 400,
+		padding: 20,
+	},
+	form: {
+		width: '100%',
+	},
+	title: {
+		textAlign: 'center',
+		marginBottom: 20,
+	},
+	error: {
+		color: 'red',
+		textAlign: 'center',
+		marginBottom: 10,
 	},
 }); 

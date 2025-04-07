@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { ElysiaClient } from 'ts-elysia-client';
 import { useAtom } from 'jotai';
 import { jwtDecodedAtom } from '../../states/user';
 import { ChatCreationForm } from './ChatCreationForm';
@@ -22,6 +21,7 @@ import {
 	AlertDialogBody,
 	AlertDialogFooter,
 } from "../../../components/ui";
+import { api } from '../../../libs/api';
 
 interface JwtDecoded {
 	ID: string;
@@ -65,7 +65,6 @@ const NewChat: React.FC = () => {
 	const [jwtDecoded] = useAtom(jwtDecodedAtom) as [JwtDecoded, any];
 	const [showForm, setShowForm] = useState(false);
 	const [selectedType, setSelectedType] = useState<'group' | 'theme' | 'pro' | null>(null);
-	const apiClient = ElysiaClient.getInstance();
 
 	useEffect(() => {
 		if (params?.initialType) {
@@ -74,9 +73,13 @@ const NewChat: React.FC = () => {
 		}
 	}, [params]);
 
-	const handleCreateChat = async (chatData: {
+	const handleCreateChat = async (data: {
 		type: 'group' | 'theme' | 'pro';
+		name?: string;
 		description?: string;
+		activityType?: string;
+		theme?: string;
+		professionalType?: string;
 		styles?: {
 			main_bg?: string;
 			other_bubble?: string;
@@ -84,21 +87,21 @@ const NewChat: React.FC = () => {
 		};
 	}) => {
 		try {
-			if (!jwtDecoded?.ID) return;
-			
-			const myUserId = jwtDecoded.ID.split(":")[1];
-			const response = await apiClient.createChat({
-				type: chatData.type,
-				users: { [myUserId]: myUserId },
-				description: chatData.description,
-				styles: chatData.styles
+			const response = await api.chat.post({
+				name: data.name,
+				type: data.type,
+				theme: data.theme,
+				description: data.description,
+				activityType: data.activityType,
+				professionalType: data.professionalType,
+				styles: data.styles
 			});
 
-			if (response?.chatId) {
+			if (response?.id) {
 				navigation.navigate('Chat', {
-					room: response.chatId,
-					usersInRoom: [myUserId],
-					type: chatData.type
+					room: response.id,
+					usersInRoom: [jwtDecoded.ID],
+					type: data.type
 				});
 			}
 		} catch (error) {
