@@ -8,20 +8,18 @@ import { useAtom } from "jotai";
 import { jwtDecode } from "jwt-decode";
 import { EyeIcon, EyeOffIcon } from "lucide-react-native";
 import React from "react";
-import { SafeAreaView, StyleSheet } from "react-native";
+import { SafeAreaView, StyleSheet, ImageBackground } from "react-native";
 import {
 	emailAtom,
 	jwtAtom,
 	jwtDecodedAtom,
 	passwordAtom,
+	userIDAtom,
 	usernameAtom,
 } from "../../states/user";
-import LinearGradient from 'react-native-linear-gradient';
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
-import { HStack } from "@/components/ui/hstack";
 import { Card } from "@/components/ui/card";
-import { getRandomProfessionalStyle } from "../../styles/professionalStyles";
 import { api } from '../../../libs/api';
 
 // Custom interface for JWT payload
@@ -35,20 +33,11 @@ export function SignUp(): React.JSX.Element {
 	const [username, setUsername] = useAtom(usernameAtom);
 	const [email, setEmail] = useAtom(emailAtom);
 	const [password, setPassword] = useAtom(passwordAtom);
+	const [userId, setUserID] = useAtom(userIDAtom);
 	const [jwt, setJwt] = useAtom(jwtAtom);
 	const [jwtDecoded, setJwtDecoded] = useAtom(jwtDecodedAtom);
 	const [showPassword, setShowPassword] = React.useState(false);
 	const [error, setError] = React.useState<string | null>(null);
-	const [gradientStyle, setGradientStyle] = React.useState(getRandomProfessionalStyle());
-
-	React.useEffect(() => {
-		// Change gradient every 5 seconds
-		const interval = setInterval(() => {
-			setGradientStyle(getRandomProfessionalStyle());
-		}, 5000);
-
-		return () => clearInterval(interval);
-	}, []);
 
 	const handleState = () => {
 		setShowPassword((showState) => !showState);
@@ -57,12 +46,17 @@ export function SignUp(): React.JSX.Element {
 	const signupUser = async () => {
 		try {
 			if (username && email && password) {
-				const response = await api.signUp(email, password);
-				if (response.jwt) {
-					setJwt(response.jwt);
-					const _jwtDecoded = jwtDecode<CustomJwtPayload>(response.jwt);
+				console.log('Attempting to sign up with:', { email, username });
+				const response = await api.signUp(email, password, username);
+				const token = response.jwt;
+				if (token) {
+					setJwt(token);
+					const _jwtDecoded = jwtDecode<CustomJwtPayload>(token);
 					setJwtDecoded(_jwtDecoded);
-					navigation.navigate("UserProfile" as never);
+					if (_jwtDecoded.ID) {
+						setUserID(_jwtDecoded.ID);
+					}
+					navigation.navigate("SympathyWorld" as never);
 				} else {
 					throw new Error("No token received");
 				}
@@ -71,17 +65,28 @@ export function SignUp(): React.JSX.Element {
 			}
 		} catch (error) {
 			console.error("Error signing up:", error);
-			setError("Failed to create account");
+			if (error instanceof Error) {
+				if (error.message.includes('Network request failed')) {
+					setError("Unable to connect to the server. Please check your internet connection and try again.");
+				} else if (error.message.includes('HTTP error! status: 409')) {
+					setError("Email or username already exists");
+				} else if (error.message.includes('HTTP error! status: 404')) {
+					setError("Server not found. Please try again later.");
+				} else {
+					setError(error.message);
+				}
+			} else {
+				setError("An unexpected error occurred. Please try again.");
+			}
 		}
 	};
 
 	return (
 		<SafeAreaView style={styles.container}>
-			<LinearGradient
-				colors={gradientStyle.colors}
-				start={gradientStyle.start}
-				end={gradientStyle.end}
-				style={styles.gradient}
+			<ImageBackground
+				source={require('../../assets/background.gif')}
+				style={styles.background}
+				resizeMode="cover"
 			>
 				<Card style={styles.card}>
 					<VStack space="md" style={styles.form}>
@@ -91,7 +96,7 @@ export function SignUp(): React.JSX.Element {
 							<Input>
 								<InputField
 									placeholder="Username"
-									value={username}
+									value={username || ''}
 									onChangeText={setUsername}
 									autoCapitalize="none"
 								/>
@@ -101,7 +106,7 @@ export function SignUp(): React.JSX.Element {
 							<Input>
 								<InputField
 									placeholder="Email"
-									value={email}
+									value={email || ''}
 									onChangeText={setEmail}
 									autoCapitalize="none"
 									keyboardType="email-address"
@@ -112,7 +117,7 @@ export function SignUp(): React.JSX.Element {
 							<Input>
 								<InputField
 									placeholder="Password"
-									value={password}
+									value={password || ''}
 									onChangeText={setPassword}
 									secureTextEntry={!showPassword}
 								/>
@@ -126,7 +131,7 @@ export function SignUp(): React.JSX.Element {
 						</Button>
 					</VStack>
 				</Card>
-			</LinearGradient>
+			</ImageBackground>
 		</SafeAreaView>
 	);
 }
@@ -135,7 +140,7 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 	},
-	gradient: {
+	background: {
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
@@ -144,6 +149,7 @@ const styles = StyleSheet.create({
 		width: '90%',
 		maxWidth: 400,
 		padding: 20,
+		backgroundColor: 'rgba(255, 255, 255, 0.9)', // Add some transparency
 	},
 	form: {
 		width: '100%',

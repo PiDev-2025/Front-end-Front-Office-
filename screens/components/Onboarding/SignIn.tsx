@@ -8,7 +8,7 @@ import { useAtom } from "jotai";
 import { jwtDecode } from "jwt-decode";
 import { EyeIcon, EyeOffIcon } from "lucide-react-native";
 import React from "react";
-import { SafeAreaView, StyleSheet } from "react-native";
+import { SafeAreaView, StyleSheet, ImageBackground } from "react-native";
 import {
 	emailAtom,
 	jwtAtom,
@@ -16,12 +16,9 @@ import {
 	passwordAtom,
 	userIDAtom,
 } from "../../states/user";
-import LinearGradient from 'react-native-linear-gradient';
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
-import { HStack } from "@/components/ui/hstack";
 import { Card } from "@/components/ui/card";
-import { getRandomProfessionalStyle } from "../../styles/professionalStyles";
 import { api } from '../../../libs/api';
 
 // Custom interface for JWT payload
@@ -39,16 +36,6 @@ export function SignIn(): React.JSX.Element {
 	const [jwtDecoded, setJwtDecoded] = useAtom(jwtDecodedAtom);
 	const [showPassword, setShowPassword] = React.useState(false);
 	const [error, setError] = React.useState<string | null>(null);
-	const [gradientStyle, setGradientStyle] = React.useState(getRandomProfessionalStyle());
-
-	React.useEffect(() => {
-		// Change gradient every 5 seconds
-		const interval = setInterval(() => {
-			setGradientStyle(getRandomProfessionalStyle());
-		}, 5000);
-
-		return () => clearInterval(interval);
-	}, []);
 
 	const handleState = () => {
 		setShowPassword((showState) => !showState);
@@ -94,11 +81,10 @@ export function SignIn(): React.JSX.Element {
 
 	return (
 		<SafeAreaView style={styles.container}>
-			<LinearGradient
-				colors={gradientStyle.colors}
-				start={gradientStyle.start}
-				end={gradientStyle.end}
-				style={styles.gradient}
+			<ImageBackground
+				source={require('../../assets/background.gif')}
+				style={styles.background}
+				resizeMode="cover"
 			>
 				<Card style={styles.card}>
 					<VStack space="md" style={styles.form}>
@@ -133,7 +119,7 @@ export function SignIn(): React.JSX.Element {
 						</Button>
 					</VStack>
 				</Card>
-			</LinearGradient>
+			</ImageBackground>
 		</SafeAreaView>
 	);
 }
@@ -142,7 +128,7 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 	},
-	gradient: {
+	background: {
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
@@ -151,6 +137,7 @@ const styles = StyleSheet.create({
 		width: '90%',
 		maxWidth: 400,
 		padding: 20,
+		backgroundColor: 'rgba(255, 255, 255, 0.9)', // Add some transparency
 	},
 	form: {
 		width: '100%',

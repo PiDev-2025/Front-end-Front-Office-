@@ -80,18 +80,13 @@ export const useSetAuthToken = () => {
 // API methods
 export const api = {
   signIn: async (email: string, password: string) => {
-      const token = process.env.API_ELYSIA_JWT_USER_SIGNUP__SIGNIN;
-      console.log(token);
-      if (!token) throw new Error('JWT token not found in environment variables');
-      setAuthToken(token);
+    client.defaults.headers.common['Authorization'] = 'Bearer e7cbb254c3bf52a2c50ff113bd36695529f26f74f2fa14e6cb96bf29ae07b44895b3d217c940ef07d3f4a32e3ac7990bcbc0728d56d57c86337ed49b2d09b2ded851c2a1a40d990415a224b4d7848146311f7fbc3419d10f3b5d856d79950d8d4d0dc7571597102e16deea4f751012d77f1dfd91553a874a085c73998a2b09375ccead4cdb48a12a0720cdae82e4b59f75abce7388b4abb88e862761c3532e455d70fc6746ed36a088b50181e5a0c358b903fc91';
     const response = await client.post<SignInResponse>('/v1/auth/user/signin', { email, password });
     return response.data;
   },
-  signUp: async (email: string, password: string, name?: string) => {
-      const token = process.env.API_ELYSIA_JWT_USER_SIGNUP__SIGNIN;
-      if (!token) throw new Error('JWT token not found in environment variables');
-      setAuthToken(token);
-    const response = await client.post<SignInResponse>('/v1/auth/user/signin', { email, password, name });
+  signUp: async (email: string, password: string, username: string) => {
+    client.defaults.headers.common['Authorization'] = 'Bearer e7cbb254c3bf52a2c50ff113bd36695529f26f74f2fa14e6cb96bf29ae07b44895b3d217c940ef07d3f4a32e3ac7990bcbc0728d56d57c86337ed49b2d09b2ded851c2a1a40d990415a224b4d7848146311f7fbc3419d10f3b5d856d79950d8d4d0dc7571597102e16deea4f751012d77f1dfd91553a874a085c73998a2b09375ccead4cdb48a12a0720cdae82e4b59f75abce7388b4abb88e862761c3532e455d70fc6746ed36a088b50181e5a0c358b903fc91';
+    const response = await client.post<SignInResponse>('/v1/auth/user/signup', { email, password, username });
     return response.data;
   },
   chat: {
