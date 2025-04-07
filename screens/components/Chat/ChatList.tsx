@@ -292,23 +292,44 @@ export const ChatList: React.FC = () => {
 	const [chats, setChats] = useState<Chat[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-
-	useEffect(() => {
-		fetchChats();
-	}, []);
+	const [refreshing, setRefreshing] = useState(false);
+	const [searchQuery, setSearchQuery] = useState('');
 
 	const fetchChats = async () => {
 		try {
 			setLoading(true);
-			const response = await api.chat.get();
+			if (!jwtDecoded?.ID) {
+				throw new Error('User ID not found');
+			}
+			const userId = jwtDecoded.ID.split(':')[1];
+			const response = await api.chat.get(userId);
 			setChats(response);
+			setError(null);
 		} catch (error) {
 			console.error('Error fetching chats:', error);
-			setError('Failed to load chats');
+			setError('Failed to load chats. Please try again.');
 		} finally {
 			setLoading(false);
 		}
 	};
+
+	const onRefresh = async () => {
+		setRefreshing(true);
+		await fetchChats();
+		setRefreshing(false);
+	};
+
+	useEffect(() => {
+		fetchChats();
+	}, [jwtDecoded?.ID]);
+
+	const filteredChats = chats.filter(chat => {
+		const searchLower = searchQuery.toLowerCase();
+		return (
+			chat.name?.toLowerCase().includes(searchLower) ||
+			chat.lastMessage?.toLowerCase().includes(searchLower)
+		);
+	});
 
 	const handleChatPress = (chat: Chat) => {
 		navigation.navigate('Chat', {
@@ -318,12 +339,12 @@ export const ChatList: React.FC = () => {
 		});
 	};
 
-	if (loading) {
-		return <Text>Loading...</Text>;
-	}
-
-	if (error) {
-		return <Text style={{ color: 'red' }}>{error}</Text>;
+	if (loading && !refreshing) {
+		return (
+			<Box className="flex-1 items-center justify-center bg-gray-50">
+				<Text>Loading chats...</Text>
+			</Box>
+		);
 	}
 
 	return (
@@ -336,10 +357,12 @@ export const ChatList: React.FC = () => {
 					<InputField
 						placeholder="Rechercher un contact"
 						className="py-2"
+						value={searchQuery}
+						onChangeText={setSearchQuery}
 					/>
 				</Input>
 				<FlatList
-					data={chats}
+					data={filteredChats}
 					renderItem={({ item }) => (
 						<ChatListItem
 							key={item.id}
@@ -352,9 +375,31 @@ export const ChatList: React.FC = () => {
 					contentContainerStyle={styles.listContent}
 					ListEmptyComponent={() => (
 						<Box className="flex-1 items-center justify-center p-4">
-							<Text className="text-gray-500 text-center">No chats available</Text>
+							{error ? (
+								<VStack space="sm" className="items-center">
+									<Text className="text-red-500 text-center">{error}</Text>
+									<Button
+										variant="outline"
+										size="sm"
+										onPress={fetchChats}
+										className="mt-2"
+									>
+										<ButtonText>Retry</ButtonText>
+									</Button>
+								</VStack>
+							) : (
+								<Text className="text-gray-500 text-center">
+									{searchQuery ? 'No chats found' : 'No chats available'}
+								</Text>
+							)}
 						</Box>
 					)}
+					refreshControl={
+						<RefreshControl
+							refreshing={refreshing}
+							onRefresh={onRefresh}
+						/>
+					}
 					showsVerticalScrollIndicator={false}
 				/>
 				<Box className="mt-3 mb-4">
