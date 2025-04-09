@@ -25,9 +25,9 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
   const handleResponse = async (response) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.patch(
-        `http://localhost:3001/api/notifications/${notification._id}/respond`,
-        { response }, // 'accept' ou 'reject'
+      await axios.put(
+        `http://localhost:3001/api/reservations/${reservation._id}/status`,
+        { status: response },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -35,7 +35,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
         }
       );
       // Mettre à jour l'état local si nécessaire
-      onMarkAsRead(notification._id);
+      onMarkAsRead(notification._id, response);
     } catch (err) {
       console.error("Erreur lors de la réponse:", err);
     }
@@ -55,6 +55,60 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
   const startTime = new Date(reservation.startTime);
   const endTime = new Date(reservation.endTime);
   const durationHours = Math.round((endTime - startTime) / (1000 * 60 * 60));
+
+  // Déterminer le contenu à afficher en fonction du statut
+  const renderActionButtons = () => {
+    
+    if (
+      reservation.status === "canceled"
+    ) {
+      return (   
+        <div className="p-2 bg-[#4b3f7a] border border-green-200 rounded-md hover:bg-red-600 text-white text-center transition-colors shadow-sm">
+          <IoCheckmarkCircle className="inline-block mr-2" />
+          Reservation Canceled
+        </div>
+      );
+    } else if (
+      reservation.status === "accepted" ||
+      notification.status === "acceptée"
+    ) {
+      return (   
+        <div className="p-2 bg-[#338a15] border border-green-200 rounded-md hover:bg-red-600 text-white text-center transition-colors shadow-sm">
+          <IoCheckmarkCircle className="inline-block mr-2" />
+          Reservation Accepted
+        </div>
+      );
+    } else if (
+      reservation.status === "rejected" ||
+      notification.status === "refusée"
+    ) {
+      return (
+        <div className="p-2 bg-[#e13105] border border-green-200 rounded-md hover:bg-red-600 text-white text-center transition-colors shadow-sm">
+          <IoAlertCircle className="inline-block mr-2 text-red-500" />
+          Reservation Rejected
+        </div>
+      );
+    } else {
+      // Si le statut est "pending" ou "en_attente", afficher les boutons
+      return (
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={() => handleResponse("rejected")}
+            className="px-4 py-2 text-sm font-medium bg-[#fe1d27] text-white rounded-md hover:bg-red-600 transition-colors shadow-sm"
+          >
+            Refuser
+          </button>
+
+          <button
+            onClick={() => handleResponse("accepted")}
+            className="px-4 py-2 text-sm font-medium bg-[#3fd30c] text-white rounded-md hover:bg-green-600 transition-colors shadow-sm"
+          >
+            Accepter
+          </button>
+        </div>
+      );
+    }
+  };
 
   return (
     <div
@@ -102,21 +156,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
           </div>
         </div>
 
-        <div className="flex justify-end space-x-2">
-          <button
-            onClick={() => handleResponse("reject")}
-            className="px-4 py-2 text-sm font-medium bg-[#fe1d27] text-white rounded-md hover:bg-red-600 transition-colors shadow-sm"
-          >
-            Refuser
-          </button>
-
-          <button
-            onClick={() => handleResponse("accept")}
-            className="px-4 py-2 text-sm font-medium bg-[#3fd30c] text-white rounded-md hover:bg-green-600 transition-colors shadow-sm"
-          >
-            Accepter
-          </button>
-        </div>
+        {renderActionButtons()}
       </div>
     </div>
   );
@@ -154,14 +194,6 @@ const NotificationItem = ({ notification, onResponse }) => {
     "dd MMMM yyyy à HH:mm",
     { locale: fr }
   );
-
-  /*const handleResponse = async (response) => {
-    try {
-      onResponse(notification._id, response);
-    } catch (err) {
-      console.error("Erreur lors de la réponse:", err);
-    }
-  };*/
 
   return (
     <div
@@ -338,28 +370,24 @@ const NotificationList = () => {
 
   const handleResponse = async (notificationId, response) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.patch(
-        `http://localhost:3001/api/notifications/${notificationId}/respond`,
-        { response },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
 
       // Mettre à jour l'état local
       setNotifications((prev) =>
-        prev.map((n) =>
-          n._id === notificationId
-            ? {
-                ...n,
-                isRead: true,
-                status: response === "accept" ? "accepted" : "rejected",
-              }
-            : n
-        )
+        prev.map((n) => {
+          if (n._id === notificationId) {
+            // Mettre à jour à la fois le statut de la notification et celui de la réservation
+            return {
+              ...n,
+              isRead: true,
+              status: response === "accepted" ? "acceptée" : "refusée",
+              reservationId: {
+                ...n.reservationId,
+                status: response,
+              },
+            };
+          }
+          return n;
+        })
       );
     } catch (err) {
       console.error("Erreur lors de la réponse:", err);
