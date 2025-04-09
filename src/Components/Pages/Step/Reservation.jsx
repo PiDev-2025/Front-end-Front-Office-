@@ -517,8 +517,8 @@ const Reservation = ({ parkingData, reservationData,  setReservationData, onCont
         }
       );
   
-      setQrCode(response.data.qrCode);
-      setCurrentStep(4);
+      //setQrCode(response.data.qrCode);
+      //setCurrentStep(4);
     } catch (err) {
       console.error("Erreur de réservation:", err);
       if (err.response) {

@@ -31,6 +31,7 @@ const Navbar = () => {
       try {
         const decoded = jwtDecode(token);
         setUserRole(decoded.role);
+        console.log("haaaw e rolee :", decoded);
       } catch (error) {
         console.error("Error decoding token:", error);
       }

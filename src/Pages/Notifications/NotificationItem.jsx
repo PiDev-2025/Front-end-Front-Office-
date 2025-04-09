@@ -25,7 +25,9 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
   const handleResponse = async (response) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.put(
+      
+      // Première API - mise à jour du statut de la réservation
+      const statusResponse = await axios.put(
         `http://localhost:3001/api/reservations/${reservation._id}/status`,
         { status: response },
         {
@@ -34,8 +36,25 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
           },
         }
       );
-      // Mettre à jour l'état local si nécessaire
+      
+      // Mettre à jour l'état local
       onMarkAsRead(notification._id, response);
+      
+      // Vérifier si le statut est "accepted" et la réponse de l'API est "acces"
+      if (response === "accepted") {
+        // Seconde API - mise à jour de la place de parking
+        await axios.patch(
+          `http://localhost:3001/parkings/${reservation.parkingId}/spots/${reservation.spotId}`,
+          { status: "reserved" },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        
+        console.log("Place de parking réservée avec succès");
+      }
     } catch (err) {
       console.error("Erreur lors de la réponse:", err);
     }
@@ -58,11 +77,8 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
 
   // Déterminer le contenu à afficher en fonction du statut
   const renderActionButtons = () => {
-    
-    if (
-      reservation.status === "canceled"
-    ) {
-      return (   
+    if (reservation.status === "canceled") {
+      return (
         <div className="p-2 bg-[#4b3f7a] border border-green-200 rounded-md hover:bg-red-600 text-white text-center transition-colors shadow-sm">
           <IoCheckmarkCircle className="inline-block mr-2" />
           Reservation Canceled
@@ -72,7 +88,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
       reservation.status === "accepted" ||
       notification.status === "acceptée"
     ) {
-      return (   
+      return (
         <div className="p-2 bg-[#338a15] border border-green-200 rounded-md hover:bg-red-600 text-white text-center transition-colors shadow-sm">
           <IoCheckmarkCircle className="inline-block mr-2" />
           Reservation Accepted
@@ -121,13 +137,13 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
       <div className="flex flex-col">
         <div className="flex justify-between items-center mb-2">
           <h3 className="font-bold text-gray-800 text-lg">
-            Demande réservation
+            Demande réservation dans {parking.name}
           </h3>
         </div>
 
         <div className="mb-3">
           <div className="font-medium">Driver: {driver.name}</div>
-
+          <div className="font-medium">Spot ID: {reservation.spotId}</div>
           <div className="font-medium">
             Price:{" "}
             <span className="text-gray-500 text-sm">
@@ -370,7 +386,6 @@ const NotificationList = () => {
 
   const handleResponse = async (notificationId, response) => {
     try {
-
       // Mettre à jour l'état local
       setNotifications((prev) =>
         prev.map((n) => {
