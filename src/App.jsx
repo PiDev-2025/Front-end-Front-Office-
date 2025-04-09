@@ -21,7 +21,6 @@ import ForgotPassword from './Pages/ForgotPassword';
 import ResetPassword from './Pages/ResetPassword';
 import { AuthProvider } from './AuthContext';
 import GoogleCallback from './Pages/googlecallbackk';
-// import { GoogleMapsProvider } from './context/GoogleMapsContext';
 import { SearchProvider } from './context/SearchContext';
 import { FavoritesProvider } from './context/FavoritesContext';
 import NotFound from './Pages/NotFound';
@@ -36,11 +35,14 @@ import Step2UploadImages from '../src/Components/Pages/Step/Step2AddParking';
 import FaceAuth from "./Components/FaceAuth/FaceAuth";
 import ParkingDetails from "./Pages/ParkingDetails";
 import SecLocation from './Components/Pages/Step/Location';
-import ParkingPlan from "./Pages/viualisation3D"
 import EmployeeProfile from "./Pages/EmployeeProfile"
 import ParkingListOwner from "./Pages/ParkingListOwner"; // Assurez-vous du bon chemin d'importation
 import UserReservations from './Components/Pages/UserReservations';
 import PrivateRoute from './Pages/PrivateRoute';
+import ParkingPlan from "./Pages/Editeur/viualisation3D";
+import ParkingLiveView3D from "./Pages/VisualizeParkingAvailibility/ParkingLiveView";
+import Visualize3d from "./Pages/VisualizeParkingAvailibility/Visualize3d";
+
 
 const App = () => {
   let location = useLocation();
@@ -67,8 +69,9 @@ const App = () => {
             <Routes>
               <Route path="/" element={<DefaultLayout />}>
                 <Route index element={<Homepage />} />
-                <Route path="parkingPlan" element={<ParkingPlan />} />
-          
+                <Route path="parkingPlan/:id" element={<ParkingPlan />} />
+                <Route path="parkingLiveView/:id" element={<ParkingLiveView3D />} />
+                <Route path="visualize3d/:id" element={<Visualize3d />} />
                 <Route path="step2/:parkingId" element={<Step2UploadImages />} />
                 <Route path="how-it-works" element={<HowItworks />} />
                 <Route path="booking" element={<Booking />} />

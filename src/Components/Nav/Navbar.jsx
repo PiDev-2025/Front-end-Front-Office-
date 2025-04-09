@@ -4,8 +4,15 @@ import { Fragment } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { AuthContext } from "../../AuthContext";
+import {
+  NotificationBadge,
+  NotificationItem,
+  NotificationList,
+} from "../../Pages/Notifications/NotificationItem";
 
 const Navbar = () => {
+  // État pour les notifications
+  const [showNotifications, setShowNotifications] = useState(false);
   const location = useLocation();
   const [ToogleMenuResponsive, setToogleMenuResponsive] = useState(false);
   const [navabarScroll, setnavabarScroll] = useState(false);
@@ -47,7 +54,7 @@ const Navbar = () => {
     };
 
     const stickNavabr = () => {
-      if (window.scrollY > 100) { // Changé de 20 à 10 pour un déclenchement encore plus rapide
+      if (window.scrollY > 100) {
         setnavabarScroll(true);
       } else {
         statatusSet();
@@ -56,7 +63,7 @@ const Navbar = () => {
 
     statatusSet();
     window.addEventListener("scroll", stickNavabr);
-    return () => window.removeEventListener("scroll", stickNavabr); // Ajout du cleanup
+    return () => window.removeEventListener("scroll", stickNavabr);
   }, [location]);
 
   // Function to check if Scan QR should be visible
@@ -67,6 +74,11 @@ const Navbar = () => {
   // Function to check if Parking should be visible
   const shouldShowParking = () => {
     return userRole === "Owner";
+  };
+
+  // Function to check if Notifications should be visible
+  const shouldShowNotifications = () => {
+    return userRole === "Owner" || userRole === "Employe";
   };
 
   return (
@@ -152,7 +164,7 @@ const Navbar = () => {
               </li>
             )}
 
-            {/* Ajouter le lien Mes réservations dans le menu mobile */}
+            {/* Réservations link for mobile menu */}
             {user && (
               <li className="w-full">
                 <NavLink
@@ -160,9 +172,25 @@ const Navbar = () => {
                   onClick={() => setToogleMenuResponsive(false)}
                   className="font-medium text-black flex items-center"
                 >
-                  
                   Réservations
                 </NavLink>
+              </li>
+            )}
+
+            {/* Notifications for mobile - only show if user is Owner or Employee */}
+            {user && shouldShowNotifications() && (
+              <li className="w-full">
+                <div 
+                  className="font-medium text-black flex items-center cursor-pointer"
+                  onClick={() => setShowNotifications(!showNotifications)}
+                >
+                  Notifications <NotificationBadge />
+                </div>
+                {showNotifications && (
+                  <div className="mt-2 w-full bg-white rounded-lg shadow-xl z-50">
+                    <NotificationList />
+                  </div>
+                )}
               </li>
             )}
 
@@ -331,6 +359,21 @@ const Navbar = () => {
           <div className="ml-auto hidden lg:block">
             {user ? (
               <div className="flex items-center gap-3">
+                {/* Composant de notifications - desktop - only show if user is Owner or Employee */}
+                {shouldShowNotifications() && (
+                  <div className="relative">
+                    <NotificationBadge
+                      onClick={() => setShowNotifications(!showNotifications)}
+                    />
+                    {/* Panneau de notifications (s'affiche au clic) */}
+                    {showNotifications && (
+                      <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50">
+                        <NotificationList />
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <NavLink to="/profile" className="cursor-pointer">
                   <span
                     className={

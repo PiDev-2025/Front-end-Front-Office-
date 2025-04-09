@@ -115,3 +115,23 @@ export const DocumentIcon = ({ width = 20, height = 20, color = "#737373" }) => 
 
     )
 }
+export const MapIcon = ({ color }) => {
+    return (
+      <svg 
+        width="24" 
+        height="24" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M9 20L3 17V5L9 8M9 20L15 17M9 20V8M15 17L21 20V8L15 5M15 17V5M9 8L15 5"
+          stroke={color || "#737373"}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  };
+  
