@@ -10,11 +10,15 @@ const EmployeeParkingScanner = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [employeeParkings, setEmployeeParkings] = useState([]);
   const [scannedData, setScannedData] = useState(null);
+  const [parsedReservation, setParsedReservation] = useState(null);
   const [updatingSpots, setUpdatingSpots] = useState(false);
   const [scannerActive, setScannerActive] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   // Create a ref to store video stream tracks
   const videoStreamRef = useRef(null);
+  // Ref for modal to detect clicks outside
+  const modalRef = useRef(null);
 
   useEffect(() => {
     const authenticateUser = async () => {
@@ -59,6 +63,23 @@ const EmployeeParkingScanner = () => {
       stopCamera();
     };
   }, []);
+
+  // Add event listener for clicks outside modal
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        closeModal();
+      }
+    };
+
+    if (showModal) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showModal]);
 
   // Function to explicitly stop the camera
   const stopCamera = () => {
@@ -123,7 +144,41 @@ const EmployeeParkingScanner = () => {
       setIsProcessing(true);
       try {
         setScannedData(result.text);
-        stopCamera(); // Use the new function to properly stop the camera
+
+        // Try to parse the QR data as JSON
+        try {
+          const reservationData = JSON.parse(result.text);
+
+          // Check if this is reservation data by looking for expected fields
+          if (reservationData.reservationId && reservationData.parkingId) {
+            // Format dates for display
+            if (reservationData.startTime) {
+              reservationData.formattedStartTime = new Date(
+                reservationData.startTime
+              ).toLocaleString();
+            }
+            if (reservationData.endTime) {
+              reservationData.formattedEndTime = new Date(
+                reservationData.endTime
+              ).toLocaleString();
+            }
+            if (reservationData.generatedAt) {
+              reservationData.formattedGeneratedAt = new Date(
+                reservationData.generatedAt
+              ).toLocaleString();
+            }
+
+            setParsedReservation(reservationData);
+            setShowModal(true); // Show modal with reservation details
+          } else {
+            setParsedReservation(null);
+          }
+        } catch (parseError) {
+          console.error("Failed to parse QR data:", parseError);
+          setParsedReservation(null);
+        }
+
+        stopCamera(); // Stop the camera after successful scan
         setError(null);
       } catch (err) {
         setError(err.message);
@@ -148,11 +203,29 @@ const EmployeeParkingScanner = () => {
 
   const resetScanner = () => {
     setScannedData(null);
+    setParsedReservation(null);
+    closeModal();
 
     // Add a small delay before reactivating the scanner
     setTimeout(() => {
       setScannerActive(true);
     }, 300);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    // Only reset scanner if we're closing the modal
+    // but not starting a new scan (resetScanner already does this)
+    if (scannedData) {
+      // Clear data and restart camera
+      setScannedData(null);
+      setParsedReservation(null);
+
+      // Add a small delay before reactivating the scanner
+      setTimeout(() => {
+        setScannerActive(true);
+      }, 300);
+    }
   };
 
   const updateParkingSpots = async (parkingId, change) => {
@@ -193,6 +266,58 @@ const EmployeeParkingScanner = () => {
     }
   };
 
+  // Function to update reservation status
+  const updateReservationStatus = async (reservationId, newStatus) => {
+    if (!user || !reservationId) return;
+
+    try {
+      setIsProcessing(true);
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Authentication token not found");
+
+      const url = `http://localhost:3001/reservations/${reservationId}/status`;
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "Invalid JSON in error response" }));
+        throw new Error(
+          errorData.message ||
+            `Failed to update reservation status: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const updatedReservation = await response.json();
+
+      // Update the parsed reservation with new status
+      setParsedReservation((prev) => ({ ...prev, status: newStatus }));
+
+      // If accepted and it's for a parking we manage, update spots
+      if (newStatus === "accepted" && parsedReservation?.parkingId) {
+        const relevantParking = employeeParkings.find(
+          (p) => p._id === parsedReservation.parkingId
+        );
+        if (relevantParking) {
+          await updateParkingSpots(parsedReservation.parkingId, -1);
+        }
+      }
+
+      setError(null);
+    } catch (err) {
+      setError(`Update error: ${err.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -203,6 +328,33 @@ const EmployeeParkingScanner = () => {
       </div>
     );
   }
+
+  // Get status color and icon
+  const getStatusConfig = (status) => {
+    switch (status) {
+      case "accepted":
+        return {
+          bgColor: "bg-green-100",
+          textColor: "text-green-800",
+          borderColor: "border-green-300",
+          icon: "✅",
+        };
+      case "rejected":
+        return {
+          bgColor: "bg-red-100",
+          textColor: "text-red-800",
+          borderColor: "border-red-300",
+          icon: "❌",
+        };
+      default:
+        return {
+          bgColor: "bg-yellow-100",
+          textColor: "text-yellow-800",
+          borderColor: "border-yellow-300",
+          icon: "⏳",
+        };
+    }
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -226,16 +378,16 @@ const EmployeeParkingScanner = () => {
         <div className="md:w-1/2">
           <div className="bg-white rounded-xl shadow-md p-5 border">
             <h2 className="text-xl font-bold text-center mb-4">
-              {scannedData ? "Scan Result" : "📷 Scan QR Code"}
+              {scannedData && !showModal ? "Scan Result" : "📷 Scan QR Code"}
             </h2>
 
-            {!scannedData ? (
+            {!scannedData || showModal ? (
               <>
                 <div className="flex justify-center mb-4">
                   <button
                     onClick={toggleCamera}
                     className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-1 px-3 rounded-lg text-sm"
-                    disabled={isProcessing}
+                    disabled={isProcessing || showModal}
                   >
                     Switch Camera (
                     {scannerFacing === "environment" ? "Back" : "Front"})
@@ -248,7 +400,8 @@ const EmployeeParkingScanner = () => {
                       <div className="w-10 h-10 border-t-4 border-white rounded-full animate-spin"></div>
                     </div>
                   )}
-                  {scannerActive && (
+                  {/* Only show scanner when active and modal is not showing */}
+                  {scannerActive && !showModal && (
                     <QrReader
                       constraints={{ facingMode: scannerFacing }}
                       onResult={handleScan}
@@ -263,9 +416,19 @@ const EmployeeParkingScanner = () => {
                       }}
                     />
                   )}
+
+                  {/* Show a placeholder when modal is open */}
+                  {showModal && (
+                    <div className="aspect-video bg-gray-100 flex items-center justify-center rounded">
+                      <p className="text-gray-500">
+                        Camera paused while viewing details
+                      </p>
+                    </div>
+                  )}
                 </div>
               </>
-            ) : (
+            ) : !parsedReservation ? (
+              // Generic QR Data Display (non-reservation data)
               <div className="text-center">
                 <div className="mt-4 p-4 bg-gray-100 rounded-lg">
                   <p className="font-bold text-lg">Scanned Data:</p>
@@ -276,6 +439,22 @@ const EmployeeParkingScanner = () => {
                 <button
                   onClick={resetScanner}
                   className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg"
+                >
+                  New Scan
+                </button>
+              </div>
+            ) : (
+              // Message when modal should be open but isn't
+              <div className="text-center p-6">
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="mb-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg"
+                >
+                  Show Reservation Details
+                </button>
+                <button
+                  onClick={resetScanner}
+                  className="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
                 >
                   New Scan
                 </button>
@@ -424,6 +603,164 @@ const EmployeeParkingScanner = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal for Reservation Details */}
+      {showModal && parsedReservation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div
+            ref={modalRef}
+            className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden relative animate-fadeIn"
+          >
+            {/* Header with status banner */}
+            <div
+              className={`w-full h-2 ${
+                getStatusConfig(parsedReservation.status).bgColor
+              }`}
+            ></div>
+
+            {/* Close button */}
+            <button
+              onClick={closeModal}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+            >
+              <span className="text-gray-500">✕</span>
+            </button>
+
+            <div className="p-6">
+              {/* Header with status */}
+              <div className="flex items-center mb-6">
+                <div
+                  className={`w-12 h-12 rounded-full ${
+                    getStatusConfig(parsedReservation.status).bgColor
+                  } flex items-center justify-center mr-4`}
+                >
+                  <span className="text-2xl">
+                    {getStatusConfig(parsedReservation.status).icon}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Reservation Details</h3>
+                  <div
+                    className={`mt-1 px-3 py-1 rounded-full text-sm font-medium inline-block ${
+                      getStatusConfig(parsedReservation.status).bgColor
+                    } ${getStatusConfig(parsedReservation.status).textColor}`}
+                  >
+                    {parsedReservation.status?.toUpperCase() || "PENDING"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Reservation content */}
+              <div className="space-y-4">
+                {/* IDs section */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-xs text-gray-500">Reservation ID</p>
+                    <p
+                      className="font-semibold text-sm truncate"
+                      title={parsedReservation.reservationId}
+                    >
+                      {parsedReservation.reservationId}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-xs text-gray-500">Parking ID</p>
+                    <p
+                      className="font-semibold text-sm truncate"
+                      title={parsedReservation.parkingId}
+                    >
+                      {parsedReservation.parkingId}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Vehicle & Generation Time */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-xs text-gray-500">Vehicle Type</p>
+                    <p className="font-semibold">
+                      {parsedReservation.vehicleType}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <p className="text-xs text-gray-500">Generated At</p>
+                    <p className="font-semibold text-sm">
+                      {parsedReservation.formattedGeneratedAt || "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Time Range */}
+                <div
+                  className={`p-4 rounded-lg ${
+                    getStatusConfig(parsedReservation.status).bgColor
+                  } ${
+                    getStatusConfig(parsedReservation.status).borderColor
+                  } border`}
+                >
+                  <p className="text-xs text-center mb-2 font-medium">
+                    Reservation Time
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <div className="text-center">
+                      <p className="text-xs text-gray-500">Start</p>
+                      <p className="font-bold text-sm">
+                        {parsedReservation.formattedStartTime}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <span className="text-xl">➡️</span>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-gray-500">End</p>
+                      <p className="font-bold text-sm">
+                        {parsedReservation.formattedEndTime}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action buttons for pending reservations */}
+                {parsedReservation.status === "pending" && (
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <button
+                      onClick={() =>
+                        updateReservationStatus(
+                          parsedReservation.reservationId,
+                          "accepted"
+                        )
+                      }
+                      className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50 shadow flex items-center justify-center gap-2"
+                      disabled={isProcessing}
+                    >
+                      <span>✓</span> Accept
+                    </button>
+                    <button
+                      onClick={() =>
+                        updateReservationStatus(
+                          parsedReservation.reservationId,
+                          "rejected"
+                        )
+                      }
+                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50 shadow flex items-center justify-center gap-2"
+                      disabled={isProcessing}
+                    >
+                      <span>✕</span> Reject
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={resetScanner}
+                  className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg"
+                >
+                  New Scan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
