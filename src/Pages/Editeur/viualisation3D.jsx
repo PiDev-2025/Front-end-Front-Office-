@@ -112,6 +112,7 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
         `http://localhost:3001/parkings/parkings/${parkingId}`
       );
       const parkingData = response.data;
+      console.log("parkiiing data ", parkingData);
 
       setParkingSpots(
         parkingData.spots.map((spot) => ({
@@ -120,6 +121,7 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
           rotation: spot.rotation,
           size: { width: spot.width, height: spot.height },
           isOccupied: spot.status === "occupied",
+          status: spot.status
         }))
       );
 
@@ -192,7 +194,7 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
       height: spot.size.height,
       rotation: spot.rotation,
       type: "standard",
-      status: spot.isOccupied ? "occupied" : "available",
+      status: spot.status
     }));
 
     // Conversion des flèches pour le layout
@@ -260,7 +262,7 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
       parkingData.layout.viewSettings.scale = scale;
       parkingData.layout.viewSettings.offsetX = offset.x;
       parkingData.layout.viewSettings.offsetY = offset.y;
-      
+
       console.log("Sauvegarde des paramètres:", {
         scale: scale,
         offsetX: offset.x,
@@ -307,9 +309,20 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
   // Mettez à jour l'état d'occupation
   const toggleOccupancy = (id) => {
     setParkingSpots(
-      parkingSpots.map((spot) =>
-        spot.id === id ? { ...spot, isOccupied: !spot.isOccupied } : spot
-      )
+      parkingSpots.map((spot) => {
+        if (spot.id === id) {
+          // Toggle between available and occupied but preserve reserved
+          if (spot.status === 'reserved') {
+            // Don't change reserved spots when clicked
+            return spot;
+          } else if (spot.status === 'available') {
+            return { ...spot, status: 'occupied' };
+          } else {
+            return { ...spot, status: 'available' };
+          }
+        }
+        return spot;
+      })
     );
   };
 
@@ -465,15 +478,69 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
   // Composants pour la sidebar
   const streetModel = (
     <div className="bg-gray-200 h-16 rounded-md flex items-center justify-center">
-      <div className="bg-gray-400 h-4 w-32 rounded-sm"></div>
+      <div
+        style={{
+          width: "100px",
+          height: "60px",
+          backgroundColor: "#333",
+          position: "relative",
+          borderRadius: "4px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            width: "90%",
+            height: "0px",
+            borderBottom: "2px dashed #fff",
+          }}
+        ></div>
+      </div>
     </div>
   );
 
   const parkingSpotModel = (
-    <div className="bg-gray-200 h-16 rounded-md flex items-center justify-center">
-      <div className="bg-gray-400 h-10 w-10 rounded-md"></div>
+    <div className="bg-gray-100 h-16 rounded-md flex items-center justify-center border border-gray-300">
+      <div
+        style={{
+          width: "50px",
+          height: "60px",
+          border: "2px dashed #fff",
+          backgroundColor: "#333",
+          opacity: 0.6,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          color: "#fff",
+          fontWeight: "bold",
+          borderRadius: "3px",
+        }}
+      >
+        P
+      </div>
     </div>
   );
+
+  <div
+    style={{
+      padding: "15px",
+      borderBottom: "1px solid #ddd",
+      backgroundColor: "#f8f8f8",
+    }}
+  >
+    <h2
+      style={{
+        fontSize: "18px",
+        margin: 0,
+        color: "#333",
+        fontWeight: "600",
+      }}
+    >
+      Éléments
+    </h2>
+  </div>;
 
   const updateSize = (id, newSize) => {
     setArrows((prevArrows) =>
@@ -484,100 +551,205 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
   };
 
   return (
-    <div style={{ padding: "20px", marginLeft: "30px", marginTop: "120px" }}>
-      <h1>Plan de Parking Interactif</h1>
+    <div
+      style={{
+        marginTop: "-75px",
+        paddingLeft: "24px",
+        paddingRight: "24px",
+        paddingBottom: "24px",
+        marginLeft: "40px",
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "32px",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "28px",
+            fontWeight: "700",
+            color: "#1a1a1a",
+            margin: 0,
+          }}
+        >
+          Interactive Parking Map
+        </h1>
+
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button
+            onClick={zoomOut}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#f8f9fa",
+              border: "1px solid #e0e0e0",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            <span>🔍</span> Zoom Out
+          </button>
+
+          <div
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#f8f9fa",
+              border: "1px solid #e0e0e0",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              minWidth: "80px",
+              textAlign: "center",
+            }}
+          >
+            {Math.round(scale * 100)}%
+          </div>
+
+          <button
+            onClick={zoomIn}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#f8f9fa",
+              border: "1px solid #e0e0e0",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            <span>🔍</span> Zoom In
+          </button>
+
+          <button
+            onClick={resetView}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#f8f9fa",
+              border: "1px solid #e0e0e0",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            <span>🔄</span> Reset
+          </button>
+        </div>
+      </div>
 
       <div
         style={{
           display: "flex",
-          flexDirection: "row",
-          justifyContent: "flex-start",
-          alignItems: "flex-start",
-          width: "100%",
+          gap: "24px",
+          height: "calc(100vh - 180px)",
         }}
       >
-        {/* Sidebar de style Canva */}
+        {/* Sidebar modernisée */}
         <div
           style={{
-            width: "250px",
-            backgroundColor: "white",
-            borderRight: "1px solid #e0e0e0",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            height: "800px",
+            width: "300px",
+            backgroundColor: "#ffffff",
+            borderRadius: "12px",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
             display: "flex",
             flexDirection: "column",
+            overflow: "hidden",
           }}
         >
-          {/* En-tête de la sidebar */}
+          {/* Sidebar header */}
           <div
             style={{
-              padding: "15px",
-              borderBottom: "1px solid #e0e0e0",
+              padding: "20px",
+              borderBottom: "1px solid #f0f0f0",
+              backgroundColor: "#f9fafb",
             }}
           >
-            <h2 style={{ fontSize: "18px", margin: 0 }}>Éléments</h2>
-          </div>
-
-          {/* Onglets */}
-          <div
-            style={{
-              display: "flex",
-              borderBottom: "1px solid #e0e0e0",
-            }}
-          >
-            <button
+            <h2
               style={{
-                flex: 1,
-                padding: "10px",
-                textAlign: "center",
-                fontSize: "14px",
-                fontWeight: "500",
-                backgroundColor: "transparent",
-                border: "none",
-                borderBottom: "2px solid #2196F3",
-                color: "#2196F3",
-                cursor: "pointer",
+                fontSize: "18px",
+                fontWeight: "600",
+                margin: 0,
+                color: "#111827",
               }}
             >
-              Modèles
-            </button>
+              Parking Elements
+            </h2>
+            <p
+              style={{
+                fontSize: "13px",
+                color: "#6b7280",
+                marginTop: "4px",
+              }}
+            >
+              Drag and drop elements to create your map
+            </p>
           </div>
 
-          {/* Contenu de la sidebar */}
+          {/* Sidebar content */}
           <div
             style={{
               flex: 1,
               overflowY: "auto",
-              padding: "15px",
+              padding: "20px",
             }}
           >
-            {/* Section Rues */}
-            <div style={{ marginBottom: "20px" }}>
-              <h3
-                style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  marginBottom: "10px",
-                  color: "#555",
-                }}
-              >
-                Rues
-              </h3>
+            {/* Streets section */}
+            <div style={{ marginBottom: "24px" }}>
               <div
                 style={{
-                  cursor: "move",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  border: "1px solid #ccc",
-                  borderRadius: "6px",
-                  padding: "5px",
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: "12px",
                 }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = "scale(1.03)";
-                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow = "none";
+              >
+                <div
+                  style={{
+                    width: "4px",
+                    height: "16px",
+                    backgroundColor: "#3b82f6",
+                    borderRadius: "2px",
+                    marginRight: "8px",
+                  }}
+                ></div>
+                <h3
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#111827",
+                    margin: 0,
+                  }}
+                >
+                  Streets
+                </h3>
+              </div>
+
+              <div
+                style={{
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  padding: "16px",
+                  cursor: "grab",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
                 }}
                 draggable
                 onDragStart={(e) => handleDragStart(e, "street")}
@@ -588,44 +760,56 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
                 <p
                   style={{
                     fontSize: "12px",
+                    color: "#6b7280",
                     textAlign: "center",
-                    marginTop: "5px",
-                    color: "#666",
+                    marginTop: "8px",
+                    fontWeight: "500",
                   }}
                 >
-                  Rue
+                  Drag to add street
                 </p>
               </div>
             </div>
 
-            {/* Section Places de parking */}
-            <div style={{ marginTop: "25px" }}>
-              <h3
+            {/* Parking spots section */}
+            <div style={{ marginBottom: "24px" }}>
+              <div
                 style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  marginBottom: "10px",
-                  color: "#555",
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: "12px",
                 }}
               >
-                Places de parking
-              </h3>
+                <div
+                  style={{
+                    width: "4px",
+                    height: "16px",
+                    backgroundColor: "#3b82f6",
+                    borderRadius: "2px",
+                    marginRight: "8px",
+                  }}
+                ></div>
+                <h3
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#111827",
+                    margin: 0,
+                  }}
+                >
+                  Parking Spots
+                </h3>
+              </div>
 
               <div
                 style={{
-                  cursor: "move",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  border: "1px solid #ccc",
-                  borderRadius: "6px",
-                  padding: "5px",
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = "scale(1.03)";
-                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow = "none";
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  padding: "16px",
+                  cursor: "grab",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
                 }}
                 draggable
                 onDragStart={(e) => handleDragStart(e, "parkingSpot")}
@@ -636,234 +820,318 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
                 <p
                   style={{
                     fontSize: "12px",
+                    color: "#6b7280",
                     textAlign: "center",
-                    marginTop: "5px",
-                    color: "#666",
+                    marginTop: "8px",
+                    fontWeight: "500",
                   }}
                 >
-                  Place standard
+                  Drag to add parking spot
                 </p>
               </div>
             </div>
-            <div style={{ marginTop: "25px" }}>
-              <h3
+
+            {/* Arrows section */}
+            <div style={{ marginBottom: "24px" }}>
+              <div
                 style={{
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  marginBottom: "10px",
-                  color: "#555",
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: "12px",
                 }}
               >
-                Flèches directionnelles
-              </h3>
+                <div
+                  style={{
+                    width: "4px",
+                    height: "16px",
+                    backgroundColor: "#3b82f6",
+                    borderRadius: "2px",
+                    marginRight: "8px",
+                  }}
+                ></div>
+                <h3
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#111827",
+                    margin: 0,
+                  }}
+                >
+                  Directional Arrows
+                </h3>
+              </div>
 
               <div
                 style={{
-                  cursor: "move",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  border: "1px solid #ccc",
-                  borderRadius: "6px",
-                  padding: "5px",
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = "scale(1.03)";
-                  e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.1)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow = "none";
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  padding: "16px",
+                  cursor: "grab",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
                 }}
                 draggable
                 onDragStart={(e) => handleDragStart(e, "arrow")}
                 onDragEnd={handleDragEnd}
                 onClick={addNewArrow}
               >
-                <div className="bg-gray-200 h-16 rounded-md flex items-center justify-center">
+                <div
+                  style={{
+                    position: "relative",
+                    width: "80px",
+                    height: "20px",
+                    margin: "0 auto",
+                  }}
+                >
                   <div
                     style={{
-                      position: "relative",
-                      width: "80px",
-                      height: "20px",
+                      position: "absolute",
+                      left: "0",
+                      top: "5px",
+                      width: "60px",
+                      height: "10px",
+                      backgroundColor: "#3b82f6",
+                      borderRadius: "2px",
                     }}
-                  >
-                    <div
-                      style={{
-                        position: "absolute",
-                        left: "0",
-                        top: "5px",
-                        width: "60px",
-                        height: "10px",
-                        backgroundColor: "#FFEB3B",
-                      }}
-                    ></div>
-                    <div
-                      style={{
-                        position: "absolute",
-                        right: "0",
-                        width: "0",
-                        height: "0",
-                        borderTop: "10px solid transparent",
-                        borderBottom: "10px solid transparent",
-                        borderLeft: "20px solid #FFEB3B",
-                      }}
-                    ></div>
-                  </div>
+                  ></div>
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: "0",
+                      width: "0",
+                      height: "0",
+                      borderTop: "10px solid transparent",
+                      borderBottom: "10px solid transparent",
+                      borderLeft: "20px solid #3b82f6",
+                    }}
+                  ></div>
                 </div>
                 <p
                   style={{
                     fontSize: "12px",
+                    color: "#6b7280",
                     textAlign: "center",
-                    marginTop: "5px",
-                    color: "#666",
+                    marginTop: "8px",
+                    fontWeight: "500",
                   }}
                 >
-                  Flèche directionnelle
+                  Drag to add arrow
                 </p>
               </div>
             </div>
 
-            {/* Statistiques */}
+            {/* Statistics card */}
             <div
               style={{
-                marginTop: "30px",
-                backgroundColor: "#f5f5f5",
-                padding: "15px",
-                borderRadius: "4px",
+                backgroundColor: "#f9fafb",
+                borderRadius: "8px",
+                padding: "16px",
+                border: "1px solid #e5e7eb",
               }}
             >
-              <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                Nombre de places: {parkingSpots.length}
-              </p>
-              <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                Nombre de rues: {streets.length}
-              </p>
-              <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                Nombre de flèches: {arrows.length}
-              </p>
-              <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                Portes d'entrée: {streets.filter((s) => s.hasEntrance).length}
-              </p>
-              <p style={{ margin: "5px 0", fontSize: "13px" }}>
-                Portes de sortie: {streets.filter((s) => s.hasExit).length}
-              </p>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "4px",
+                    height: "16px",
+                    backgroundColor: "#3b82f6",
+                    borderRadius: "2px",
+                    marginRight: "8px",
+                  }}
+                ></div>
+                <h3
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#111827",
+                    margin: 0,
+                  }}
+                >
+                  Statistics
+                </h3>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "8px",
+                  fontSize: "13px",
+                }}
+              >
+                <div>
+                  <p style={{ margin: "8px 0", color: "#6b7280" }}>Spots:</p>
+                  <p style={{ margin: "8px 0", color: "#6b7280" }}>Streets:</p>
+                  <p style={{ margin: "8px 0", color: "#6b7280" }}>Arrows:</p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <p
+                    style={{
+                      margin: "8px 0",
+                      color: "#111827",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {parkingSpots.length}
+                  </p>
+                  <p
+                    style={{
+                      margin: "8px 0",
+                      color: "#111827",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {streets.length}
+                  </p>
+                  <p
+                    style={{
+                      margin: "8px 0",
+                      color: "#111827",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {arrows.length}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  marginTop: "12px",
+                  paddingTop: "12px",
+                  borderTop: "1px dashed #e5e7eb",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "8px",
+                }}
+              >
+                <div>
+                  <p style={{ margin: "8px 0", color: "#6b7280" }}>
+                    Entrances:
+                  </p>
+                  <p style={{ margin: "8px 0", color: "#6b7280" }}>Exits:</p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <p
+                    style={{
+                      margin: "8px 0",
+                      color: "#111827",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {streets.filter((s) => s.hasEntrance).length}
+                  </p>
+                  <p
+                    style={{
+                      margin: "8px 0",
+                      color: "#111827",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {streets.filter((s) => s.hasExit).length}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Bouton de sauvegarde en bas */}
+          {/* Save button */}
           <div
             style={{
-              padding: "15px",
-              borderTop: "1px solid #e0e0e0",
+              padding: "16px",
+              borderTop: "1px solid #e5e7eb",
+              backgroundColor: "#f9fafb",
             }}
           >
             <button
               onClick={saveParkingPlan}
               disabled={isSaving}
               style={{
-                padding: "10px 15px",
-                backgroundColor: "#FF9800",
+                width: "100%",
+                padding: "12px",
+                backgroundColor: "#3b82f6",
                 color: "white",
                 border: "none",
-                borderRadius: "4px",
-                cursor: isSaving ? "not-allowed" : "pointer",
-                width: "100%",
+                borderRadius: "8px",
                 fontSize: "14px",
                 fontWeight: "500",
+                cursor: isSaving ? "not-allowed" : "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
               }}
             >
-              {isSaving ? "Sauvegarde en cours..." : "Enregistrer le plan"}
+              {isSaving ? (
+                <>
+                  <span>⏳</span> Saving...
+                </>
+              ) : (
+                <>
+                  <span>💾</span> Save Parking Plan
+                </>
+              )}
             </button>
 
             {saveStatus === "success" && (
               <div
                 style={{
-                  backgroundColor: "#4CAF50",
-                  color: "white",
+                  marginTop: "12px",
                   padding: "10px",
-                  borderRadius: "4px",
-                  marginTop: "10px",
+                  backgroundColor: "#10b981",
+                  color: "white",
+                  borderRadius: "6px",
                   fontSize: "13px",
+                  textAlign: "center",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
                 }}
               >
-                Plan de parking enregistré avec succès!
+                <span>✓</span> Plan saved successfully!
               </div>
             )}
 
             {saveStatus === "error" && (
               <div
                 style={{
-                  backgroundColor: "#F44336",
-                  color: "white",
+                  marginTop: "12px",
                   padding: "10px",
-                  borderRadius: "4px",
-                  marginTop: "10px",
+                  backgroundColor: "#ef4444",
+                  color: "white",
+                  borderRadius: "6px",
                   fontSize: "13px",
+                  textAlign: "center",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
                 }}
               >
-                Erreur lors de l'enregistrement du plan.
+                <span>✕</span> Error saving plan
               </div>
             )}
           </div>
         </div>
 
-        {/* Colonne de droite pour le ParkingArea */}
+        {/* Main canvas area */}
         <div
           style={{
-            width: "calc(100% - 270px)",
-            maxWidth: "1600px",
-            marginLeft: "20px",
-            position: "relative",
+            flex: 1,
+            borderRadius: "12px",
+            overflow: "hidden",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
           }}
         >
-          <div
-            style={{
-              position: "absolute",
-              top: "-40px",
-              right: "0",
-              display: "flex",
-              alignItems: "center",
-              zIndex: 10,
-            }}
-          >
-            <button
-              onClick={zoomOut}
-              style={{
-                marginRight: "10px",
-                padding: "5px 10px",
-                backgroundColor: "#f0f0f0",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-              }}
-            >
-              🔍➖ Zoom Out
-            </button>
-            <span style={{ margin: "0 10px", color: "#666" }}>
-              {Math.round(scale * 100)}%
-            </span>
-            <button
-              onClick={zoomIn}
-              style={{
-                marginRight: "10px",
-                padding: "5px 10px",
-                backgroundColor: "#f0f0f0",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-              }}
-            >
-              🔍➕ Zoom In
-            </button>
-            <button
-              onClick={resetView}
-              style={{
-                padding: "5px 10px",
-                backgroundColor: "#e0e0e0",
-                border: "1px solid #ccc",
-                borderRadius: "4px",
-              }}
-            >
-              🔄 Réinitialiser
-            </button>
-          </div>
           <DndProvider backend={HTML5Backend}>
             <ParkingArea
               ref={parkingAreaRef}
@@ -920,11 +1188,12 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
                     position={spot.position}
                     rotation={spot.rotation}
                     size={spot.size}
-                    isOccupied={spot.isOccupied}
+                    status={spot.status}
                     updatePosition={updateParkingSpotPosition}
                     updateRotation={updateParkingSpotRotation}
                     toggleOccupancy={toggleOccupancy}
                     onRemove={removeParkingSpot}
+                    parkingId={parkingId}
                   />
                 ))}
                 {arrows.map((arrow) => (

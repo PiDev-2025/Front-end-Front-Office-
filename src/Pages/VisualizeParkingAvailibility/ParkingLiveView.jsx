@@ -2,13 +2,176 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 
+const ReservationDetails = ({ reservation }) => {
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
+
+  return (
+    <div>
+      <h2
+        style={{
+          fontSize: "1.5rem",
+          fontWeight: "600",
+          marginBottom: "1rem",
+          color: "#1e293b",
+        }}
+      >
+        Réservation #{reservation.id.slice(0, 6)}
+      </h2>
+
+      <div style={{ marginBottom: "1.5rem" }}>
+        <h3
+          style={{
+            fontSize: "1.1rem",
+            fontWeight: "500",
+            marginBottom: "0.5rem",
+            color: "#334155",
+          }}
+        >
+          Véhicule: {reservation.vehicleType}
+        </h3>
+      </div>
+
+      <div
+        style={{
+          backgroundColor: "#f8fafc",
+          borderRadius: "8px",
+          padding: "1rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={{ color: "#64748b" }}>FROM:</span>
+          <span style={{ fontWeight: "500" }}>
+            {formatDate(reservation.startTime)}
+          </span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: "0.5rem",
+          }}
+        >
+          <span style={{ color: "#64748b" }}>TO:</span>
+          <span style={{ fontWeight: "500" }}>
+            {formatDate(reservation.endTime)}
+          </span>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: "1rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "#f0fdf4",
+            color: "#166534",
+            padding: "0.75rem",
+            borderRadius: "8px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "0.875rem", color: "#22c55e" }}>Statut</div>
+          <div style={{ fontWeight: "600" }}>
+            {reservation.status === "accepted"
+              ? "Confirmée"
+              : reservation.status === "pending"
+              ? "En attente"
+              : "Annulée"}
+          </div>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "#f0f9ff",
+            color: "#075985",
+            padding: "0.75rem",
+            borderRadius: "8px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: "0.875rem", color: "#0ea5e9" }}>Paiement</div>
+          <div style={{ fontWeight: "600" }}>
+            {reservation.paymentStatus === "completed" ? "Payée" : "En attente"}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          backgroundColor: "#f8fafc",
+          borderRadius: "8px",
+          padding: "1rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span style={{ color: "#64748b" }}>Prix total:</span>
+          <span
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: "600",
+              color: "#1e293b",
+            }}
+          >
+            {reservation.totalPrice.toFixed(2)} TND
+          </span>
+        </div>
+      </div>
+
+      {reservation.client && (
+        <div>
+          <h3
+            style={{
+              fontSize: "1rem",
+              fontWeight: "500",
+              marginBottom: "0.5rem",
+              color: "#334155",
+            }}
+          >
+            Informations client
+          </h3>
+          <div
+            style={{
+              backgroundColor: "#f8fafc",
+              borderRadius: "8px",
+              padding: "1rem",
+            }}
+          >
+            <p style={{ marginBottom: "0.25rem" }}>{reservation.client.name}</p>
+            <p style={{ color: "#64748b" }}>{reservation.client.phone}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const ParkingLiveView = ({ parkingId: propParkingId }) => {
   const { id: urlParkingId } = useParams(); // Si utilisation de React Router
   const parkingId = propParkingId || urlParkingId;
-
   const [parkingSpots, setParkingSpots] = useState([]);
   const [streets, setStreets] = useState([]);
-  const [arrows, setArrows] = useState([]);
+  const [selectedReservation, setSelectedReservation] = useState(null);
   const [parkingInfo, setParkingInfo] = useState({
     name: "Parking",
     totalSpots: 0,
@@ -17,7 +180,6 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updateStatus, setUpdateStatus] = useState(null);
-
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [parkingDimensions, setParkingDimensions] = useState({
@@ -25,18 +187,166 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
     height: 0,
     boundingBox: { minX: 0, minY: 0, maxX: 0, maxY: 0 },
   });
-
   const [isDragging, setIsDragging] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [isMouseOverVisualization, setIsMouseOverVisualization] =
-    useState(false);
   const containerRef = useRef(null);
-  const [isReservationPopupOpen, setIsReservationPopupOpen] = useState(false);
-  const [selectedSpotId, setSelectedSpotId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const calculateParkingDimensions = (spots, streets, arrows) => {
+  const styles = {
+    container: {
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "100vh",
+      backgroundColor: "#f8fafc",
+      padding: "1rem",
+    },
+    parkingContainer: {
+      backgroundColor: "#1e293b",
+      borderRadius: "16px",
+      overflow: "hidden",
+      boxShadow:
+        "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+      width: "100%",
+      maxWidth: "800px",
+      height: "500px",
+      position: "relative",
+    },
+    parkingGrid: {
+      position: "absolute",
+      width: "100%",
+      height: "100%",
+      backgroundColor: "#1e293b",
+      backgroundImage: "radial-gradient(#334155 1px, transparent 1px)",
+      backgroundSize: "20px 20px",
+      zIndex: 0,
+    },
+    zoomControls: {
+      position: "absolute",
+      bottom: "20px",
+      left: "20px",
+      display: "flex",
+      flexDirection: "column",
+      backgroundColor: "rgba(30, 41, 59, 0.8)",
+      borderRadius: "12px",
+      padding: "8px",
+      boxShadow:
+        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+      zIndex: 10,
+    },
+    controlButton: {
+      width: "36px",
+      height: "36px",
+      backgroundColor: "#3b82f6",
+      color: "white",
+      border: "none",
+      borderRadius: "8px",
+      margin: "4px",
+      fontSize: "16px",
+      cursor: "pointer",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      transition: "all 0.2s ease",
+      ":hover": {
+        backgroundColor: "#2563eb",
+      },
+    },
+    legend: {
+      position: "absolute",
+      top: "20px",
+      left: "20px",
+      backgroundColor: "rgba(30, 41, 59, 0.9)",
+      color: "white",
+      padding: "12px",
+      borderRadius: "12px",
+      fontSize: "14px",
+      zIndex: 10,
+      boxShadow:
+        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+      backdropFilter: "blur(4px)",
+    },
+    statusIndicator: {
+      display: "flex",
+      alignItems: "center",
+      marginBottom: "8px",
+      ":last-child": {
+        marginBottom: 0,
+      },
+    },
+    statusDot: {
+      width: "12px",
+      height: "12px",
+      borderRadius: "50%",
+      marginRight: "8px",
+    },
+    notification: {
+      position: "absolute",
+      top: "20px",
+      right: "20px",
+      padding: "12px 16px",
+      borderRadius: "8px",
+      fontWeight: "500",
+      boxShadow:
+        "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+      zIndex: 20,
+      display: "flex",
+      alignItems: "center",
+    },
+    loadingScreen: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(30, 41, 59, 0.8)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 30,
+      borderRadius: "16px",
+    },
+    loadingSpinner: {
+      border: "4px solid rgba(255, 255, 255, 0.3)",
+      borderRadius: "50%",
+      borderTop: "4px solid #3b82f6",
+      width: "40px",
+      height: "40px",
+      animation: "spin 1s linear infinite",
+    },
+  };
+
+  const fetchReservationDetails = async (id) => {
+    const currentSpot = parkingSpots.find((spot) => spot.id === id);
+    if (!currentSpot.isReserved) {
+      setSelectedReservation(null);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data?.length > 0) {
+        setSelectedReservation(response.data[0]);
+      } else {
+        setSelectedReservation(null);
+      }
+    } catch (err) {
+      console.error("Erreur:", err);
+      setSelectedReservation(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const calculateParkingDimensions = (spots, streets) => {
     // Make sure to include arrows in the calculation
-    const allElements = [...spots, ...streets, ...arrows];
+    const allElements = [...spots, ...streets];
 
     if (allElements.length === 0)
       return {
@@ -248,21 +558,6 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
   const handleTouchEnd = () => {
     setIsDragging(false);
   };
-  const handleReservationComplete = async () => {
-    // Mise à jour de l'interface après réservation réussie
-    setUpdateStatus("success");
-
-    // Rechargement des données du parking pour refléter les changements
-    await loadParkingData();
-
-    setTimeout(() => setUpdateStatus(null), 2000);
-  };
-
-  // Fonction pour fermer le popup
-  const handleCloseReservationPopup = () => {
-    setIsReservationPopupOpen(false);
-    setSelectedSpotId(null);
-  };
 
   // Fonction pour charger les données du parking
   const loadParkingData = async () => {
@@ -293,33 +588,13 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
           hasExit: street.hasExit,
         })) || [];
 
-      const formattedArrows =
-        parkingData.layout?.arrows?.map((arrow) => ({
-          id: arrow.id,
-          position: {
-            left: arrow.x,
-            top: arrow.y,
-          },
-          rotation: arrow.rotation,
-          size: {
-            width: arrow.width || 40,
-            height: arrow.length || 80, // Ensure you're using the correct property name
-          },
-          color: arrow.color || "#F5F5F5",
-        })) || [];
-      // Add this after setting the formattedArrows in loadParkingData
-      console.log("Arrow data from API:", parkingData.layout?.arrows);
-      console.log("Formatted Arrows:", formattedArrows);
-
       setParkingSpots(formattedSpots);
       setStreets(formattedStreets);
-      setArrows(formattedArrows);
 
       // Calculate parking dimensions
       const dimensions = calculateParkingDimensions(
         formattedSpots,
-        formattedStreets,
-        formattedArrows
+        formattedStreets
       );
       setParkingDimensions(dimensions);
 
@@ -338,50 +613,6 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
       setError("Impossible de charger les données du parking");
       setLoading(false);
     }
-  };
-
-  const renderArrow = (arrow) => {
-    const arrowWidth = arrow.size?.width || 40;
-    const arrowHeight = arrow.size?.height || 80;
-    const arrowColor = arrow.color || "#F5F5F5";
-
-    return (
-      <div
-        key={arrow.id}
-        style={{
-          position: "absolute",
-          left: arrow.position.left,
-          top: arrow.position.top,
-          width: `${arrowWidth}px`,
-          height: `${arrowHeight}px`,
-          transform: `rotate(${arrow.rotation}deg)`,
-          transformOrigin: "center center", // This is correct
-          pointerEvents: "none",
-          zIndex: 2,
-        }}
-      >
-        <svg
-          width={arrowWidth}
-          height={arrowHeight}
-          viewBox={`0 0 ${arrowWidth} ${arrowHeight}`}
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Improved arrow path with better positioning */}
-          <path
-            d={`M ${arrowWidth * 0.1} ${arrowHeight / 2} 
-                  L ${arrowWidth * 0.9} ${arrowHeight / 2} 
-                  M ${arrowWidth * 0.7} ${arrowHeight * 0.3} 
-                  L ${arrowWidth * 0.9} ${arrowHeight / 2} 
-                  L ${arrowWidth * 0.7} ${arrowHeight * 0.7}`}
-            stroke={arrowColor}
-            strokeWidth={arrowWidth * 0.1}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </div>
-    );
   };
 
   // Méthode pour calculer la vue initiale
@@ -416,32 +647,45 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
     });
   };
 
-  // Fonction pour mettre à jour l'état d'occupation d'une place
-  /*const toggleOccupancy = async (id) => {
+  const toggleOccupancy = async (id) => {
+    // Find the current spot to check its status
     const currentSpot = parkingSpots.find((spot) => spot.id === id);
 
-    if (currentSpot.isOccupied || currentSpot.isReserved) {
+    // Don't allow toggling if already reserved
+    if (currentSpot.isReserved) {
       return;
     }
+
+    // Prepare the new status (toggle between available and occupied)
+    const newStatus = currentSpot.isOccupied ? "available" : "occupied";
+
+    // Optimistically update the UI
     const updatedSpots = parkingSpots.map((spot) => {
       if (spot.id === id) {
-        return { ...spot, isReserved: true, isOccupied: false };
+        return {
+          ...spot,
+          isOccupied: newStatus === "occupied",
+          isReserved: newStatus === "reserved",
+        };
       }
       return spot;
     });
 
     setParkingSpots(updatedSpots);
 
+    // Update the available spots count
     const availableCount = updatedSpots.filter(
       (spot) => !spot.isOccupied && !spot.isReserved
     ).length;
+
     setParkingInfo({
       ...parkingInfo,
       availableSpots: availableCount,
     });
 
+    // Prepare the data to send to the API
     const spotData = {
-      status: "reserved",
+      status: newStatus,
     };
 
     try {
@@ -454,6 +698,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
         },
       };
 
+      // Send the PATCH request to update the spot status in the database
       await axios.patch(
         `http://localhost:3001/parkings/${parkingId}/spots/${id}`,
         spotData,
@@ -466,6 +711,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
       console.error("Erreur lors de la mise à jour de la place:", error);
       setUpdateStatus("error");
 
+      // Revert changes on error
       setParkingSpots(parkingSpots);
       setParkingInfo({
         ...parkingInfo,
@@ -476,119 +722,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
 
       setTimeout(() => setUpdateStatus(null), 3000);
     }
-  };*/
-
-  const toggleOccupancy = (id) => {
-    const currentSpot = parkingSpots.find((spot) => spot.id === id);
-
-    // Si la place est déjà occupée ou réservée, ne rien faire
-    if (currentSpot.isOccupied || currentSpot.isReserved) {
-      return;
-    }
-
-    // Au lieu de changer directement le statut, ouvrir le popup
-    setSelectedSpotId(id);
-    setIsReservationPopupOpen(true);
   };
-
-  const renderParkingContainer = () => (
-    <div
-      style={{
-        position: "absolute",
-        left: 0,
-        top: 0,
-        width: "100%",
-        height: "100%",
-        border: "8px solid #aaa",
-        borderRadius: "10px",
-        pointerEvents: "none",
-        boxSizing: "border-box",
-        zIndex: -1,
-      }}
-    >
-      {/* Légende du parking */}
-      <div
-        style={{
-          position: "absolute",
-          top: "10px",
-          left: "10px",
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
-          color: "white",
-          padding: "8px",
-          borderRadius: "5px",
-          fontSize: "14px",
-          zIndex: 10,
-        }}
-      >
-        <div style={{ marginBottom: "5px", fontWeight: "bold" }}>
-          {parkingInfo.name} - {parkingInfo.availableSpots}/
-          {parkingInfo.totalSpots} places disponibles
-        </div>
-        <div
-          style={{ display: "flex", alignItems: "center", marginBottom: "3px" }}
-        >
-          <div
-            style={{
-              width: "12px",
-              height: "12px",
-              backgroundColor: "#2ecc71",
-              marginRight: "5px",
-              borderRadius: "2px",
-            }}
-          ></div>
-          <span>Disponible</span>
-        </div>
-        <div
-          style={{ display: "flex", alignItems: "center", marginBottom: "3px" }}
-        >
-          <div
-            style={{
-              width: "12px",
-              height: "12px",
-              backgroundColor: "#f39c12",
-              marginRight: "5px",
-              borderRadius: "2px",
-            }}
-          ></div>
-          <span>Réservé</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div
-            style={{
-              width: "12px",
-              height: "12px",
-              backgroundColor: "#e74c3c",
-              marginRight: "5px",
-              borderRadius: "2px",
-            }}
-          ></div>
-          <span>Occupé</span>
-        </div>
-      </div>
-
-      {/* Panneau de parking */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: "20px",
-          right: "20px",
-          width: "40px",
-          height: "50px",
-          backgroundColor: "#3498db",
-          borderRadius: "3px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          border: "2px solid white",
-          zIndex: 10,
-        }}
-      >
-        <span style={{ color: "white", fontSize: "28px", fontWeight: "bold" }}>
-          P
-        </span>
-      </div>
-    </div>
-  );
 
   // Fonction pour dessiner une place de parking
   const renderParkingSpot = (spot) => {
@@ -596,20 +730,44 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
     const spotHeight = spot.size?.height || 30;
 
     // Déterminer la couleur en fonction du statut
-    let fillColor = "#2ecc71"; // Vert pour disponible
-    let spotText = "P";
-    let spotOpacity = 0.7;
-    let tooltipText = "Disponible";
+    let spotStyle = {
+      available: {
+        fillColor: "#10b981",
+        borderColor: "#059669",
+        text: "P",
+        opacity: 0.9,
+      },
+      reserved: {
+        fillColor: "#f59e0b",
+        borderColor: "#d97706",
+        text: "R",
+        opacity: 0.9,
+      },
+      occupied: {
+        fillColor: "#ef4444",
+        borderColor: "#dc2626",
+        text: "X",
+        opacity: 0.9,
+      },
+    };
 
-    if (spot.isOccupied) {
-      fillColor = "#e74c3c"; // Rouge pour occupé
-      spotText = "X";
-      tooltipText = "Occupée";
-    } else if (spot.isReserved) {
-      fillColor = "#f39c12"; // Orange pour réservé
-      spotText = "R";
-      tooltipText = "Réservée";
-    }
+    const status = spot.isOccupied
+      ? "occupied"
+      : spot.isReserved
+      ? "reserved"
+      : "available";
+    const { fillColor, borderColor, text, opacity } = spotStyle[status];
+
+    // Fonction de gestion du clic selon le statut
+    const handleSpotClick = () => {
+      if (status === "reserved") {
+        // Si la place est réservée, afficher les détails de réservation
+        fetchReservationDetails(spot.id);
+      } else {
+        // Sinon, utiliser la fonction toggleOccupancy normale
+        toggleOccupancy(spot.id);
+      }
+    };
 
     return (
       <div
@@ -622,77 +780,108 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
           height: `${spotHeight}px`,
           transform: `rotate(${spot.rotation}rad)`,
           transformOrigin: "center center",
-          cursor:
-            spot.isOccupied || spot.isReserved ? "not-allowed" : "pointer",
+          cursor: "pointer", // Toujours pointer car les deux actions sont possibles
           transition: "all 0.3s ease",
+          filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))",
         }}
-        onClick={() => toggleOccupancy(spot.id)}
-        title={`Place ${spot.id} - ${tooltipText}`}
+        onClick={handleSpotClick}
+        title={`Place ${spot.id} - ${
+          status === "available"
+            ? "Disponible"
+            : status === "reserved"
+            ? "Réservée"
+            : "Occupée"
+        }`}
       >
         <svg
           width={spotWidth}
           height={spotHeight}
           viewBox={`0 0 ${spotWidth} ${spotHeight}`}
         >
-          {/* Fond de la place de parking */}
+          {/* Fond avec effet de profondeur */}
+          <rect
+            x="0"
+            y="0"
+            width={spotWidth}
+            height={spotHeight}
+            rx="4"
+            fill="#334155"
+          />
+
+          {/* Place de parking */}
           <rect
             x="2"
             y="2"
             width={spotWidth - 4}
             height={spotHeight - 4}
-            rx="2"
-            stroke="#fff"
+            rx="3"
+            stroke={borderColor}
             strokeWidth="2"
             fill={fillColor}
-            fillOpacity={spotOpacity}
+            fillOpacity={opacity}
           >
             <animate
               attributeName="fillOpacity"
-              values={
-                updateStatus === "updating" && spot.id ? "0.7;0.3;0.7" : "0.7"
-              }
+              values={updateStatus === "updating" ? "0.9;0.5;0.9" : "0.9"}
               dur="1s"
               repeatCount="1"
             />
           </rect>
 
-          {/* Marquage au sol */}
+          {/* Marquage au sol moderne */}
           <rect
-            x={spotWidth * 0.1}
-            y={spotHeight * 0.1}
-            width={spotWidth * 0.8}
-            height={spotHeight * 0.8}
-            rx="1"
-            stroke="#fff"
+            x={spotWidth * 0.15}
+            y={spotHeight * 0.15}
+            width={spotWidth * 0.7}
+            height={spotHeight * 0.7}
+            rx="2"
+            stroke="rgba(255, 255, 255, 0.3)"
             strokeWidth="1"
-            strokeDasharray="3,3"
+            strokeDasharray="4,2"
             fill="none"
           />
 
-          {/* Texte indicateur */}
+          {/* Texte avec effet de profondeur */}
           <text
             x={spotWidth / 2}
             y={spotHeight / 2}
             fontSize="14"
             fontWeight="bold"
-            fill="#fff"
+            fill="white"
             textAnchor="middle"
             dominantBaseline="middle"
+            filter="url(#text-shadow)"
           >
-            {spotText}
+            {text}
           </text>
+          <defs>
+            <filter
+              id="text-shadow"
+              x="-20%"
+              y="-20%"
+              width="140%"
+              height="140%"
+            >
+              <feDropShadow
+                dx="1"
+                dy="1"
+                stdDeviation="1"
+                floodColor="rgba(0,0,0,0.5)"
+              />
+            </filter>
+          </defs>
 
-          {/* Ajouter une voiture stylisée pour les places occupées */}
-          {spot.isOccupied && (
+          {/* Icône de voiture pour les places occupées */}
+          {status === "occupied" && (
             <g
-              transform={`translate(${spotWidth / 2 - 12}, ${
+              transform={`translate(${spotWidth / 2 - 10}, ${
                 spotHeight / 2 - 6
               })`}
             >
-              <rect x="2" y="3" width="20" height="10" rx="2" fill="#333" />
-              <rect x="5" y="0" width="14" height="6" rx="1" fill="#555" />
-              <circle cx="6" cy="13" r="2" fill="#222" />
-              <circle cx="18" cy="13" r="2" fill="#222" />
+              <rect x="0" y="4" width="20" height="8" rx="2" fill="#1e293b" />
+              <rect x="4" y="0" width="12" height="6" rx="1" fill="#334155" />
+              <circle cx="5" cy="12" r="2" fill="#1e293b" />
+              <circle cx="15" cy="12" r="2" fill="#1e293b" />
             </g>
           )}
         </svg>
@@ -713,13 +902,14 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
           height: `${street.length}px`,
           transform: `rotate(${street.rotation}rad)`,
           transformOrigin: "center center",
-          backgroundColor: "#444",
-          borderRadius: "4px",
+          backgroundColor: "#334155",
+          borderRadius: "6px",
           pointerEvents: "none",
           zIndex: 0,
+          boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.2)",
         }}
       >
-        {/* Marquage central */}
+        {/* Marquage central moderne */}
         <div
           style={{
             position: "absolute",
@@ -728,157 +918,68 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
             transform: "translateX(-50%)",
             width: "4px",
             height: "100%",
-            backgroundColor: "#fff",
-            opacity: 0.6,
-            borderRadius: "2px",
+            background:
+              "linear-gradient(to bottom, transparent, #f8fafc, transparent)",
+            opacity: 0.8,
             zIndex: 1,
           }}
         />
-        {/* Entrée avec barrière */}
+
+        {/* Entrée moderne */}
         {street.hasEntrance && (
           <div
             style={{
               position: "absolute",
-              top: "5px",
-              left: "0",
-              width: "100%",
-              height: "30px",
-              display: "flex",
-              justifyContent: "flex-start",
-              alignItems: "center",
+              top: "10px",
+              left: "10px",
               zIndex: 2,
             }}
           >
-            {/* Badge Entrée */}
             <div
               style={{
-                width: "26px",
-                height: "26px",
-                backgroundColor: "#3498db",
+                width: "24px",
+                height: "24px",
+                backgroundColor: "#3b82f6",
                 borderRadius: "50%",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                marginLeft: "5px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
               }}
             >
               <span
-                style={{ color: "#fff", fontSize: "14px", fontWeight: "bold" }}
+                style={{ color: "white", fontSize: "12px", fontWeight: "bold" }}
               >
                 E
               </span>
             </div>
-
-            {/* Barrière d'entrée */}
-            <div
-              style={{
-                position: "relative",
-                width: "60%",
-                height: "8px",
-                backgroundColor: "#f1c40f",
-                marginLeft: "10px",
-                borderRadius: "4px",
-                transform: "rotate(0deg)",
-                transformOrigin: "left center",
-                transition: "transform 1.5s ease",
-                // Animation de la barrière
-                animation: "barrierEntrance 8s infinite",
-              }}
-            >
-              <style>
-                {`
-                  @keyframes barrierEntrance {
-                    0%, 50%, 100% { transform: rotate(0deg); }
-                    12.5%, 37.5%, 62.5%, 87.5% { transform: rotate(-90deg); }
-                  }
-                `}
-              </style>
-              {/* Rayures sur la barrière */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  background:
-                    "repeating-linear-gradient(45deg, #f1c40f, #f1c40f 5px, #e74c3c 5px, #e74c3c 10px)",
-                  borderRadius: "4px",
-                }}
-              />
-            </div>
           </div>
         )}
 
-        {/* Sortie avec barrière */}
+        {/* Sortie moderne */}
         {street.hasExit && (
           <div
             style={{
               position: "absolute",
-              bottom: "5px",
-              right: "0",
-              width: "100%",
-              height: "30px",
-              display: "flex",
-              justifyContent: "flex-end",
-              alignItems: "center",
+              bottom: "10px",
+              right: "10px",
               zIndex: 2,
             }}
           >
-            {/* Barrière de sortie */}
             <div
               style={{
-                position: "relative",
-                width: "60%",
-                height: "8px",
-                backgroundColor: "#f1c40f",
-                marginRight: "10px",
-                borderRadius: "4px",
-                transform: "rotate(0deg)",
-                transformOrigin: "right center",
-                transition: "transform 1.5s ease",
-                // Animation de la barrière avec décalage
-                animation: "barrierExit 8s infinite",
-              }}
-            >
-              <style>
-                {`
-                  @keyframes barrierExit {
-                    0%, 50%, 100% { transform: rotate(0deg); }
-                    25%, 75% { transform: rotate(90deg); }
-                  }
-                `}
-              </style>
-              {/* Rayures sur la barrière */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  background:
-                    "repeating-linear-gradient(45deg, #f1c40f, #f1c40f 5px, #e74c3c 5px, #e74c3c 10px)",
-                  borderRadius: "4px",
-                }}
-              />
-            </div>
-
-            {/* Badge Sortie */}
-            <div
-              style={{
-                width: "26px",
-                height: "26px",
-                backgroundColor: "#e74c3c",
+                width: "24px",
+                height: "24px",
+                backgroundColor: "#ef4444",
                 borderRadius: "50%",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                marginRight: "5px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
               }}
             >
               <span
-                style={{ color: "#fff", fontSize: "14px", fontWeight: "bold" }}
+                style={{ color: "white", fontSize: "12px", fontWeight: "bold" }}
               >
                 S
               </span>
@@ -889,6 +990,30 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
     );
   };
 
+  const renderLegend = () => (
+    <div style={styles.legend}>
+      <div style={{ marginBottom: "8px", fontWeight: "600", fontSize: "16px" }}>
+        {parkingInfo.name}
+      </div>
+      <div style={{ marginBottom: "12px", color: "#94a3b8", fontSize: "12px" }}>
+        {parkingInfo.availableSpots}/{parkingInfo.totalSpots} places disponibles
+      </div>
+
+      <div style={styles.statusIndicator}>
+        <div style={{ ...styles.statusDot, backgroundColor: "#10b981" }}></div>
+        <span>Disponible</span>
+      </div>
+      <div style={styles.statusIndicator}>
+        <div style={{ ...styles.statusDot, backgroundColor: "#f59e0b" }}></div>
+        <span>Réservée</span>
+      </div>
+      <div style={styles.statusIndicator}>
+        <div style={{ ...styles.statusDot, backgroundColor: "#ef4444" }}></div>
+        <span>Occupée</span>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -897,141 +1022,486 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
     );
   }
 
+  const renderZoomControls = () => (
+    <div style={styles.zoomControls}>
+      <button
+        onClick={() => setZoom((prev) => Math.min(3, prev * 1.2))}
+        style={styles.controlButton}
+        title="Zoom in"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <path d="M12 5v14M5 12h14" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </button>
+      <button
+        onClick={() => setZoom((prev) => Math.max(0.5, prev / 1.2))}
+        style={styles.controlButton}
+        title="Zoom out"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <path d="M5 12h14" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </button>
+      <button
+        onClick={calculateInitialView}
+        style={styles.controlButton}
+        title="Reset view"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <path
+            d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+            strokeWidth="2"
+          />
+          <path d="M3 3v5h5" strokeWidth="2" />
+        </svg>
+      </button>
+    </div>
+  );
+
+  const renderNotification = () => {
+    if (!updateStatus) return null;
+
+    const notificationStyles = {
+      updating: {
+        backgroundColor: "#fef3c7",
+        color: "#92400e",
+        icon: (
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            style={{ marginRight: "8px" }}
+          >
+            <path
+              d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        ),
+      },
+      success: {
+        backgroundColor: "#d1fae5",
+        color: "#065f46",
+        icon: (
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            style={{ marginRight: "8px" }}
+          >
+            <path
+              d="M20 6L9 17l-5-5"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ),
+      },
+      error: {
+        backgroundColor: "#fee2e2",
+        color: "#991b1b",
+        icon: (
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            style={{ marginRight: "8px" }}
+          >
+            <path
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ),
+      },
+    };
+
+    const { backgroundColor, color, icon } = notificationStyles[updateStatus];
+
+    return (
+      <div style={{ ...styles.notification, backgroundColor, color }}>
+        {icon}
+        {updateStatus === "updating"
+          ? "Mise à jour en cours..."
+          : updateStatus === "success"
+          ? "Mise à jour réussie!"
+          : "Erreur lors de la mise à jour"}
+      </div>
+    );
+  };
+
   if (error) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-xl text-red-500">{error}</div>
+      <div style={styles.container}>
+        <div
+          style={{
+            backgroundColor: "white",
+            padding: "2rem",
+            borderRadius: "12px",
+            boxShadow:
+              "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              color: "#ef4444",
+              fontSize: "1.5rem",
+              marginBottom: "1rem",
+            }}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <h2 style={{ color: "#1e293b", marginBottom: "0.5rem" }}>
+            Erreur de chargement
+          </h2>
+          <p style={{ color: "#64748b" }}>{error}</p>
+          <button
+            onClick={loadParkingData}
+            style={{
+              marginTop: "1rem",
+              padding: "0.5rem 1rem",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              transition: "background-color 0.2s",
+              ":hover": {
+                backgroundColor: "#2563eb",
+              },
+            }}
+          >
+            Réessayer
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div
-      className="flex justify-center items-center h-screen w-screen bg-gray-100 p-4"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
+      style={{
+        marginTop: "-100px",
+        display: "flex",
+        minHeight: "100vh",
+        backgroundColor: "#f8fafc",
+        padding: "1rem",
+        gap: "1rem",
+        flexDirection: "column",
+      }}
     >
-      {/* Notification de mise à jour */}
-      {updateStatus && (
-        <div
-          className={`absolute top-4 p-2 rounded-md text-center transition-all ${
-            updateStatus === "updating"
-              ? "bg-yellow-100 text-yellow-800"
-              : updateStatus === "success"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {updateStatus === "updating"
-            ? "Mise à jour en cours..."
-            : updateStatus === "success"
-            ? "Mise à jour réussie!"
-            : "Erreur lors de la mise à jour"}
-        </div>
-      )}
-
-      {/* Zone de visualisation du parking */}
+      {/* Titre et en-tête */}
       <div
-        ref={containerRef}
-        className="bg-gray-800 rounded-lg overflow-hidden relative shadow-xl"
         style={{
-          width: "800px",
-          height: "600px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          margin: "0 40px 20px 40px",
+          paddingBottom: "15px",
+          borderBottom: "1px solid #e2e8f0",
         }}
-        onMouseDown={handleMouseDown}
-        onMouseEnter={() => setIsMouseOverVisualization(true)}
-        onMouseLeave={() => setIsMouseOverVisualization(false)}
-        onWheel={handleWheel}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#3b82f6"
+          >
+            <path
+              d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z"
+              strokeWidth="2"
+            />
+            <path d="M3 10h18M8 15h8M8 18h5M10 6h4v4h-4z" strokeWidth="2" />
+          </svg>
+          <h1
+            style={{
+              fontSize: "1.5rem",
+              fontWeight: "600",
+              color: "#1e293b",
+              margin: 0,
+            }}
+          >
+            Parking Management - Dashboard
+          </h1>
+        </div>
         <div
           style={{
-            position: "absolute",
-            width: "100%",
-            height: "100%",
-            backgroundColor: "#3a3a3a",
-            backgroundImage: "radial-gradient(#444 1px, transparent 1px)",
-            backgroundSize: "20px 20px",
-            zIndex: -2,
-          }}
-        />
-        {renderParkingContainer()}
-        <div
-          style={{
-            transform: `scale(${zoom}) translate(${offset.x}px, ${offset.y}px)`,
-            transformOrigin: "top left",
-            position: "absolute",
+            backgroundColor: "#e0f2fe",
+            color: "#0369a1",
+            padding: "8px 12px",
+            borderRadius: "8px",
+            fontSize: "0.875rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
           }}
         >
-          {streets.map(renderStreet)}
-          {arrows.map(renderArrow)}
-          {parkingSpots.map(renderParkingSpot)}
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#0369a1"
+          >
+            <path
+              d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+              strokeWidth="2"
+            />
+          </svg>
+          <span>Owner Mode</span>
+        </div>
+      </div>
+
+      {/* Contenu principal */}
+      <div style={{ display: "flex", flex: 1, gap: "1rem" }}>
+        {/* Partie gauche - Parking */}
+        <div style={{ flex: 2, marginLeft: "40px" }}>
+          {renderNotification()}
+          <div
+            ref={containerRef}
+            style={{
+              ...styles.parkingContainer,
+              width: "100%",
+              height: "600px",
+            }}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {loading && (
+              <div style={styles.loadingScreen}>
+                <div style={styles.loadingSpinner}></div>
+              </div>
+            )}
+
+            <div style={styles.parkingGrid} />
+
+            <div
+              style={{
+                transform: `scale(${zoom}) translate(${offset.x}px, ${offset.y}px)`,
+                transformOrigin: "top left",
+                position: "absolute",
+                transition: "transform 0.1s ease-out",
+              }}
+            >
+              {streets.map(renderStreet)}
+              {parkingSpots.map(renderParkingSpot)}
+            </div>
+
+            {renderLegend()}
+            {renderZoomControls()}
+          </div>
         </div>
 
-        {/* Contrôles de zoom */}
+        {/* Partie droite - Détails de réservation */}
         <div
           style={{
-            position: "absolute",
-            bottom: "15px",
-            left: "15px",
+            flex: 1,
+            backgroundColor: "white",
+            borderRadius: "16px",
+            padding: "1.5rem",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            height: "600px",
+            overflow: "auto",
+            marginRight: "40px",
             display: "flex",
             flexDirection: "column",
-            backgroundColor: "rgba(255, 255, 255, 0.2)",
-            borderRadius: "5px",
-            padding: "5px",
-            zIndex: 5,
           }}
         >
-          <button
-            onClick={() => setZoom((prev) => Math.min(3, prev * 1.2))}
-            style={{
-              width: "30px",
-              height: "30px",
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              color: "white",
-              border: "none",
-              borderRadius: "3px",
-              margin: "2px",
-              fontSize: "18px",
-              cursor: "pointer",
-            }}
-          >
-            +
-          </button>
-          <button
-            onClick={() => setZoom((prev) => Math.max(0.5, prev / 1.2))}
-            style={{
-              width: "30px",
-              height: "30px",
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              color: "white",
-              border: "none",
-              borderRadius: "3px",
-              margin: "2px",
-              fontSize: "18px",
-              cursor: "pointer",
-            }}
-          >
-            -
-          </button>
-          <button
-            onClick={calculateInitialView}
-            style={{
-              width: "30px",
-              height: "30px",
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              color: "white",
-              border: "none",
-              borderRadius: "3px",
-              margin: "2px",
-              fontSize: "14px",
-              cursor: "pointer",
-            }}
-          >
-            R
-          </button>
+          {selectedReservation ? (
+            <ReservationDetails reservation={selectedReservation} />
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                height: "100%",
+                color: "#64748b",
+                textAlign: "center",
+                gap: "20px",
+              }}
+            >
+              <div
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  backgroundColor: "#f1f5f9",
+                  borderRadius: "50%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <svg
+                  width="40"
+                  height="40"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#94a3b8"
+                >
+                  <path
+                    d="M8 17l4 4 4-4m-4-5v9"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3
+                  style={{
+                    fontSize: "1.25rem",
+                    fontWeight: "600",
+                    color: "#334155",
+                    marginBottom: "8px",
+                  }}
+                >
+                  No place selected
+                </h3>
+                <p style={{ margin: 0 }}>
+                  Cliquez sur une place réservée pour afficher
+                  <br />
+                  booking details
+                </p>
+              </div>
+              <div
+                style={{
+                  backgroundColor: "#f8fafc",
+                  borderRadius: "12px",
+                  padding: "15px",
+                  width: "100%",
+                  marginTop: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginBottom: "10px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "24px",
+                      height: "24px",
+                      backgroundColor: "#e0f2fe",
+                      borderRadius: "6px",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#0ea5e9"
+                    >
+                      <path
+                        d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+                        strokeWidth="2"
+                      />
+                    </svg>
+                  </div>
+                  <span style={{ fontWeight: "500" }}>
+                    Statut actuel du parking
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  <span>Places totales:</span>
+                  <span style={{ fontWeight: "600" }}>
+                    {parkingInfo.totalSpots}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  <span>Places disponibles:</span>
+                  <span style={{ fontWeight: "600", color: "#10b981" }}>
+                    {parkingInfo.availableSpots}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  <span>Places réservées:</span>
+                  <span style={{ fontWeight: "600", color: "#f59e0b" }}>
+                    {parkingSpots.filter((spot) => spot.isReserved).length}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

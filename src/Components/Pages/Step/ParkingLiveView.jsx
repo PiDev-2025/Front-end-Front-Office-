@@ -298,20 +298,25 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
       : `parking-spot-${selectedSpotId}`;
 
     // Vérifier si la place existe
-    const spotExists = parkingSpots.some((spot) => spot.id === fullId);
+    const spot = parkingSpots.find((spot) => spot.id === fullId);
 
-    if (spotExists) {
+    if (spot) {
+      // Vérifier si la place est réservée
+      if (spot.isReserved || spot.isOccupied) {
+        alert(
+          `Attention : La place ${selectedSpotId} est actuellement réservée.`
+        );
+        setHighlightedSpot(null);
+        return; 
+      }
+
       setHighlightedSpot(fullId);
 
-      // Trouver la place pour ajuster la vue si nécessaire
-      const targetSpot = parkingSpots.find((spot) => spot.id === fullId);
-      if (targetSpot) {
-        // Centrer la vue sur la place sélectionnée
-        setOffset({
-          x: -targetSpot.position.left + 400 / scale - 30,
-          y: -targetSpot.position.top + 200 / scale - 60,
-        });
-      }
+      // Centrer la vue sur la place sélectionnée
+      setOffset({
+        x: -spot.position.left + 400 / scale - 30,
+        y: -spot.position.top + 200 / scale - 60,
+      });
     } else {
       alert(`La place de parking ${selectedSpotId} n'existe pas.`);
       setHighlightedSpot(null);

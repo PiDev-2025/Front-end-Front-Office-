@@ -137,7 +137,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
       <div className="flex flex-col">
         <div className="flex justify-between items-center mb-2">
           <h3 className="font-bold text-gray-800 text-lg">
-            Demande réservation dans {parking.name}
+          Reservation Request in {parking.name}
           </h3>
         </div>
 
@@ -157,18 +157,18 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
           <div className="p-2 bg-white rounded border border-gray-200">
-            <div className="text-xs text-gray-500">Début</div>
+            <div className="text-xs text-gray-500">From</div>
             <div className="font-medium">{formattedStartDate}</div>
           </div>
 
           <div className="p-2 bg-white rounded border border-gray-200">
-            <div className="text-xs text-gray-500">Fin</div>
+            <div className="text-xs text-gray-500">To</div>
             <div className="font-medium">{formattedEndDate}</div>
           </div>
 
           <div className="p-2 bg-white rounded border border-gray-200">
-            <div className="text-xs text-gray-500">Durée</div>
-            <div className="font-medium">{durationHours} heures</div>
+            <div className="text-xs text-gray-500">Duration</div>
+            <div className="font-medium">{durationHours} Hours</div>
           </div>
         </div>
 

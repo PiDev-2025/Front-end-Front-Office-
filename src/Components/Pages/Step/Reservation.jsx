@@ -356,26 +356,31 @@ const QRCodeModal = ({ qrCode, onPrint, onContinue, onViewReservations }) => (
   </div>
 );
 
-const Reservation = ({ parkingData, reservationData,  setReservationData, onContinue }) => {
+const Reservation = ({
+  parkingData,
+  reservationData,
+  setReservationData,
+  onContinue,
+}) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [qrCode, setQrCode] = useState(null);
   const [calculatedPrice, setCalculatedPrice] = useState(0);
-  const [currentStep, setCurrentStep] = useState(1);;
+  const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("cash");
-
-
 
   useEffect(() => {
     if (!parkingData?.pricing?.hourly) return;
-  
+
     const hours = Math.ceil(
-      (new Date(reservationData.endDate) - new Date(reservationData.startDate)) / (1000 * 60 * 60) )
-    
+      (new Date(reservationData.endDate) -
+        new Date(reservationData.startDate)) /
+        (1000 * 60 * 60)
+    );
+
     const total = hours * parkingData.pricing.hourly;
     setCalculatedPrice(parseFloat(total.toFixed(2)));
-  
   }, [reservationData.startDate, reservationData.endDate, parkingData.pricing]);
 
   const calculatePrice = () => {
@@ -383,25 +388,24 @@ const Reservation = ({ parkingData, reservationData,  setReservationData, onCont
       if (!parkingData?.pricing?.hourly) {
         throw new Error("Tarifs non disponibles");
       }
-  
+
       const start = new Date(reservationData.startDate);
       const end = new Date(reservationData.endDate);
-      
+
       if (isNaN(start) || isNaN(end)) {
         throw new Error("Dates invalides");
       }
-  
+
       const diffMs = end - start;
       const diffHours = diffMs / (1000 * 60 * 60);
-      
+
       if (diffHours <= 0) {
         setCalculatedPrice(0);
         return;
       }
-  
+
       const total = Math.ceil(diffHours) * parkingData.pricing.hourly;
       setCalculatedPrice(parseFloat(total.toFixed(2)));
-  
     } catch (error) {
       console.error("Erreur de calcul:", error);
       setCalculatedPrice(0);
@@ -446,42 +450,43 @@ const Reservation = ({ parkingData, reservationData,  setReservationData, onCont
         return;
       }
       const spotId = parkingData.selectedSpotId;
-  
+
       if (!spotId) {
         setError("Veuillez sélectionner une place de parking");
         return;
       }
-  
+
       if (!reservationData.vehicleType) {
         setError("Veuillez sélectionner un type de véhicule");
         return;
       }
-  
+
       const token = localStorage.getItem("token");
       if (!token) {
         setError("Veuillez vous connecter pour effectuer une réservation");
         return;
       }
-  
+
       // Validate date range
       const minDuration = 60 * 60 * 1000; // 1 heure minimum
       if (
-        new Date(reservationData.endDate) - new Date(reservationData.startDate) <
+        new Date(reservationData.endDate) -
+          new Date(reservationData.startDate) <
         minDuration
       ) {
         setError("La durée minimale de réservation est de 1 heure");
         return;
       }
-  
+
       // Validate dates are not in the past
       if (new Date(reservationData.startDate) < new Date()) {
         setError("La date de début ne peut pas être dans le passé");
         return;
       }
-  
+
       setLoading(true);
       setError("");
-  
+
       // Renommez cette variable pour éviter la collision
       const reservationPayload = {
         parkingId: parkingData._id,
@@ -491,7 +496,7 @@ const Reservation = ({ parkingData, reservationData,  setReservationData, onCont
         vehicleType: reservationData.vehicleType,
         totalPrice: calculatedPrice,
         paymentMethod: paymentMethod,
-        userId: localStorage.getItem('userId')
+        userId: localStorage.getItem("userId"),
       };
       console.log("Payload complet:", {
         parkingId: parkingData._id,
@@ -501,11 +506,10 @@ const Reservation = ({ parkingData, reservationData,  setReservationData, onCont
         vehicleType: reservationData.vehicleType,
         totalPrice: calculatedPrice,
         paymentMethod: paymentMethod,
-        
       });
-  
+
       console.log("Sending reservation data:", reservationPayload);
-  
+
       const response = await axios.post(
         "http://localhost:3001/api/reservations",
         reservationPayload,
@@ -516,9 +520,9 @@ const Reservation = ({ parkingData, reservationData,  setReservationData, onCont
           },
         }
       );
-  
-      //setQrCode(response.data.qrCode);
-      //setCurrentStep(4);
+
+      setQrCode(response.data.qrCode);
+      setCurrentStep(4);
     } catch (err) {
       console.error("Erreur de réservation:", err);
       if (err.response) {
@@ -531,6 +535,58 @@ const Reservation = ({ parkingData, reservationData,  setReservationData, onCont
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const verifyAvailability = async () => {
+      if (reservationData.startDate && reservationData.endDate) {
+        await checkAvailability(
+          reservationData.startDate,
+          reservationData.endDate
+        );
+      }
+    };
+
+    const timer = setTimeout(verifyAvailability, 500);
+    return () => clearTimeout(timer);
+  }, [reservationData.startDate, reservationData.endDate]);
+  const checkAvailability = async (startDate, endDate) => {
+    try {
+      if (!parkingData?._id || !parkingData.selectedSpotId) {
+        return true;
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("Veuillez vous connecter pour vérifier la disponibilité");
+        return false;
+      }
+
+      const response = await axios.get(
+        `http://localhost:3001/api/reservations/checkAvailability/${parkingData._id}/${parkingData.selectedSpotId}`,
+        {
+          params: {
+            startTime: new Date(startDate).toISOString(),
+            endTime: new Date(endDate).toISOString(),
+          },
+        }
+      );
+
+      if (!response.data.available) {
+        setError(
+          "Cette place n'est pas disponible pour la période sélectionnée"
+        );
+        return false;
+      } else {
+        setError(""); // Efface l'erreur si la place est disponible
+        return true;
+      }
+    } catch (err) {
+      console.error("Erreur lors de la vérification de disponibilité:", err);
+      // En cas d'erreur, on considère que la place est disponible pour ne pas bloquer l'utilisateur
+      setError("");
+      return true;
     }
   };
 
@@ -657,15 +713,20 @@ const Reservation = ({ parkingData, reservationData,  setReservationData, onCont
       case 1: // Date selection
         const minDuration = 60 * 60 * 1000; // 1 heure en millisecondes
 
-        return (
+        const isValidDuration =
           reservationData.startDate &&
           reservationData.endDate &&
           new Date(reservationData.endDate) >
             new Date(reservationData.startDate) &&
           new Date(reservationData.endDate) -
             new Date(reservationData.startDate) >=
-            minDuration
-        );
+            minDuration;
+
+        // Si la durée est valide, vérifier la disponibilité
+        if (isValidDuration && error.includes("disponible")) {
+          return false;
+        }
+        return isValidDuration;
       case 2: // Vehicle type
         return !!reservationData.vehicleType;
       case 3: // Payment method
@@ -695,29 +756,61 @@ const Reservation = ({ parkingData, reservationData,  setReservationData, onCont
               <div className="flex flex-col space-y-8">
                 <CustomDatePicker
                   selected={reservationData.startDate}
-                  onChange={(date) => setReservationData(prev => ({
-                    ...prev,
-                    startDate: date,
-                    endDate: date > prev.endDate ? new Date(date.getTime() + 60*60*1000) : prev.endDate
-                  }))}
+                  onChange={async (date) => {
+                    const newEndDate =
+                      date > reservationData.endDate
+                        ? new Date(date.getTime() + 60 * 60 * 1000)
+                        : reservationData.endDate;
+
+                    // Mettre à jour les dates immédiatement
+                    setReservationData((prev) => ({
+                      ...prev,
+                      startDate: date,
+                      endDate: newEndDate,
+                    }));
+
+                    // Vérifier la disponibilité après un court délai
+                    setTimeout(async () => {
+                      const isAvailable = await checkAvailability(
+                        date,
+                        newEndDate
+                      );
+                      if (!isAvailable) {
+                        setError(
+                          "Cette place n'est pas disponible pour la période sélectionnée"
+                        );
+                      }
+                    }, 300);
+                  }}
                   label="Date et heure d'arrivée"
                 />
 
                 <CustomDatePicker
                   selected={reservationData.endDate}
-                  onChange={(date) =>
+                  onChange={async (date) => {
                     setReservationData((prev) => ({
                       ...prev,
                       endDate: date,
-                    }))
-                  }
+                    }));
+
+                    setTimeout(async () => {
+                      const isAvailable = await checkAvailability(
+                        reservationData.startDate,
+                        date
+                      );
+                      if (!isAvailable) {
+                        setError(
+                          "Cette place n'est pas disponible pour la période sélectionnée"
+                        );
+                      }
+                    }, 300);
+                  }}
                   label="Date et heure de départ"
                   minDate={
                     new Date(
                       reservationData.startDate.getTime() + 60 * 60 * 1000
                     )
                   }
-                  className="w-full transform transition-all focus:scale-105"
                 />
               </div>
 
@@ -916,8 +1009,21 @@ const Reservation = ({ parkingData, reservationData,  setReservationData, onCont
 
             {/* Error message */}
             {error && (
-              <div className="p-3 bg-red-50 text-red-700 rounded-lg mb-4 flex items-center">
-                <AlertCircle size={18} className="mr-2 text-red-500" />
+              <div
+                className={`p-3 rounded-lg mb-4 flex items-center ${
+                  error.includes("disponible")
+                    ? "bg-yellow-50 text-yellow-700"
+                    : "bg-red-50 text-red-700"
+                }`}
+              >
+                <AlertCircle
+                  size={18}
+                  className={`mr-2 ${
+                    error.includes("disponible")
+                      ? "text-yellow-500"
+                      : "text-red-500"
+                  }`}
+                />
                 {error}
               </div>
             )}

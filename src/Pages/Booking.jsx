@@ -137,7 +137,7 @@ const Booking = () => {
             parkingData={{
               ...selectedParking,
               selectedSpotId: selectedSpot,
-              pricing: selectedParking.pricing, // Ajoutez le spot sélectionné
+              pricing: selectedParking.pricing,
             }}
             reservationData={reservationData}
             setReservationData={setReservationData}

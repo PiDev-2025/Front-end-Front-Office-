@@ -13,7 +13,7 @@ const mapContainerStyle = {
   overflow: "hidden"
 };
 
-const defaultCenter = { lat: 36.8065, lng: 10.1815 }; // Default: Tunis
+const defaultCenter = { lat: 36.8065, lng: 10.1815 };
 
 const vehiculeOptions = [
   { value: "Moto", label: "Moto", image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765730/moto_xdypx2.png" },
