@@ -89,6 +89,7 @@ export const MapboxProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Check if Mapbox is properly initialized
     if (mapboxgl.accessToken) {
       setIsLoaded(true);
       
