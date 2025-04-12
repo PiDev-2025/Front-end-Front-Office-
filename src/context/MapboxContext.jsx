@@ -16,11 +16,39 @@ const MapboxContext = createContext({
 });
 
 export const MapboxProvider = ({ children }) => {
-  if (!process.env.REACT_APP_MAPBOX_TOKEN) {
-    console.error('Mapbox token is not defined in environment variables');
-  }
+  const getMapboxToken = () => {
+    const hardcodedToken = "pk.eyJ1IjoiYXltZW5qYWxsb3VsaSIsImEiOiJjbThnbDA3eTIwanY2MmxzZDdpZXJocGVuIn0.5CM0j5TSsORXd6mbsTf-6Q";
+    
+    try {
+      if (typeof import.meta !== 'undefined' && 
+          import.meta.env && 
+          import.meta.env.VITE_MAPBOX_TOKEN) {
+        return import.meta.env.VITE_MAPBOX_TOKEN;
+      }
+    } catch (e) {
+      console.log("Error accessing import.meta:", e);
+    }
+    
+    try {
+      if (window && window.REACT_APP_MAPBOX_TOKEN) {
+        return window.REACT_APP_MAPBOX_TOKEN;
+      }
+      
+      if (window && window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.MAPBOX_TOKEN) {
+        return window.RUNTIME_CONFIG.MAPBOX_TOKEN;
+      }
+    } catch (e) {
+      console.log("Error accessing window properties:", e);
+    }
 
-  mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN;
+    return hardcodedToken;
+  };
+
+  const token = getMapboxToken();
+  
+  console.log("Using Mapbox token:", token.substring(0, 8) + "...");
+
+  mapboxgl.accessToken = token;
 
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
@@ -61,7 +89,6 @@ export const MapboxProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Check if Mapbox is properly initialized
     if (mapboxgl.accessToken) {
       setIsLoaded(true);
       
