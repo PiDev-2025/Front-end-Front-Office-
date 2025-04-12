@@ -67,28 +67,35 @@ const Login = () => {
           otp,
         }
       );
-
+  
       if (!response.data || !response.data.token) {
         throw new Error("Réponse invalide du serveur");
       }
-      console.log(response.data.token);
-
+  
+      const token = response.data.token;
+  
+      // Stock the token in localStorage
+      localStorage.setItem("token", token);
+  
       // Decode the token to get user data
-      const decodedToken = jwtDecode(response.data.token); // Correct function name
-      console.log(decodedToken); // Check the decoded token structure
-
+      const decodedToken = jwtDecode(token);
+            console.log(decodedToken);
+  
       // Use the login function from context to store the token
-      login(response.data.token);
+      login(token);
+  
       toast.success("Connexion réussie !", {
         position: "top-right",
         autoClose: 3000,
       });
-
-      // Check if the user is an Admin and redirect
+  
+      // Check if the user is an Admin and redirect to the backoffice
       if (decodedToken.role === "Admin") {
-        window.location.href = "http://localhost:5173/"; // Full external URL
+        // Redirect to the backoffice with the token stored in localStorage
+        window.location.href = "http://localhost:5173/users";
       } else {
-        navigate("/"); // Default internal navigation
+        // Redirect to the front-office homepage
+        navigate("/");
       }
     } catch (error) {
       toast.error(
@@ -99,9 +106,9 @@ const Login = () => {
           autoClose: 5000,
         }
       );
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false); // Reset loading state after OTP verification attempt
   };
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">

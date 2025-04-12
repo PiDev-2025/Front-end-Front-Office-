@@ -82,8 +82,7 @@ const StatusIndicator = ({ availability }) => {
   );
 };
 
-// Popup component for parking details
-// Popup component for parking details
+
 const ParkingDetailsPopup = ({ parking, onClose }) => {
     if (!parking) return null;
     
@@ -204,6 +203,7 @@ const SecLocation = () => {
     const mapContainer = useRef(null);
     const map = useRef(null);
     const searchBoxRef = useRef(null);
+    const [expandedParkingId, setExpandedParkingId] = useState(null);
     const routerLocation = useLocation(); // Rename to avoid conflict with our location state
 
     
