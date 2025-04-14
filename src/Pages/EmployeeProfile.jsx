@@ -104,7 +104,11 @@ const EmployeeParkingScanner = () => {
 
   const fetchEmployeeParkings = async (employeeId, token) => {
     try {
+      // Update this URL to match your backend API endpoint structure
       const url = `http://localhost:3001/parkings/parkings-by-employee/${employeeId}`;
+      // Or, if your API uses query parameters instead:
+      // const url = `http://localhost:3001/parkings?id_employee=${employeeId}`;
+
       const headers = {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -116,13 +120,21 @@ const EmployeeParkingScanner = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ message: "Invalid JSON in error response" }));
-        throw new Error(
-          errorData.message ||
-            `Failed to fetch parkings: ${response.status} ${response.statusText}`
-        );
+        const errorText = await response.text();
+        let errorMessage = "Unknown error";
+
+        try {
+          // Try to parse as JSON, but handle text responses too
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.message || `Error code: ${response.status}`;
+        } catch (e) {
+          // If not valid JSON, use the text directly
+          errorMessage =
+            errorText ||
+            `Error code: ${response.status} ${response.statusText}`;
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -496,12 +508,14 @@ const EmployeeParkingScanner = () => {
                       </span>
                       <span
                         className={`px-2 py-1 rounded-full text-sm ${
-                          parking.status === "Open" || !parking.status
+                          parking.status === "accepted"
                             ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            : parking.status === "rejected"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {parking.status || "Open"}
+                        {parking.status || "pending"}
                       </span>
                     </div>
                   </div>
@@ -509,18 +523,13 @@ const EmployeeParkingScanner = () => {
                   <p className="text-gray-700">{parking.description}</p>
 
                   <div className="grid grid-cols-2 gap-4">
+                    {/* Updated to use position instead of location */}
                     <div>
                       <h4 className="font-semibold text-gray-700">Location</h4>
-                      <p className="text-sm">
-                        {parking.location?.address || "N/A"}
-                      </p>
-                      {parking.location && (
+                      {parking.position && (
                         <p className="text-xs text-gray-500 mt-1">
-                          {parking.location.lat?.toFixed(4) ||
-                            parking.location.coordinates?.[1]?.toFixed(4)}
-                          ,
-                          {parking.location.lng?.toFixed(4) ||
-                            parking.location.coordinates?.[0]?.toFixed(4)}
+                          Lat: {parking.position.lat?.toFixed(4) || "N/A"}, Lng:{" "}
+                          {parking.position.lng?.toFixed(4) || "N/A"}
                         </p>
                       )}
                     </div>
@@ -542,6 +551,23 @@ const EmployeeParkingScanner = () => {
                     </div>
                   </div>
 
+                  {/* Added features display */}
+                  {parking.features && parking.features.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-700">Features</h4>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {parking.features.map((feature, index) => (
+                          <span
+                            key={index}
+                            className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded"
+                          >
+                            {feature}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {parking.pricing && (
                     <div>
                       <h4 className="font-semibold text-gray-700">Pricing</h4>
@@ -559,6 +585,24 @@ const EmployeeParkingScanner = () => {
                             </div>
                           )
                         )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Parking images carousel/preview - if available */}
+                  {parking.images && parking.images.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-700">Images</h4>
+                      <div className="flex overflow-x-auto gap-2 mt-1 pb-2">
+                        {parking.images.map((image, index) => (
+                          <div key={index} className="flex-shrink-0">
+                            <img
+                              src={image}
+                              alt={`Parking ${index + 1}`}
+                              className="h-20 w-32 object-cover rounded"
+                            />
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
