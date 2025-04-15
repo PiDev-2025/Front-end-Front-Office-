@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+- try to git pull git@github.com:auratechnos/micro-services.git api-client branch
+- inside go to api-client
+- then install with npm run build
+- it's the only package that will be used to interact with the api for the react native application we are building

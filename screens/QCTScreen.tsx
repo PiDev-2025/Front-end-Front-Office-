@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { Text } from "@/components/ui/text";
 import { Box } from "@/components/ui/box";
 import { Card } from "@/components/ui/card";
@@ -26,8 +27,26 @@ import {
 	BookOpen,
 	Users2,
 	Hash,
-	LifeBuoy
+	LifeBuoy,
+	Palette
 } from 'lucide-react-native';
+
+// Define Param List Type for the Root Stack Navigator
+type RootStackParamList = {
+	User: undefined;
+	SympathyWorld: undefined;
+	ChatList: undefined;
+	ChatScreen: { roomId: string } | undefined;
+	NewChat: undefined;
+	Pro: undefined;
+	Map: undefined;
+	Programs: undefined;
+	MoodLab: undefined;
+	Designer: undefined;
+	Settings: undefined;
+	Help: undefined;
+	// Add other screens if needed
+};
 
 const QCTSection: React.FC<{
 	icon: React.ReactNode;
@@ -53,7 +72,7 @@ const QCTSection: React.FC<{
 };
 
 function QCTScreen(): React.JSX.Element {
-	const navigation = useNavigation();
+	const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 	const isDarkMode = useColorScheme() === "dark";
 	const backgroundStyle = {
 		backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -119,6 +138,13 @@ function QCTScreen(): React.JSX.Element {
 							title="MoodLab"
 							description="Analysez et suivez votre bien-être émotionnel"
 							onPress={() => navigation.navigate('MoodLab')}
+						/>
+
+						<QCTSection
+							icon={<Palette className="text-primary-600" size={24} />}
+							title="Designer Maryam"
+							description="Découvrez les nouveautés du designer"
+							onPress={() => navigation.navigate('Designer')}
 						/>
 
 						<QCTSection

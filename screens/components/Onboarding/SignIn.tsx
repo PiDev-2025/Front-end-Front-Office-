@@ -88,7 +88,8 @@ export function SignIn(): React.JSX.Element {
 			>
 				<Card style={styles.card}>
 					<VStack space="md" style={styles.form}>
-						<Heading size="xl" style={styles.title}>Sign In</Heading>
+						<Heading size="xl" style={styles.title}>Noelis</Heading>
+						<Heading size="sm" style={styles.title}>connection</Heading>
 						{error && <Text style={styles.error}>{error}</Text>}
 						<FormControl>
 							<Input>
