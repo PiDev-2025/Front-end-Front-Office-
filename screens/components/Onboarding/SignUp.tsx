@@ -20,7 +20,7 @@ import {
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
-import { api } from '../../../libs/api';
+import apiClient, { useInitializeApiClient } from '../../../libs/apiClient';
 
 // Custom interface for JWT payload
 interface CustomJwtPayload {
@@ -39,6 +39,9 @@ export function SignUp(): React.JSX.Element {
 	const [showPassword, setShowPassword] = React.useState(false);
 	const [error, setError] = React.useState<string | null>(null);
 
+	// Initialize the API client with the token atom
+	useInitializeApiClient();
+
 	const handleState = () => {
 		setShowPassword((showState) => !showState);
 	};
@@ -47,8 +50,8 @@ export function SignUp(): React.JSX.Element {
 		try {
 			if (username && email && password) {
 				console.log('Attempting to sign up with:', { email, username });
-				const response = await api.signUp(email, password, username);
-				const token = response.jwt;
+				const response = await apiClient.signup({ email, password, username });
+				const token = response.token;
 				if (token) {
 					setJwt(token);
 					const _jwtDecoded = jwtDecode<CustomJwtPayload>(token);
