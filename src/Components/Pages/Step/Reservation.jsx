@@ -556,13 +556,13 @@ const Reservation = ({
       if (!parkingData?._id || !parkingData.selectedSpotId) {
         return true;
       }
-
+  
       const token = localStorage.getItem("token");
       if (!token) {
         setError("Veuillez vous connecter pour vérifier la disponibilité");
         return false;
       }
-
+  
       const response = await axios.get(
         `http://localhost:3001/api/reservations/checkAvailability/${parkingData._id}/${parkingData.selectedSpotId}`,
         {
@@ -572,8 +572,9 @@ const Reservation = ({
           },
         }
       );
-
-      if (!response.data.available) {
+  
+      // Change this line - check for isAvailable instead of available
+      if (!response.data.isAvailable) {
         setError(
           "Cette place n'est pas disponible pour la période sélectionnée"
         );
