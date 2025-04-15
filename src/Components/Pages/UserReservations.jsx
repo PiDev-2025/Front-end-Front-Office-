@@ -19,8 +19,6 @@ const UserReservations = () => {
 
     // Ajout d'un ref pour éviter les calculs redondants
     const calculatedRoutes = React.useRef(new Set());
-    const MAPBOX_TOKEN = "pk.eyJ1IjoiYXltZW5qYWxsb3VsaSIsImEiOiJjbThnbDA3eTIwanY2MmxzZDdpZXJocGVuIn0.5CM0j5TSsORXd6mbsTf-6Q";
-
 
     useEffect(() => {
         const fetchReservations = async () => {
@@ -95,8 +93,9 @@ const UserReservations = () => {
                 return null;
             }
       
+            // Utiliser l'API de directions de Mapbox
             const response = await fetch(
-                `https://api.mapbox.com/directions/v5/mapbox/driving/${userLocation.lng},${userLocation.lat};${parkingPosition.lng},${parkingPosition.lat}?access_token=${MAPBOX_TOKEN}`
+                `https://api.mapbox.com/directions/v5/mapbox/driving/${userLocation.lng},${userLocation.lat};${parkingPosition.lng},${parkingPosition.lat}?access_token=${process.env.REACT_APP_MAPBOX_TOKEN}`
             );
       
             const data = await response.json();
@@ -584,5 +583,8 @@ const UserReservations = () => {
         </div>    
     );
 };
+
+export default UserReservations;
+
 
 export default UserReservations;
