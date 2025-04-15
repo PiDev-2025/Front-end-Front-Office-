@@ -9,9 +9,9 @@ const JoinCarent = () => {
             <img src="./../images/sasa (1).png" className='absolute w-[50vw] sm:w-[16rem] lg:w-auto left-0 bottom-0 z-[2]' alt="" />
             <img src="./../images/sasa (2).png" className='absolute w-[50vw] sm:w-[16rem] lg:w-auto right-0 bottom-0 z-[2]' alt="" />
             <Container className='text-center relative z-[3] pb-[5rem]'>
-                <p className='text__18 mb-2'>JOIN CARENT</p>
-                <h2 className='font-bold text__48 mb-8'>Come to the Right Lair</h2>
-                <NavLink to="/booking" className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass !py-[14px]">Join Now</NavLink>
+                <p className='text__18 mb-2'>JOIN PARKINI</p>
+                <h2 className='font-bold text__48 mb-8'>Find Your Perfect Parking Spot</h2>
+                <NavLink to="/booking" className="inline-block cursor-pointer font-medium text__16 text-Mwhite !rounded-[24px] !border-Mblue bg-Mblue btnClass !py-[14px]">Book Now</NavLink>
             </Container>
         </section>
     )

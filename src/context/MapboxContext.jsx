@@ -7,18 +7,86 @@ const MapboxContext = createContext({
   setSelectedLocation: () => {},
   userLocation: null,
   setUserLocation: () => {},
+  locationError: null,
+  searchRadius: null,
+  setSearchRadius: () => {},
+  nearbyParkings: [],
+  calculateDistance: () => {},
+  updateNearbyParkings: () => {},
 });
 
 export const MapboxProvider = ({ children }) => {
-  if (!process.env.REACT_APP_MAPBOX_TOKEN) {
-    console.error('Mapbox token is not defined in environment variables');
-  }
+  const getMapboxToken = () => {
+    const hardcodedToken = "pk.eyJ1IjoiYXltZW5qYWxsb3VsaSIsImEiOiJjbThnbDA3eTIwanY2MmxzZDdpZXJocGVuIn0.5CM0j5TSsORXd6mbsTf-6Q";
+    
+    try {
+      if (typeof import.meta !== 'undefined' && 
+          import.meta.env && 
+          import.meta.env.VITE_MAPBOX_TOKEN) {
+        return import.meta.env.VITE_MAPBOX_TOKEN;
+      }
+    } catch (e) {
+      console.log("Error accessing import.meta:", e);
+    }
+    
+    try {
+      if (window && window.REACT_APP_MAPBOX_TOKEN) {
+        return window.REACT_APP_MAPBOX_TOKEN;
+      }
+      
+      if (window && window.RUNTIME_CONFIG && window.RUNTIME_CONFIG.MAPBOX_TOKEN) {
+        return window.RUNTIME_CONFIG.MAPBOX_TOKEN;
+      }
+    } catch (e) {
+      console.log("Error accessing window properties:", e);
+    }
 
-  mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN;
+    return hardcodedToken;
+  };
+
+  const token = getMapboxToken();
+  
+  console.log("Using Mapbox token:", token.substring(0, 8) + "...");
+
+  mapboxgl.accessToken = token;
 
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [locationError, setLocationError] = useState(null);
+  const [searchRadius, setSearchRadius] = useState(1000); // default 1km
+  const [nearbyParkings, setNearbyParkings] = useState([]);
+
+  const calculateDistance = (point1, point2) => {
+    if (!point1 || !point2) return Infinity;
+    
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = point1.lat * Math.PI/180;
+    const φ2 = point2.lat * Math.PI/180;
+    const Δφ = (point2.lat-point1.lat) * Math.PI/180;
+    const Δλ = (point2.lng-point1.lng) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c; // distance in meters
+  };
+
+  const updateNearbyParkings = (location, parkings) => {
+    if (!location || !parkings) return;
+    
+    const nearby = parkings.filter(parking => {
+      const distance = calculateDistance(location, {
+        lat: parking.latitude,
+        lng: parking.longitude
+      });
+      return distance <= searchRadius;
+    });
+    
+    setNearbyParkings(nearby);
+  };
 
   useEffect(() => {
     // Check if Mapbox is properly initialized
@@ -26,17 +94,47 @@ export const MapboxProvider = ({ children }) => {
       setIsLoaded(true);
       
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
+        const options = {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 1000
+        };
+
+        const watchId = navigator.geolocation.watchPosition(
           (position) => {
-            setUserLocation({
+            setLocationError(null);
+            const newLocation = {
               lat: position.coords.latitude,
               lng: position.coords.longitude,
-            });
+              accuracy: position.coords.accuracy,
+              timestamp: position.timestamp
+            };
+            setUserLocation(newLocation);
           },
           (error) => {
-            console.error("Error getting user location:", error);
-          }
+            let errorMessage;
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                errorMessage = "User denied the request for geolocation.";
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMessage = "Location information is unavailable.";
+                break;
+              case error.TIMEOUT:
+                errorMessage = "The request to get user location timed out.";
+                break;
+              default:
+                errorMessage = "An unknown error occurred.";
+            }
+            setLocationError(errorMessage);
+            console.error("Error getting user location:", errorMessage);
+          },
+          options
         );
+
+        return () => {
+          navigator.geolocation.clearWatch(watchId);
+        };
       }
     }
   }, []);
@@ -47,6 +145,12 @@ export const MapboxProvider = ({ children }) => {
     setSelectedLocation,
     userLocation,
     setUserLocation,
+    locationError,
+    searchRadius,
+    setSearchRadius,
+    nearbyParkings,
+    calculateDistance,
+    updateNearbyParkings
   };
 
   return (

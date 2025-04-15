@@ -4,123 +4,7 @@ import { format } from 'date-fns';
 import fr from 'date-fns/locale/fr';
 import { useMapbox } from "../../context/MapboxContext";
 import { toast } from 'react-toastify';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-
-
-const MapModal = ({ isOpen, onClose, reservation, userLocation }) => {
-    const mapContainer = useRef(null);
-    const map = useRef(null);
-    const [markers, setMarkers] = useState([]);
-
-    useEffect(() => {
-        if (!isOpen || !mapContainer.current) return;
-
-        map.current = new mapboxgl.Map({
-            container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/streets-v11',
-            center: [reservation.parkingId.position.lng, reservation.parkingId.position.lat],
-            zoom: 12
-        });
-
-        // Add markers
-        const userMarker = new mapboxgl.Marker({ color: '#3B82F6' })
-            .setLngLat([userLocation.lng, userLocation.lat])
-            .setPopup(new mapboxgl.Popup().setHTML('<h3>Votre position</h3>'))
-            .addTo(map.current);
-
-        const parkingMarker = new mapboxgl.Marker({ color: '#22C55E' })
-            .setLngLat([reservation.parkingId.position.lng, reservation.parkingId.position.lat])
-            .setPopup(new mapboxgl.Popup().setHTML(`<h3>${reservation.parkingId.name}</h3>`))
-            .addTo(map.current);
-
-        setMarkers([userMarker, parkingMarker]);
-
-        // Add navigation controls
-        map.current.addControl(new mapboxgl.NavigationControl());
-
-        // Draw route
-        const drawRoute = async () => {
-            try {
-                const response = await fetch(
-                    `https://api.mapbox.com/directions/v5/mapbox/driving/${userLocation.lng},${userLocation.lat};${reservation.parkingId.position.lng, reservation.parkingId.position.lat}?steps=true&geometries=geojson&access_token=${process.env.REACT_APP_MAPBOX_TOKEN}`
-                );
-
-                const data = await response.json();
-
-                if (data.routes && data.routes.length > 0) {
-                    const route = data.routes[0];
-
-                    map.current.addSource('route', {
-                        type: 'geojson',
-                        data: {
-                            type: 'Feature',
-                            properties: {},
-                            geometry: route.geometry
-                        }
-                    });
-
-                    map.current.addLayer({
-                        id: 'route',
-                        type: 'line',
-                        source: 'route',
-                        layout: {
-                            'line-join': 'round',
-                            'line-cap': 'round'
-                        },
-                        paint: {
-                            'line-color': '#3b82f6',
-                            'line-width': 4,
-                            'line-opacity': 1.25
-                        }
-                    });
-
-                    // Fit bounds to show entire route
-                    const bounds = new mapboxgl.LngLatBounds()
-                        .extend([userLocation.lng, userLocation.lat])
-                        .extend([reservation.parkingId.position.lng, reservation.parkingId.position.lat]);
-
-                    map.current.fitBounds(bounds, {
-                        padding: 50,
-                        duration: 1000
-                    });
-                }
-            } catch (error) {
-                console.error("Error drawing route:", error);
-            }
-        };
-
-        drawRoute();
-
-        return () => {
-            markers.forEach(marker => marker.remove());
-            if (map.current) map.current.remove();
-        };
-    }, [isOpen, reservation, userLocation]);
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl w-full max-w-4xl shadow-2xl relative">
-                <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                        Itinéraire vers {reservation.parkingId.name}
-                    </h3>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-500 hover:text-gray-700"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <div ref={mapContainer} className="w-full h-[60vh]" />
-            </div>
-        </div>
-    );
-};
+import MapModal from '../Modals/MapModal';
 
 const UserReservations = () => {
     const [reservations, setReservations] = useState([]);
@@ -327,7 +211,7 @@ const UserReservations = () => {
                         backgroundColor: '#d1fae5',
                         color: '#065f46'
                     },
-                    label: 'Confirmée'
+                    label: 'confirmed'
                 };
             case 'pending':
                 return {
@@ -335,7 +219,7 @@ const UserReservations = () => {
                         backgroundColor: '#fef3c7',
                         color: '#92400e'
                     },
-                    label: 'En attente'
+                    label: 'pending'
                 };
             default:
                 return {
@@ -343,7 +227,7 @@ const UserReservations = () => {
                         backgroundColor: '#fee2e2',
                         color: '#b91c1c'
                     },
-                    label: 'Annulée'
+                    label: 'cancelled'
                 };
         }
     };
@@ -556,31 +440,37 @@ const UserReservations = () => {
         };
 
         return (
-            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl relative animate-fade-in-up">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl animate-scaleIn">
                     <button 
                         onClick={() => setSelectedReservation(null)}
-                        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                     
-                    <h3 className="text-xl font-semibold mb-2 text-center text-gray-800">QR Code de réservation</h3>
-                    <p className="text-center text-sm text-gray-500 mb-6">Parking {selectedReservation.parkingId.name}</p>
+                    <h3 className="text-2xl font-bold mb-2 text-center text-gray-800">QR Code de réservation</h3>
+                    <p className="text-center text-sm text-gray-600 mb-6">Parking {selectedReservation.parkingId.name}</p>
                     
-                    <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                    <div className="bg-gradient-to-b from-blue-50 to-white p-6 rounded-xl mb-6 shadow-inner">
                         <img 
                             src={selectedReservation.qrCode} 
                             alt="QR Code" 
-                            className="mx-auto mb-4 w-64 h-64 object-contain"
+                            className="mx-auto w-64 h-64 object-contain"
                         />
                     </div>
                     
-                    <div className="text-center mb-6">
-                        <p className="text-gray-600 font-medium">
-                            Présentez ce QR code à l'entrée du parking
+                    <div className="bg-blue-50 rounded-lg p-4 mb-6">
+                        <div className="flex items-center text-blue-800 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="font-medium">Instructions</span>
+                        </div>
+                        <p className="text-blue-700 text-sm">
+                            Présentez ce QR code à l'entrée du parking pour accéder à votre place.
                         </p>
                     </div>
                     
@@ -591,21 +481,20 @@ const UserReservations = () => {
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                            </svg>
-                            Imprimer
-                        </button>
-                        <button
-                            onClick={() => setSelectedReservation(null)}
-                            className="flex-1 py-3 px-4 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                            Fermer
-                        </button>
-                    </div>
+                        </svg>
+                        Imprimer
+                    </button>
+                    <button
+                        onClick={() => setSelectedReservation(null)}
+                        className="flex-1 py-3 px-4 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                        Fermer
+                    </button>
                 </div>
             </div>
-        );
-    };
-
+        </div>
+    );
+};
     // Animation pour le chargement
     if (loading) return (   
         <div className="flex flex-col justify-center items-center min-h-[500px]">   
@@ -644,8 +533,8 @@ const UserReservations = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <h3 className="text-xl font-medium text-gray-700 mb-2">Aucune réservation trouvée</h3>
-                <p className="text-gray-500 mb-6">Vous n'avez pas encore effectué de réservation.</p>
-                <a href="/parkings" className="inline-block bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors">
+                <p className="text-gray-500 mb-6">Vous n'avez pas  encore effectué de réservation.</p>
+                <a href="/Booking" className="inline-block bg-blue-600 text-black py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors">
                     Découvrir les parkings
                 </a>
             </div>
@@ -694,5 +583,6 @@ const UserReservations = () => {
         </div>    
     );
 };
+
 
 export default UserReservations;

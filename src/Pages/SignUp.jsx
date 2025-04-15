@@ -3,7 +3,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Col, Container, Form, Row, Button } from "react-bootstrap";
 import axios from "axios";
 import toast from "react-hot-toast";
-import OTPModal from "../Pages/OTPPopUp";
+import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 
 const vehicleOptions = [
@@ -58,7 +58,37 @@ const customOption = (props) => {
   );
 };
 
+// Mise à jour du style du sélecteur de véhicules
+const customStyles = {
+  control: (base) => ({
+    ...base,
+    padding: '0.5rem',
+    borderRadius: '0.75rem',
+    border: '1px solid #e2e8f0',
+    boxShadow: 'none',
+    '&:hover': {
+      borderColor: '#000'
+    }
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 9999,
+    borderRadius: '0.75rem',
+    padding: '0.5rem'
+  }),
+  option: (base, state) => ({
+    ...base,
+    padding: '0.75rem',
+    borderRadius: '0.5rem',
+    backgroundColor: state.isSelected ? '#000' : state.isFocused ? '#f3f4f6' : 'white',
+    '&:hover': {
+      backgroundColor: '#f3f4f6'
+    }
+  })
+};
+
 const SignUp = () => {
+  const [step, setStep] = useState(1); // Add this: 1 for signup, 2 for OTP
   const [user, setUser] = useState({
     firstName: "",
     lastName: "",
@@ -75,15 +105,14 @@ const SignUp = () => {
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [phoneError, setPhoneError] = useState("");
-  const [showOTPModal, setShowOTPModal] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [passwordForOTPModal, setPasswordForOTPModal] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
-
-
+  const [otpCode, setOtpCode] = useState(""); // Add this for OTP input
+  const navigate = useNavigate();
 
   const generatePassword = async () => {
     try {
@@ -267,7 +296,6 @@ const SignUp = () => {
     };
 
     if (user.role === "Driver") {
-      // Only include vehicleType if role is Driver
       dataToSend.vehicleType = user.vehicleType;
     }
 
@@ -278,7 +306,8 @@ const SignUp = () => {
       );
       if (response && response.status === 200) {
         setPasswordForOTPModal(user.password);
-        setShowOTPModal(true);
+        setStep(2); // Change this: Set step to 2 instead of showing modal
+        toast.success("Account created! Please verify your email with OTP code");
       }
     } catch (error) {
       toast.error(
@@ -289,233 +318,330 @@ const SignUp = () => {
     }
   };
 
+  const loginAfterOTP = async (password) => {
+    try {
+      const response = await axios.post("http://localhost:3001/User/loginAfterSignUp", {
+        email: user.email,
+        password: password
+      });
+
+      const { token } = response.data;
+      if (token) {
+        localStorage.setItem("token", token);
+        navigate("/");
+      } else {
+        toast.error("Authentication error.");
+      }
+    } catch (error) {
+      console.error("Login error after OTP", error);
+      toast.error("Unable to login.");
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/User/verify-otp",
+        { 
+          email: user.email, 
+          otp: String(otpCode) 
+        },
+        { 
+          headers: { "Content-Type": "application/json" } 
+        }
+      );
+
+      // Si la vérification OTP réussit, procéder au login
+      if (response.status === 200) {
+        loginAfterOTP(user.password);
+      }
+    } catch (error) {
+      console.error("OTP Error", error.response?.data || error.message);
+      toast.error(error.response?.data?.message || "Incorrect or expired CODE.");
+    }
+  };
+
   return (
-    <section>
-      <Container>
-        <Row className="align-items-center">
-          <Col md={5}>
-            <h2 className="font-bold text__32 mb-3">Welcome!</h2>
-            <p className="text__16 text-[#525252]">
-              Please enter your credentials to access your account.
-            </p>
+    <section className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
+      <Container className="max-w-6xl mx-auto px-4">
+        <Row className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          {/* Section de gauche */}
+          <Col className="p-8 bg-Mblack text-white" md={4}>
+          <div className="mb-8">
 
-            <div className="my-4">
-              <p className="text__14 mb-2">Need assistance?</p>
-              <h5 className="font-bold text__20 text-Mblue">
-                support@parkini.com
-              </h5>
-            </div>
+            <h2 className="text-4xl text-center font-bold mb-6">Welcome!</h2>
+            <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm">
+      <p className="text-gray-300 text-lg text-center">
+        Please enter your credentials to create your account.
+      </p>  
+      </div>
 
-            <p className="text__14 mb-2">Follow us on Social Media</p>
-            <div className="d-flex gap-2">
-              {[1, 2, 3, 4, 5].map((num) => (
-                <a href="#" key={num}>
-                  <img
-                    src={`./../images/as (${num}).svg`}
-                    alt={`Social ${num}`}
-                  />
-                </a>
-              ))}
+      </div>
+       {/* Sign In Button */}
+  <div className="mb-8">
+    <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm">
+      <p className="text-gray-300 text-center mb-4">Already have an account?</p>
+      <button
+        onClick={() => navigate('/login')}
+        className="w-full bg-white text-Mblack py-3 px-6 rounded-xl hover:bg-gray-100 transition-colors duration-300 font-medium"
+      >
+        Sign In
+      </button>
+    </div>
+  </div>
+      <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm mb-8">
+      <div className="bg-white/5 rounded-xl p-6 backdrop-blur-sm mb-8">
+    <p className="text-gray-300 uppercase tracking-wider mb-2">
+      Need assistance?
+    </p>
+    <div className="flex items-center space-x-3">
+      <svg
+        className="w-6 h-6 text-gray-300"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+        />
+      </svg>
+      <h5 className="text-xl font-bold">Support@Parkini.com</h5>
+    </div>
+  </div>
+    </div>
+  
+            {/* Réseaux sociaux */}
+            <div className="mt-auto">
+
+      <p className="text-gray-300 font-medium mb-4 flex items-center justify-center">
+        <svg 
+          className="w-5 h-5 mr-2" 
+          fill="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path d="M23 12a11 11 0 01-17.437 8.912L2 22l1.088-3.563A11 11 0 1123 12z" />
+        </svg>
+        Follow us on Social Media
+      </p>
+              <div className="flex space-x-4 bg-white/10 p-4 rounded-xl justify-center">
+                {[1, 2, 3, 4, 5].map((num) => (
+                  <a key={num} href="#!" className="hover:opacity-90 transition-opacity bg-white p-2 rounded-lg">
+                    <img src={`./../images/as (${num}).svg`} alt="" className="w-6 h-6" />
+                  </a>
+                ))}
+              </div>
             </div>
           </Col>
+  
+          {/* Section de droite - Formulaire */}
+          <Col md={8} className="p-8">
+            {step === 1 ? (
+              // Registration Form
+              <Form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-6">
+                <h3 className="text-2xl font-bold  text-center text-gray-800 mb-6">Create your account</h3>
 
-          <Col md={7}>
-            <Form
-              onSubmit={handleSubmit}
-              className="p-4 shadow rounded bg-light"
-            >
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>
-                      First Name<span className="text-danger">*</span>
-                    </Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="firstName"
-                      value={user.firstName}
-                      onChange={handleChange}
-                      placeholder="First Name"
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>
-                      Last Name<span className="text-danger">*</span>
-                    </Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="lastName"
-                      value={user.lastName}
-                      onChange={handleChange}
-                      placeholder="Last Name"
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
+                <Row className="mb-4">
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label className="text-gray-600 font-medium mb-2">
+                        First Name<span className="text-danger">*</span>
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="firstName"
+                        value={user.firstName}
+                        onChange={handleChange}
+                        placeholder="First Name"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-Mblack focus:ring-2 focus:ring-Mblack/20 transition-all duration-300"
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group>
+                      <Form.Label className="text-gray-600 font-medium mb-2">
+                        Last Name<span className="text-danger">*</span>
+                      </Form.Label>
+                      <Form.Control
+                        type="text"
+                        name="lastName"
+                        value={user.lastName}
+                        onChange={handleChange}
+                        placeholder="Last Name"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-Mblack focus:ring-2 focus:ring-Mblack/20 transition-all duration-300"
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
 
-              <Form.Group className="mb-3">
-                <Form.Label>
-                  Email<span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Control
-                  type="email"
-                  name="email"
-                  value={user.email}
-                  onChange={handleChange}
-                  placeholder="Email address"
-                />
-                {emailError && <p className="text-danger">{emailError}</p>}
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label className="d-flex align-items-center">
-                  Password<span className="text-danger ms-1">*</span>
-                  {/* Icône incluse dans le label */}
-                  <span
-                    className="ms-2"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => setPasswordVisible(!passwordVisible)}
-                  >
-                    {passwordVisible ? (
-                      <FaEye size={20} />
-                    ) : (
-                      <FaEyeSlash size={20} />
-                    )}
-                  </span>
-                </Form.Label>
-
-                {/* Champ input avec bouton "Generate" */}
-                <div className="input-group">
+                {/* Email */}
+                <Form.Group className="mb-3">
+                  <Form.Label>Email<span className="text-danger">*</span></Form.Label>
                   <Form.Control
-                    type={passwordVisible ? "text" : "password"}
-                    name="password"
-                    value={user.password}
+                    type="email"
+                    name="email"
+                    value={user.email}
                     onChange={handleChange}
-                    placeholder="Password"
-                    autoComplete="new-password"
-                  />
-                  <Button
-                    variant="outline-secondary"
-                    onClick={generatePassword}
-                  >
-                    Generate
-                  </Button>
-                </div>
-
-                {passwordError && (
-                  <p className="text-danger">{passwordError}</p>
-                )}
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label className="d-flex align-items-center">
-                  Confirm Password<span className="text-danger ms-1">*</span>
-                  <span
-                    className="ms-2"
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      setConfirmPasswordVisible(!confirmPasswordVisible)
-                    }
-                  >
-                    {confirmPasswordVisible ? (
-                      <FaEye size={20} />
-                    ) : (
-                      <FaEyeSlash size={20} />
-                    )}
-                  </span>
-                </Form.Label>
-
-                <div className="input-group">
-                  <Form.Control
-                    type={confirmPasswordVisible ? "text" : "password"}
-                    name="confirmPassword"
-                    value={user.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="Confirm Password"
-                  />
-                </div>
-
-                {confirmPasswordError && (
-                  <p className="text-danger">{confirmPasswordError}</p>
-                )}
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>
-                  Phone<span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Control
-                  type="text"
-                  name="phone"
-                  value={user.phone}
-                  onChange={handleChange}
-                  placeholder="Numéro de téléphone"
-                />
-                {phoneError && <p className="text-danger">{phoneError}</p>}
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>
-                  Role<span className="text-danger">*</span>
-                </Form.Label>
-                <Form.Control
-                  as="select"
-                  name="role"
-                  value={user.role}
-                  onChange={handleChange}
-                >
-                  <option value="Driver">Driver</option>
-                  <option value="Owner">Owner</option>
-                </Form.Control>
-              </Form.Group>
-
-              {user.role === "Driver" && (
-                <div className="mb-3">
-                  <label className="block text-gray-700 mb-1">
-                    Vehicle Type <span className="text-red-500">*</span>
-                  </label>
-                  <Select
-                    options={vehicleOptions}
-                    components={{ Option: customOption }}
-                    getOptionLabel={(e) => (
-                      <div className="flex items-center">
-                        <img
-                          src={e.image}
-                          alt={e.label}
-                          className="w-8 h-5 mr-3"
-                        />
-                        {e.label}
-                      </div>
-                    )}
-                    value={selectedVehicle}
-                    onChange={handleVehicleChange}
+                    placeholder="Email address"
                     className="w-full"
                   />
-                </div>
-              )}
+                  {emailError && <p className="text-danger">{emailError}</p>}
+                </Form.Group>
+    
+                {/* Mot de passe */}
+                <Form.Group className="mb-3">
+                  <Form.Label className="d-flex align-items-center">
+                    Password<span className="text-danger ms-1">*</span>
+                    <span
+                      className="ms-2 cursor-pointer"
+                      onClick={() => setPasswordVisible(!passwordVisible)}
+                    >
+                      {passwordVisible ? <FaEye size={20} /> : <FaEyeSlash size={20} />}
+                    </span>
+                  </Form.Label>
+                  <div className="input-group relative w-full">
+                    <Form.Control
+                      type={passwordVisible ? "text" : "password"}
+                      name="password"
+                      value={user.password}
+                      onChange={handleChange}
+                      placeholder="Password"
+                      className="w-full"
+                    />
+                    <Button
+                      variant="outline-secondary"
+                      className="bg-black text-white px-3"
+                      onClick={generatePassword}
+                    >
+                      Generate
+                    </Button>
+                  </div>
+                  {passwordError && <p className="text-danger">{passwordError}</p>}
+                </Form.Group>
+    
+                {/* Confirmation du mot de passe */}
+                <Form.Group className="mb-3">
+                  <Form.Label className="d-flex align-items-center">
+                    Confirm Password<span className="text-danger ms-1">*</span>
+                    <span
+                      className="ms-2 cursor-pointer"
+                      onClick={() => setConfirmPasswordVisible(!confirmPasswordVisible)}
+                    >
+                      {confirmPasswordVisible ? <FaEye size={20} /> : <FaEyeSlash size={20} />}
+                    </span>
+                  </Form.Label>
+                  <div className="input-group relative w-full">
+                    <Form.Control
+                      type={confirmPasswordVisible ? "text" : "password"}
+                      name="confirmPassword"
+                      value={user.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="Confirm Password"
+                      className="w-full"
+                    />
+                  </div>
+                  {confirmPasswordError && <p className="text-danger">{confirmPasswordError}</p>}
+                </Form.Group>
+    
+                {/* Téléphone */}
+                <Form.Group className="mb-3">
+                  <Form.Label>Phone<span className="text-danger">*</span></Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="phone"
+                    value={user.phone}
+                    onChange={handleChange}
+                    placeholder="Numéro de téléphone"
+                    className="w-full"
+                  />
+                  {phoneError && <p className="text-danger">{phoneError}</p>}
+                </Form.Group>
+    
+                {/* Sélection du rôle */}
+                <Form.Group className="mb-4">
+                  <Form.Label className="text-gray-600 font-medium mb-2">
+                    Role<span className="text-danger">*</span>
+                  </Form.Label>
+                  <Form.Select
+                    name="role"
+                    value={user.role}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-Mblack focus:ring-2 focus:ring-Mblack/20 transition-all duration-300"
+                  >
+                    <option value="Driver">Driver</option>
+                    <option value="Owner">Owner</option>
+                    <option value="Employe">Employé</option>
 
-              <div className="d-flex justify-content-end">
+                  </Form.Select>
+                </Form.Group>
+
+                {/* Sélection du véhicule si Driver */}
+                {user.role === "Driver" && (
+                  <Form.Group className="mb-4">
+                    <Form.Label className="text-gray-600 font-medium mb-2">
+                      Vehicle Type <span className="text-danger">*</span>
+                    </Form.Label>
+                    <Select
+                      options={vehicleOptions}
+                      components={{ Option: customOption }}
+                      styles={customStyles}
+                      value={selectedVehicle}
+                      onChange={handleVehicleChange}
+                      menuPosition="fixed"
+                      menuPlacement="auto"
+                      className="vehicle-select"
+                    />
+                  </Form.Group>
+                )}
+    
+                {/* Bouton de soumission */}
+                <div className="d-flex justify-content-end">
+                  <button
+                    type="submit"
+                    disabled={!isFormValid}
+                    className="w-full bg-Mblack text-white py-3 px-6 rounded-xl hover:bg-Mdarkblack transition-colors duration-300 font-medium disabled:opacity-50"
+                  >
+                    Sign Up
+                  </button>
+                </div>
+                
+              </Form>
+            ) : (
+              // OTP Verification Form
+              <Form onSubmit={handleVerifyOtp} className="max-w-md mx-auto space-y-6">
+                <h3 className="text-2xl font-bold text-gray-800 mb-6">Verify Your Email</h3>
+                
+                <div className="bg-gray-50 p-4 rounded-xl mb-6">
+                  <p className="text-gray-600">A verification code has been sent to:</p>
+                  <p className="font-semibold text-black">{user.email}</p>
+                </div>
+
+                <Form.Group>
+                  <Form.Label className="text-gray-600 font-medium mb-2">OTP Code</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Enter 6-digit code"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-Mblack focus:ring-2 focus:ring-Mblack/20 transition-all duration-300 text-center text-2xl letter-spacing-wide"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    required
+                    maxLength="6"
+                  />
+                </Form.Group>
+
                 <button
                   type="submit"
-                  disabled={!isFormValid}
-                  className="btn text-white"
-                  style={{ backgroundColor: "#007bff" }}
+                  className="w-full bg-Mblack text-white py-3 px-6 rounded-xl hover:bg-Mdarkblack transition-colors duration-300 font-medium"
                 >
-                  Sign Up
+                  Verify OTP
                 </button>
-              </div>
-            </Form>
+              </Form>
+            )}
           </Col>
         </Row>
-
-        <OTPModal
-          show={showOTPModal}
-          handleClose={() => setShowOTPModal(false)}
-          email={user.email}
-          password={passwordForOTPModal}
-        />
       </Container>
     </section>
   );

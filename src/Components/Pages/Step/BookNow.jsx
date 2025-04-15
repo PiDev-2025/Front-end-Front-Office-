@@ -6,8 +6,14 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useMapbox } from "../../../context/MapboxContext";
 import { AuthContext } from '../../../AuthContext';
 
-const mapContainerStyle = { width: "100%", height: "300px" };
-const defaultCenter = { lat: 36.8065, lng: 10.1815 }; // Default: Tunis
+const mapContainerStyle = { 
+  width: "100%", 
+  height: "400px",  // Increased height
+  borderRadius: "12px",
+  overflow: "hidden"
+};
+
+const defaultCenter = { lat: 36.8065, lng: 10.1815 };
 
 const vehiculeOptions = [
   { value: "Moto", label: "Moto", image: "https://res.cloudinary.com/dpcyppzpw/image/upload/v1740765730/moto_xdypx2.png" },
@@ -29,22 +35,22 @@ const StatusIndicator = ({ availability }) => {
     if (availability >= 0.5) {
       return { 
         text: "Available", 
-        color: "text-black",  // Changed from text-green-600
-        bgColor: "bg-green-500", // Changed from bg-green-100
+        color: "text-black",
+        bgColor: "bg-gradient-to-r from-green-400 to-green-600",
         icon: "✓"
       };
     } else if (availability > 0.2) {
       return { 
         text: "Limited", 
-        color: "text-black", // Changed from text-yellow-600
-        bgColor: "bg-yellow-500", // Changed from bg-yellow-100
+        color: "text-black",
+        bgColor: "bg-gradient-to-r from-yellow-400 to-yellow-600",
         icon: "⚠"
       };
     } else {
       return { 
         text: "Almost Full", 
-        color: "text-black", // Changed from text-red-600
-        bgColor: "bg-red-500", // Changed from bg-red-100
+        color: "text-black",
+        bgColor: "bg-gradient-to-r from-red-400 to-red-600",
         icon: "!"
       };
     }
@@ -52,21 +58,23 @@ const StatusIndicator = ({ availability }) => {
 
   const status = getStatusInfo();
   return (
-    <div className={`${status.bgColor} ${status.color} px-3 py-1 rounded-full text-sm font-semibold inline-flex items-center`}>
-      <span className="mr-1">{status.icon}</span>
+    <div className={`${status.bgColor} ${status.color} px-4 py-2 rounded-full text-sm font-semibold inline-flex items-center shadow-lg transform hover:scale-105 transition-all duration-300`}>
+      <span className="mr-2 text-lg">{status.icon}</span>
       {status.text}
     </div>
   );
 };
 
 const PricingCard = ({ icon, label, price }) => (
-  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 transition-all hover:shadow-md">
+  <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 transition-all hover:shadow-xl hover:border-blue-100 transform hover:-translate-y-1">
     <div className="flex items-center justify-between">
       <div className="flex items-center">
-        <span className="text-black mr-2">{icon}</span>
-        <span className="text-black">{label}</span>
+        <span className="text-2xl mr-3">{icon}</span>
+        <span className="text-gray-700 font-medium">{label}</span>
       </div>
-      <span className="text-xl font-bold text-black">{price} Dt</span>
+      <div className="flex flex-col items-end">
+        <span className="text-2xl font-bold text-blue-600">{price} Dt</span>
+      </div>
     </div>
   </div>
 );
@@ -309,20 +317,31 @@ const parkingDescription = parking.description || "";
 const parkingLocation = parking.location || "";
 
 return (
-  <div className="max-w-7xl mx-auto px-4 py-8">
-    {/* Header Section with Status */}
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-8 relative">
-        <h1 className="text-4xl font-bold text-black mb-3 text-center">{parkingName}</h1>
-        {parkingLocation && (
-          <p className="text-black flex items-center text-lg">
-            <span className="mr-2">📍</span>
-            {parkingLocation}
-          </p>
-        )}
-        <div className="absolute top-4 right-4">
-          <StatusIndicator availability={parking.availableSpots / parking.totalSpots} />
+  <div className="max-w-7xl mx-auto px-4 py-8 bg-gray-50 min-h-screen">
+ {/* Header Section */}
+ <div className="bg-white rounded-2xl shadow-2xl overflow-hidden mb-8 transform hover:shadow-3xl transition-all duration-300">
+      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 p-12 relative">
+        <div className="max-w-3xl mx-auto text-center">
+          <h1 className="text-5xl font-bold text-black mb-4 tracking-tight">{parkingName}</h1>
+          {parkingLocation && (
+            <p className="text-black/90 flex items-center justify-center text-xl font-medium">
+              <span className="mr-2">📍</span>
+              {parkingLocation}
+            </p>
+          )}
         </div>
+        {/* Status indicator positioned top-right */}
+ 
+        {/* Reserve button positioned bottom-right */}
+        <button 
+          onClick={handleReservation}
+          className="absolute bottom-6 right-6 bg-white text-blue-700 px-6 py-3 rounded-full font-semibold 
+                     shadow-lg flex items-center space-x-2 hover:bg-blue-50 transition-all duration-300 
+                     transform hover:scale-105"
+        >
+          <span>Reserve Now</span>
+          <span className="text-xl">→</span>
+        </button>
       </div>
     </div>
 
@@ -330,46 +349,62 @@ return (
       {/* Left Column */}
       <div className="lg:col-span-2 space-y-8">
         {/* Map Section */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <TitleBox icon="📍">Location</TitleBox>
-          <div className="p-4">
-            <div ref={mapContainer} style={{ width: "100%", height: "300px" }} />
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+              <span className="text-3xl mr-3">📍</span>
+              Location
+            </h2>
+          </div>
+          <div className="p-6">
+            <div ref={mapContainer} style={mapContainerStyle} />
           </div>
         </div>
 
-        {/* Photos Section */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <TitleBox icon="📸">Parking Views</TitleBox>
-          <div className="p-4">
+        {/* Photos Section with enhanced grid */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+              <span className="text-3xl mr-3">📸</span>
+              Parking Views
+            </h2>
+          </div>
+          <div className="p-6">
             {parking?.images && parking.images.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 {parking.images.map((image, index) => (
                   <div key={index} 
-                    className="aspect-video overflow-hidden rounded-lg shadow-sm cursor-pointer transform transition-transform hover:scale-105"
+                    className="group aspect-video overflow-hidden rounded-xl shadow-md cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
                     onClick={() => setSelectedImage(image)}
                   >
                     <img
                       src={image}
                       alt={`Parking view ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transform transition-transform group-hover:scale-110"
                     />
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 text-gray-500">
-                <p>No images available</p>
+              <div className="text-center py-16 text-gray-500">
+                <span className="text-4xl mb-4 block">📷</span>
+                <p className="text-lg">No images available</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Description Section - Only show if exists */}
+        {/* Description Section with enhanced styling */}
         {parkingDescription && (
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <TitleBox icon="📝">Description</TitleBox>
-            <div className="p-6">
-              <p className="text-gray-700 leading-relaxed">{parkingDescription}</p>
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                <span className="text-3xl mr-3">📝</span>
+                Description
+              </h2>
+            </div>
+            <div className="p-8">
+              <p className="text-gray-700 leading-relaxed text-lg">{parkingDescription}</p>
             </div>
           </div>
         )}
@@ -377,23 +412,28 @@ return (
 
       {/* Right Column */}
       <div className="space-y-8">
-        {/* Availability Card */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <TitleBox icon="🅿️">Availability</TitleBox>
-          <div className="p-6">
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-black">Current Capacity</span>
-                <span className="font-bold text-black">{parking.availableSpots}/{parking.totalSpots} spots</span>
+        {/* Availability Card with enhanced styling */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+              <span className="text-3xl mr-3">🅿️</span>
+              Availability
+            </h2>
+          </div>
+          <div className="p-8">
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-gray-700 text-lg">Current Capacity</span>
+                <span className="text-2xl font-bold text-blue-600">{parking.availableSpots}/{parking.totalSpots}</span>
               </div>
-              <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden shadow-inner">
                 <div
                   className={`h-full transition-all duration-500 ${availabilityColor}`}
                   style={{ 
                     width: `${(parking.availableSpots / parking.totalSpots) * 100}%`,
-                    backgroundColor: availabilityPercentage >= 50 ? '#22c55e' : 
-                                   availabilityPercentage >= 20 ? '#eab308' : 
-                                   '#dc2626'
+                    background: availabilityPercentage >= 50 ? 'linear-gradient(to right, #22c55e, #16a34a)' : 
+                               availabilityPercentage >= 20 ? 'linear-gradient(to right, #eab308, #ca8a04)' : 
+                               'linear-gradient(to right, #dc2626, #b91c1c)'
                   }}
                 />
               </div>
@@ -429,14 +469,7 @@ return (
             
             
               
-            {/* ...other pricing options... */}
-            <button 
-              onClick={handleReservation}
-              className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-black font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
-            >
-              <span>Reserve Now</span>
-              <span>→</span>
-            </button>
+=         
           </div>
         </div>
 

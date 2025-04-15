@@ -8,91 +8,50 @@ const Faq = () => {
 
   const dataAccordion = [
     {
-      title: "Will someone assist me if I need help?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
+      title: "How do I book a parking space?",
+      desc: "To book a parking space, log into your account, select your preferred parking lot, choose the desired date and time, then confirm your reservation. You will receive a confirmation email.",
       category: "Booking"
     },
     {
-      title: "Can I rent a car without a credit card?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Car"
+      title: "What payment methods are accepted?",
+      desc: "We accept credit/debit cards (Visa, MasterCard), mobile payments, and secure online payments. Payment is required at the time of booking.",
+      category: "Payment"
     },
     {
-      title: "What types of insurance do car rental companies offer?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Driving"
+      title: "How do I access the parking with my reservation?",
+      desc: "Use the QR code received during your reservation at the parking entrance. Our system will automatically recognize your reservation and grant you access.",
+      category: "Access"
     },
     {
-      title: "Can I modify or cancel my car rental reservation?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Charging"
+      title: "What should I do in case of technical issues?",
+      desc: "In case of technical issues, use the help button in our app or call our 24/7 customer service. An agent will be available to assist you immediately.",
+      category: "Support"
     },
     {
-      title: "Are there any restrictions on where I can take the rental car?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
+      title: "Can I modify or cancel my reservation?",
+      desc: "Yes, you can modify or cancel your reservation up to 2 hours before the scheduled time. Access the 'My Reservations' section to make changes.",
       category: "Booking"
     },
     {
-      title: "What happens if I return the rental car late?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Car"
+      title: "How does pricing work?",
+      desc: "Pricing is based on parking duration and varies by parking location. Rates are clearly displayed during booking, including all taxes.",
+      category: "Payment"
     },
     {
-      title: "How do I refuel the rental car before returning it?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Driving"
+      title: "Are there electric charging stations?",
+      desc: "Yes, some of our parking lots are equipped with charging stations for electric vehicles. You can identify them during booking with the dedicated icon.",
+      category: "Access"
     },
     {
-      title: "Can I rent a car with a foreign driver's license?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Charging"
-    },
-    {
-      title: "What documents do I need to rent a car?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Booking"
-    },
-    {
-      title: "Can I add an additional driver to the rental agreement?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Car"
-    },
-    {
-      title: "Can I rent a car one-way and drop it off at a different location?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Driving"
-    },
-    {
-      title: "What should I do if the rental car breaks down or has issues during the rental period?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Charging"
-    },
-    {
-      title: "Can I request specific car features or models when renting a car?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Booking"
-    },
-    {
-      title: "Are there mileage restrictions on rental cars?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Car"
-    },
-    {
-      title: "Can I extend my rental period after picking up the car?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Driving"
-    },
-    {
-      title: "What happens if the rental car gets damaged during my rental period?",
-      desc: "Conducting market research is crucial to understand the demand for your product or service in the target market. Identify the target audience, evaluate the competition, and assess the overall market conditions.",
-      category: "Charging"
-    },
-
+      title: "How do I contact customer service?",
+      desc: "Our customer service is available 24/7 by phone, email, or in-app chat. For emergencies, use the SOS button in the app.",
+      category: "Support"
+    }
   ]
 
   const [ToogleTab, setToogleTab] = useState("All")
   const [Search, setSearch] = useState("")
-  const [ToogleAccordion, setToogleAccordion] = useState("Will someone assist me if I need help?")
+  const [ToogleAccordion, setToogleAccordion] = useState("How do I book a parking space?")
 
   const toogleAccFun = (e) => {
     if (ToogleAccordion == e) {
@@ -148,7 +107,7 @@ const Faq = () => {
 
   return (
     <Fragment>
-      <HeadTitle title={"How much time between <br /> plane & car?"} sub={"FAQ"} />
+      <HeadTitle title={"Frequently Asked Questions <br /> about our Smart Parking"} sub={"FAQ"} />
       <section>
         <Container>
 
@@ -157,9 +116,9 @@ const Faq = () => {
             <div className="flex items-center gap-3 w-full sm:w-auto text-center">
               <div onClick={() => setToogleTab("All")} className={'font-medium text__16 w-full sm:px-3 py-2 cursor-pointer ' + (ToogleTab == "All" ? "text-Mblue border-b border-solid border-Mblue" : "text-[#737373]")}>All</div>
               <div onClick={() => setToogleTab("Booking")} className={'font-medium text__16 w-full sm:px-3 py-2 cursor-pointer ' + (ToogleTab == "Booking" ? "text-Mblue border-b border-solid border-Mblue" : "text-[#737373]")}>Booking</div>
-              <div onClick={() => setToogleTab("Car")} className={'font-medium text__16 w-full sm:px-3 py-2 cursor-pointer ' + (ToogleTab == "Car" ? "text-Mblue border-b border-solid border-Mblue" : "text-[#737373]")}>Car</div>
-              <div onClick={() => setToogleTab("Driving")} className={'font-medium text__16 w-full sm:px-3 py-2 cursor-pointer ' + (ToogleTab == "Driving" ? "text-Mblue border-b border-solid border-Mblue" : "text-[#737373]")}>Driving</div>
-              <div onClick={() => setToogleTab("Charging")} className={'font-medium text__16 w-full sm:px-3 py-2 cursor-pointer ' + (ToogleTab == "Charging" ? "text-Mblue border-b border-solid border-Mblue" : "text-[#737373]")}>Charging</div>
+              <div onClick={() => setToogleTab("Payment")} className={'font-medium text__16 w-full sm:px-3 py-2 cursor-pointer ' + (ToogleTab == "Payment" ? "text-Mblue border-b border-solid border-Mblue" : "text-[#737373]")}>Payment</div>
+              <div onClick={() => setToogleTab("Access")} className={'font-medium text__16 w-full sm:px-3 py-2 cursor-pointer ' + (ToogleTab == "Access" ? "text-Mblue border-b border-solid border-Mblue" : "text-[#737373]")}>Access</div>
+              <div onClick={() => setToogleTab("Support")} className={'font-medium text__16 w-full sm:px-3 py-2 cursor-pointer ' + (ToogleTab == "Support" ? "text-Mblue border-b border-solid border-Mblue" : "text-[#737373]")}>Support</div>
             </div>
 
             <div className="flex items-center gap-3 w-full lg:w-auto">

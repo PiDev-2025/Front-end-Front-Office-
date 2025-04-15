@@ -64,7 +64,7 @@ const ForgotPassword = () => {
                                         className="font-medium text__14 bg-[#FAFAFA] h-[54px] rounded-[20px] px-3 outline-none shadow-none focus:outline-none focus:shadow-none border-[#F5F5F5] focus:border-[#F5F5F5] focus:bg-[#FAFAFA]"
                                     />
                                 </Form.Group>
-                                <button type="submit" className="inline-block w-full cursor-pointer text-center font-medium text__16 text-Mwhite !py-[15px] !px-[28px] bg-Mblue !border-Mblue btnClass transition-all duration-300 hover:opacity-90">
+                                <button type="submit" className="inline-block w-full cursor-pointer text-center font-medium text__16 text-Mwhite !py-[15px] !px-[28px] bg-Mblack !border-Mblack btnClass transition-all duration-300 hover:opacity-90">
                                     Send Reset Link
                                 </button>
                             </Form>
