@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- every components should be imported separately from components/ui/<name>
+- always use gluestack ui component as default

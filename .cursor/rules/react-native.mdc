@@ -8,6 +8,8 @@ alwaysApply: true
 
   For styled components you use gluestack ui components availables at components/ui/* so every one of them should be imported from this folder separately.
 
+  You use react-native-cli bare, we dont use expo so avoid using expo packages find the react-native-cli bare alternative
+
   You use jotai for state management.
   
   Code Style and Structure:

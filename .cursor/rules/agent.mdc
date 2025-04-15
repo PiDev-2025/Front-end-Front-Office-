@@ -4,7 +4,7 @@ globs:
 alwaysApply: true
 ---
 
-1. Always use gemini-2.5-pro to operates 
+1. Always use claude-3.5-sonnet to operates 
 2. Always use codebase_search with target_directories="/Users/qct/Code/sympathyworldv2" first to find existing core files
 3. Always check existing system files purposes before creating new ones with similar functionality
 4. Always list the cursor rules youre using

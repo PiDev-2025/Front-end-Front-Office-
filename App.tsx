@@ -30,6 +30,7 @@ import Program from "./screens/components/Program/Program";
 import MoodLabScreen from "./screens/components/MoodLab/MoodLabScreen";
 import DesignerScreen from "./screens/components/Designer/DesignerScreen";
 import { jwtAtom } from "./screens/states/user";
+import { UploadScreen } from "./screens/components/Upload/UploadScreen";
 
 const LIGHT_THEME: Theme = {
 	dark: false,
@@ -257,6 +258,14 @@ export default function App(): React.JSX.Element {
 										component={DesignerScreen} 
 										options={{
 											headerShown: true,
+										}}
+									/>
+									<Stack.Screen
+										name="Upload"
+										component={UploadScreen}
+										options={{
+											headerShown: true,
+											title: "Gestionnaire de médias",
 										}}
 									/>
 									{/* <Stack.Screen

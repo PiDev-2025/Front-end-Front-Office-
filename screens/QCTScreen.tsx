@@ -28,7 +28,8 @@ import {
 	Users2,
 	Hash,
 	LifeBuoy,
-	Palette
+	Palette,
+	Upload
 } from 'lucide-react-native';
 
 // Define Param List Type for the Root Stack Navigator
@@ -43,6 +44,7 @@ type RootStackParamList = {
 	Programs: undefined;
 	MoodLab: undefined;
 	Designer: undefined;
+	Upload: undefined;
 	Settings: undefined;
 	Help: undefined;
 	// Add other screens if needed
@@ -138,6 +140,13 @@ function QCTScreen(): React.JSX.Element {
 							title="MoodLab"
 							description="Analysez et suivez votre bien-être émotionnel"
 							onPress={() => navigation.navigate('MoodLab')}
+						/>
+
+						<QCTSection
+							icon={<Upload className="text-primary-600" size={24} />}
+							title="Gestionnaire de médias"
+							description="Gérez vos photos et vidéos"
+							onPress={() => navigation.navigate('Upload')}
 						/>
 
 						<QCTSection
