@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, Platform, ScrollView as RNScrollView } from 'react-native';
+import { Alert, Platform, ScrollView as RNScrollView, Modal as RNModal, Dimensions } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
@@ -8,13 +8,14 @@ import { HStack } from '@/components/ui/hstack';
 import { Image } from '@/components/ui/image';
 import { Pressable } from '@/components/ui/pressable';
 import { Card } from '@/components/ui/card';
+import { AlertDialog, AlertDialogBackdrop, AlertDialogContent, AlertDialogBody } from '@/components/ui/alert-dialog';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useAtom } from 'jotai';
 import { mediaAtom, MediaItem } from '@/atoms/mediaAtom';
 import ApiClient from '@/api-client/api-client/src/apiClient';
 import { tokenAtom } from '../../../api-client/api-client/src/storage';
 
-const apiClient = new ApiClient(process.env.API_URL || 'http://localhost:3000');
+const apiClient = new ApiClient(process.env.API_URL || 'https://noelis.qazar.cloud');
 
 interface CoreLink {
   id: string;
@@ -31,6 +32,11 @@ export const UploadScreen: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [media, setMedia] = useAtom(mediaAtom);
   const [token, setToken] = useAtom(tokenAtom);
+  const [selectedImage, setSelectedImage] = useState<MediaItem | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+
+  const windowWidth = Dimensions.get('window').width;
+  const windowHeight = Dimensions.get('window').height;
 
   useEffect(() => {
     apiClient.initializeTokenAtom([token, setToken]);
@@ -47,18 +53,14 @@ export const UploadScreen: React.FC = () => {
         return;
       }
       
-      const mediaItems: MediaItem[] = await Promise.all(
-        links.map(async (link) => {
-          const { url } = await apiClient.getPresignedURL(link.id);
-          return {
-            id: link.id,
-            url,
-            type: link.typ.includes('video') ? 'video' : 'image',
-            name: link.name,
-            fileName: link.name,
-          };
-        })
-      );
+      const mediaItems: MediaItem[] = links.map((link) => ({
+        id: link.id,
+        url: link.src,
+        type: link.typ.includes('video') ? 'video' : 'image',
+        name: link.name,
+        fileName: link.name,
+      }));
+      
       setMedia(mediaItems);
     } catch (error) {
       console.error('Failed to load media:', error);
@@ -116,11 +118,10 @@ export const UploadScreen: React.FC = () => {
       xhr.onload = async () => {
         if (xhr.status === 200) {
           const response = JSON.parse(xhr.responseText) as { link: CoreLink };
-          const { url } = await apiClient.getPresignedURL(response.link.id);
           
           const newMedia: MediaItem = {
             id: response.link.id,
-            url,
+            url: response.link.src,
             type: response.link.typ.includes('video') ? 'video' : 'image',
             name: response.link.name,
             fileName: file.fileName,
@@ -156,6 +157,11 @@ export const UploadScreen: React.FC = () => {
       console.error('Delete failed:', error);
       Alert.alert('Error', 'Failed to delete media');
     }
+  };
+
+  const handleImagePress = (item: MediaItem) => {
+    setSelectedImage(item);
+    setShowImageModal(true);
   };
 
   return (
@@ -201,11 +207,18 @@ export const UploadScreen: React.FC = () => {
                 className="bg-white rounded-lg overflow-hidden shadow-md"
               >
                 <HStack className="p-3 items-center space-x-3">
-                  <Image
-                    source={{ uri: item.url }}
-                    alt={item.name}
-                    className="w-16 h-16 rounded-sm"
-                  />
+                  <Pressable onPress={() => handleImagePress(item)}>
+                    <Image
+                      source={{ uri: item.url }}
+                      alt={item.name}
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 8,
+                      }}
+                      resizeMode="cover"
+                    />
+                  </Pressable>
                   <VStack className="flex-1">
                     <Text className="font-bold">{item.name}</Text>
                     <Text className="text-sm text-gray-500">
@@ -223,6 +236,43 @@ export const UploadScreen: React.FC = () => {
           </VStack>
         </VStack>
       </RNScrollView>
+
+      <AlertDialog
+        isOpen={showImageModal}
+        onClose={() => {
+          setShowImageModal(false);
+          setSelectedImage(null);
+        }}
+      >
+        <AlertDialogBackdrop />
+        <AlertDialogContent>
+          <AlertDialogBody>
+            {selectedImage && (
+              <Box className="relative">
+                <Image
+                  source={{ uri: selectedImage.url }}
+                  alt={selectedImage.name}
+                  style={{
+                    width: windowWidth * 0.9,
+                    height: windowHeight * 0.6,
+                    borderRadius: 8,
+                  }}
+                  resizeMode="contain"
+                />
+                <Pressable
+                  onPress={() => {
+                    setShowImageModal(false);
+                    setSelectedImage(null);
+                  }}
+                  className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1"
+                >
+                  <MaterialIcons name="close" size={24} color="#ffffff" />
+                </Pressable>
+              </Box>
+            )}
+          </AlertDialogBody>
+        </AlertDialogContent>
+      </AlertDialog>
     </Box>
   );
 }; 
