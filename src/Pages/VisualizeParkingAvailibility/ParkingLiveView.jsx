@@ -87,10 +87,10 @@ const ReservationDetails = ({ reservation }) => {
           <div style={{ fontSize: "0.875rem", color: "#22c55e" }}>Statut</div>
           <div style={{ fontWeight: "600" }}>
             {reservation.status === "accepted"
-              ? "Confirmée"
+              ? "accepted"
               : reservation.status === "pending"
-              ? "En attente"
-              : "Annulée"}
+              ? "pending"
+              : "cancled"}
           </div>
         </div>
 
@@ -105,7 +105,7 @@ const ReservationDetails = ({ reservation }) => {
         >
           <div style={{ fontSize: "0.875rem", color: "#0ea5e9" }}>Paiement</div>
           <div style={{ fontWeight: "600" }}>
-            {reservation.paymentStatus === "completed" ? "Payée" : "En attente"}
+            {reservation.paymentStatus === "completed" ? "Succesful" : "Pending"}
           </div>
         </div>
       </div>

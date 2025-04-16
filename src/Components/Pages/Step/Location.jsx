@@ -2355,13 +2355,13 @@ const SecLocation = () => {
         countries: "tn",
         language: "fr",
         marker: false,
+        clearOnBlur: false, // Empêcher l'effacement lors de la perte de focus
+        clearAndBlurOnEsc: false, // Empêcher l'effacement lors de l'appui sur Échap
         proximity: {
           longitude: 10.18,
           latitude: 36.8,
         },
       });
-
-      // Ajouter les styles personnalisés
       const style = document.createElement("style");
       style.textContent = `
             .mapboxgl-ctrl-geocoder {
