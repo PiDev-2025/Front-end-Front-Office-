@@ -37,6 +37,7 @@ export const UploadScreen: React.FC = () => {
 
   const windowWidth = Dimensions.get('window').width;
   const windowHeight = Dimensions.get('window').height;
+  const imageSize = windowWidth / 3.054 ; 
 
   useEffect(() => {
     apiClient.initializeTokenAtom([token, setToken]);
@@ -165,9 +166,9 @@ export const UploadScreen: React.FC = () => {
   };
 
   return (
-    <Box className="flex-1 bg-background p-4">
+    <Box className="flex-1 bg-background">
       <RNScrollView showsVerticalScrollIndicator={false}>
-        <VStack space="md">
+        <Box className="p-4">
           <Card className="p-6 border-2 border-dashed border-primary-500 bg-primary-50">
             <Pressable onPress={pickMedia} disabled={isUploading}>
               <VStack className="items-center space-y-2">
@@ -195,46 +196,43 @@ export const UploadScreen: React.FC = () => {
               </Text>
             </Box>
           )}
+        </Box>
 
-          <Text className="text-2xl font-bold mt-4 mb-2">
-            Your Media
-          </Text>
-
-          <VStack space="md">
-            {media.map((item: MediaItem) => (
-              <Card
-                key={item.id}
-                className="bg-white rounded-lg overflow-hidden shadow-md"
-              >
-                <HStack className="p-3 items-center space-x-3">
-                  <Pressable onPress={() => handleImagePress(item)}>
-                    <Image
-                      source={{ uri: item.url }}
-                      alt={item.name}
-                      style={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: 8,
-                      }}
-                      resizeMode="cover"
-                    />
-                  </Pressable>
-                  <VStack className="flex-1">
-                    <Text className="font-bold">{item.name}</Text>
-                    <Text className="text-sm text-gray-500">
-                      {item.type}
-                    </Text>
-                  </VStack>
-                  <Pressable
-                    onPress={() => handleDelete(item.id)}
-                  >
-                    <MaterialIcons name="delete-outline" size={24} color="#ef4444" />
-                  </Pressable>
-                </HStack>
-              </Card>
-            ))}
-          </VStack>
-        </VStack>
+        <Box className="flex-row flex-wrap gap-1">
+          {media.map((item: MediaItem) => (
+            <Pressable
+              key={item.id}
+              onPress={() => handleImagePress(item)}
+              style={{
+                width: imageSize,
+                height: imageSize,
+              }}
+            >
+              <Image
+                source={{ uri: item.url }}
+                alt={item.name}
+                size='full'
+                // style={{
+                //   width: '100%',
+                //   height: '100%',
+                //   position: 'absolute',
+                //   top: 0,
+                //   left: 0,
+                //   right: 0,
+                //   bottom: 0
+                // }}
+                resizeMode="cover"
+              />
+              {item.type === 'video' && (
+                <Box
+                  className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1"
+                >
+                  <MaterialIcons name="play-circle-outline" size={24} color="#ffffff" />
+                </Box>
+              )}
+            </Pressable>
+          ))}
+        </Box>
       </RNScrollView>
 
       <AlertDialog
@@ -259,15 +257,32 @@ export const UploadScreen: React.FC = () => {
                   }}
                   resizeMode="contain"
                 />
-                <Pressable
-                  onPress={() => {
-                    setShowImageModal(false);
-                    setSelectedImage(null);
-                  }}
-                  className="absolute top-2 right-2 bg-black bg-opacity-50 rounded-full p-1"
+                <VStack
+                  className="absolute top-2 right-2 space-y-2"
                 >
-                  <MaterialIcons name="close" size={24} color="#ffffff" />
-                </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      setShowImageModal(false);
+                      setSelectedImage(null);
+                    }}
+                    className="bg-black bg-opacity-50 rounded-full p-1"
+                  >
+                    <MaterialIcons name="close" size={24} color="#ffffff" />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      handleDelete(selectedImage.id);
+                      setShowImageModal(false);
+                      setSelectedImage(null);
+                    }}
+                    className="bg-red-500 bg-opacity-50 rounded-full p-1"
+                  >
+                    <MaterialIcons name="delete-outline" size={24} color="#ffffff" />
+                  </Pressable>
+                </VStack>
+                <Box className="absolute bottom-2 left-2 bg-black bg-opacity-50 rounded-lg px-2 py-1">
+                  <Text className="text-white text-sm">{selectedImage.name}</Text>
+                </Box>
               </Box>
             )}
           </AlertDialogBody>
