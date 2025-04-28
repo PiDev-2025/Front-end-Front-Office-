@@ -20,7 +20,7 @@ import { Track } from "livekit-client";
 
 // !! Note !!
 // This sample hardcodes a token which expires in 2 hours.
-const wsURL = "wss://sympathyworldv2-h27bhi08.livekit.cloud";
+const wsURL = "wss://noelis.gardenv2-h27bhi08.livekit.cloud";
 
 const token =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MzM4NDA0MTQsImlzcyI6IkFQSXI0YjlWNmF5OFlmViIsIm5iZiI6MTczMzgzMzIxNCwic3ViIjoicXVpY2tzdGFydCB1c2VyIHNid21obCIsInZpZGVvIjp7ImNhblB1Ymxpc2giOnRydWUsImNhblB1Ymxpc2hEYXRhIjp0cnVlLCJjYW5TdWJzY3JpYmUiOnRydWUsInJvb20iOiJxdWlja3N0YXJ0IHJvb20iLCJyb29tSm9pbiI6dHJ1ZX19.yKFtEs9IqYfQvhNSe_dN6x778VTT_c6cwhvU7lGXYQo";

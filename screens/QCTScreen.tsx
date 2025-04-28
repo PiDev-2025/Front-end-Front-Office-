@@ -35,7 +35,7 @@ import {
 // Define Param List Type for the Root Stack Navigator
 type RootStackParamList = {
 	User: undefined;
-	SympathyWorld: undefined;
+	NoelisGarden: undefined;
 	ChatList: undefined;
 	ChatScreen: { roomId: string } | undefined;
 	NewChat: undefined;
@@ -98,7 +98,7 @@ function QCTScreen(): React.JSX.Element {
 					className="rounded-lg"
 				>
 					<Box className="p-4">
-						<Text className="text-2xl font-bold mb-6">SympathyWorld</Text>
+						<Text className="text-2xl font-bold mb-6">noelis.garden</Text>
 						
 						<QCTSection
 							icon={<User className="text-primary-600" size={24} />}

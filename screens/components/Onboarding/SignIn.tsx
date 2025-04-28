@@ -58,7 +58,7 @@ export function SignIn(): React.JSX.Element {
 					if (_jwtDecoded.ID) {
 						setUserID(_jwtDecoded.ID);
 					}
-					navigation.navigate("SympathyWorld" as never);
+					navigation.navigate("NoelisGarden" as never);
 				} else {
 					throw new Error("No token received");
 				}

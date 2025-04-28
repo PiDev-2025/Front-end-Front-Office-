@@ -160,7 +160,7 @@ export default function App(): React.JSX.Element {
 							{jwtAtom ? (
 								<>
 									<Stack.Screen
-										name="SympathyWorld"
+										name="NoelisGarden"
 										component={QCTScreen}
 										options={{
 											headerShown: true,

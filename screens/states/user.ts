@@ -6,7 +6,7 @@ const userIDAtom = atom<string>("");
 
 const usernameAtom = atom<string | null>("dams_qct");
 
-const emailAtom = atom<string | null>("dams_qct@sympathyworld.co");
+const emailAtom = atom<string | null>("dams_qct@noelis.garden.co");
 
 const passwordAtom = atom<string | null>("Test1234");
 
