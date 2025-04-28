@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/toast';
 import ApiClient from '@/api-client/api-client/src/apiClient';
 import { B } from '@expo/html-elements';
 import { Toast, ToastTitle, ToastDescription } from '@/components/ui/toast';
+import useThemeStore from '@/store/themeStore';
 
 const apiClient = new ApiClient(process.env.API_URL || 'https://noelis.qazar.cloud');
 
@@ -26,61 +27,13 @@ interface Theme {
   }[];
 }
 
-const themes: Theme[] = [
-  {
-    id: '1',
-    name: 'Light Theme',
-    description: 'Clean and bright interface',
-    children: [
-      {
-        id: '1-1',
-        name: 'Classic Light',
-        description: 'Traditional light theme with subtle shadows',
-      },
-      {
-        id: '1-2',
-        name: 'Modern Light',
-        description: 'Contemporary light theme with minimal design',
-      },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Dark Theme',
-    description: 'Elegant dark interface',
-    children: [
-      {
-        id: '2-1',
-        name: 'Midnight Dark',
-        description: 'Deep dark theme with blue accents',
-      },
-      {
-        id: '2-2',
-        name: 'Obsidian Dark',
-        description: 'Pure black theme with high contrast',
-      },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Custom Theme',
-    description: 'Personalized color scheme',
-    children: [
-      {
-        id: '3-1',
-        name: 'Custom Colors',
-        description: 'Create your own theme',
-      },
-    ],
-  },
-];
-
 export const ModeUserThemes: React.FC = () => {
   const [themeSelections, setThemeSelections] = useAtom(themeSelectionsAtom);
   const isCombinationUsed = useAtom(isCombinationUsedAtom)[0];
   const [, clearThemeSelection] = useAtom(clearThemeSelectionAtom);
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const themes = useThemeStore((state: { themes: Theme[] }) => state.themes);
 
   const handleThemeChange = async () => {
     try {
@@ -165,7 +118,7 @@ export const ModeUserThemes: React.FC = () => {
                 <Select
                   selectedValue={selection.parentThemeId}
                   onValueChange={(value) => {
-                    const theme = themes.find(t => t.id === value);
+                    const theme = themes.find((t: Theme) => t.id === value);
                     updateThemeSelection(index, theme || null, null);
                   }}
                 >
@@ -179,9 +132,9 @@ export const ModeUserThemes: React.FC = () => {
                       <SelectDragIndicatorWrapper>
                         <SelectDragIndicator />
                       </SelectDragIndicatorWrapper>
-                      {themes.map((theme) => (
+                      {themes.map((theme: Theme) => (
                         <SelectItem
-                          key={theme.id}
+                          key={`${theme.id}-${theme.name}`}
                           label={theme.name}
                           value={theme.id}
                         >
@@ -193,7 +146,7 @@ export const ModeUserThemes: React.FC = () => {
                 </Select>
                 {selection.parentThemeId && (
                   <Text className="text-xs text-gray-500">
-                    {themes.find(t => t.id === selection.parentThemeId)?.description}
+                    {themes.find((t: Theme) => t.id === selection.parentThemeId)?.description}
                   </Text>
                 )}
               </VStack>
@@ -204,8 +157,8 @@ export const ModeUserThemes: React.FC = () => {
                   <Select
                     selectedValue={selection.childThemeId}
                     onValueChange={(value) => {
-                      const parentTheme = themes.find(t => t.id === selection.parentThemeId);
-                      const childTheme = parentTheme?.children.find(t => t.id === value);
+                      const parentTheme = themes.find((t: Theme) => t.id === selection.parentThemeId);
+                      const childTheme = parentTheme?.children.find((c: Theme['children'][0]) => c.id === value);
                       updateThemeSelection(index, parentTheme || null, childTheme || null);
                     }}
                   >
@@ -220,38 +173,24 @@ export const ModeUserThemes: React.FC = () => {
                           <SelectDragIndicator />
                         </SelectDragIndicatorWrapper>
                         {themes
-                          .find(t => t.id === selection.parentThemeId)
-                          ?.children
-                          .map((child) => {
-                            // Check if this child theme is used in any other selection with the same parent theme
-                            const isUsed = themeSelections.some((otherSelection, otherIndex) => 
-                              otherIndex !== index && 
-                              otherSelection.parentThemeId === selection.parentThemeId && 
-                              otherSelection.childThemeId === child.id
-                            );
-                            
-                            // Only render the SelectItem if it's the current selection or not used elsewhere
-                            if (child.id === selection.childThemeId || !isUsed) {
-                              return (
-                                <SelectItem
-                                  key={child.id}
-                                  label={child.name}
-                                  value={child.id}
-                                >
-                                  <Text>{child.name}</Text>
-                                </SelectItem>
-                              );
-                            }
-                            return null;
-                          })}
+                          .find((t: Theme) => t.id === selection.parentThemeId)
+                          ?.children.map((child: Theme['children'][0]) => (
+                            <SelectItem
+                              key={child.id}
+                              label={child.name}
+                              value={child.id}
+                            >
+                              <Text>{child.name}</Text>
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </SelectPortal>
                   </Select>
                   {selection.childThemeId && (
                     <Text className="text-xs text-gray-500">
                       {themes
-                        .find(t => t.id === selection.parentThemeId)
-                        ?.children.find(t => t.id === selection.childThemeId)
+                        .find((t: Theme) => t.id === selection.parentThemeId)
+                        ?.children.find((c: Theme['children'][0]) => c.id === selection.childThemeId)
                         ?.description}
                     </Text>
                   )}
