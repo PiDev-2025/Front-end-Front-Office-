@@ -146,7 +146,7 @@ export const ModeUserThemes: React.FC = () => {
 
         {themeSelections.map((selection, index) => (
           <Card key={index} className="p-3 mb-3">
-            <VStack space="sm">
+            <VStack space="sm" className='gap-2'>
               <HStack className="justify-between items-center">
                 <Text className="text-base font-semibold">Theme {index + 1}</Text>
                 {selection.parentThemeId && (
@@ -155,7 +155,7 @@ export const ModeUserThemes: React.FC = () => {
                     variant="outline"
                     onPress={() => handleClearSelection(index)}
                   >
-                    <Text className="text-xs text-red-500">Clear</Text>
+                    <Text className="text-xs text-red-500">Recommencez</Text>
                   </Button>
                 )}
               </HStack>
