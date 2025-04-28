@@ -34,7 +34,7 @@ import {
 	SelectTrigger,
 } from "@/components/ui/select";
 import { userSaveProfile } from "./apis/User";
-import { log } from "./libs/logger";
+import { log } from "../screens/libs/logger";
 import {
 	ageAtom,
 	fetchThemesAtom,
