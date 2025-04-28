@@ -89,6 +89,8 @@ export function SignIn(): React.JSX.Element {
 				source={require('../../assets/background.gif')}
 				style={styles.background}
 				resizeMode="cover"
+				loadingIndicatorSource={require('../../assets/background.gif')}
+				defaultSource={require('../../assets/background.gif')}
 			>
 				<Card style={styles.card}>
 					<VStack space="md" style={styles.form}>

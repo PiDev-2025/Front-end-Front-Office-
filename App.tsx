@@ -31,6 +31,10 @@ import MoodLabScreen from "./screens/components/MoodLab/MoodLabScreen";
 import DesignerScreen from "./screens/components/Designer/DesignerScreen";
 import { jwtAtom } from "./screens/states/user";
 import { UploadScreen } from "./screens/components/Upload/UploadScreen";
+import { ModeUserScreen } from "./screens/components/ModeUser/ModeUser";
+import ModeUserLayout from "./screens/components/ModeUser/ModeUserLayout";
+import { ModeUserSettings } from "./screens/components/ModeUser/ModeUserSettings";
+import { ModeUserThemes } from "./screens/components/ModeUser/ModeUserThemes";
 
 const LIGHT_THEME: Theme = {
 	dark: false,
@@ -266,6 +270,46 @@ export default function App(): React.JSX.Element {
 										options={{
 											headerShown: true,
 											title: "Gestionnaire de médias",
+										}}
+									/>
+									<Stack.Screen
+										name="ModeUser"
+										component={ModeUserScreen}
+										options={{
+											headerShown: true,
+											title: "User Modes",
+										}}
+									/>
+									<Stack.Screen
+										name="ModeUserLayout"
+										component={ModeUserLayout}
+										options={{
+											headerShown: true,
+											title: "Mode Settings",
+										}}
+									/>
+									<Stack.Screen
+										name="ModeUserThemes"
+										component={ModeUserThemes}
+										options={{
+											headerShown: true,
+											title: "Themes",
+										}}
+									/>
+									<Stack.Screen
+										name="ModeUserQuizzes"
+										component={ModeUserLayout}
+										options={{
+											headerShown: true,
+											title: "Quizzes",
+										}}
+									/>
+									<Stack.Screen
+										name="ModeUserSettings"
+										component={ModeUserSettings}
+										options={{
+											headerShown: true,
+											title: "Settings",
 										}}
 									/>
 									{/* <Stack.Screen

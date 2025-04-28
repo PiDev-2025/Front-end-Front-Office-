@@ -29,7 +29,8 @@ import {
 	Hash,
 	LifeBuoy,
 	Palette,
-	Upload
+	Upload,
+	UserCog
 } from 'lucide-react-native';
 
 // Define Param List Type for the Root Stack Navigator
@@ -47,6 +48,7 @@ type RootStackParamList = {
 	Upload: undefined;
 	Settings: undefined;
 	Help: undefined;
+	ModeUser: undefined;
 	// Add other screens if needed
 };
 
@@ -147,6 +149,13 @@ function QCTScreen(): React.JSX.Element {
 							title="Gestionnaire de médias"
 							description="Gérez vos photos et vidéos"
 							onPress={() => navigation.navigate('Upload')}
+						/>
+
+						<QCTSection
+							icon={<UserCog className="text-primary-600" size={24} />}
+							title="User Modes"
+							description="Customize your experience with different modes"
+							onPress={() => navigation.navigate('ModeUser')}
 						/>
 
 						<QCTSection
