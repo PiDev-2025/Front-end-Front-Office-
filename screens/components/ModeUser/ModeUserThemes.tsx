@@ -123,7 +123,10 @@ export const ModeUserThemes: React.FC = () => {
                   }}
                 >
                   <SelectTrigger size="sm">
-                    <SelectInput placeholder="Select a parent theme" />
+                    <SelectInput 
+                      placeholder="Select a parent theme" 
+                      value={themes.find((t: Theme) => t.id === selection.parentThemeId)?.name || ''}
+                    />
                     <SelectIcon />
                   </SelectTrigger>
                   <SelectPortal>
@@ -163,7 +166,13 @@ export const ModeUserThemes: React.FC = () => {
                     }}
                   >
                     <SelectTrigger size="sm">
-                      <SelectInput placeholder="Select a theme variation" />
+                      <SelectInput 
+                        placeholder="Select a theme variation" 
+                        value={themes
+                          .find((t: Theme) => t.id === selection.parentThemeId)
+                          ?.children.find((c: Theme['children'][0]) => c.id === selection.childThemeId)
+                          ?.name || ''}
+                      />
                       <SelectIcon />
                     </SelectTrigger>
                     <SelectPortal>
