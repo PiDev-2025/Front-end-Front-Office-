@@ -96,82 +96,37 @@ export const ModeUserThemes: React.FC = () => {
         <Text className="text-sm text-gray-500 mb-4">
           Choose your preferred themes and their variations
         </Text>
-
-        {themeSelections.map((selection, index) => (
-          <Card key={index} className="p-3 mb-3">
-            <VStack space="sm" className='gap-2'>
-              <HStack className="justify-between items-center">
-                <Text className="text-base font-semibold">Theme {index + 1}</Text>
-                {selection.parentThemeId && (
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    onPress={() => handleClearSelection(index)}
-                  >
-                    <Text className="text-xs text-red-500">Recommencez</Text>
-                  </Button>
-                )}
-              </HStack>
-              
-              <VStack space="xs">
-                <Text className="text-sm font-medium">Parent Theme</Text>
-                <Select
-                  selectedValue={selection.parentThemeId}
-                  onValueChange={(value) => {
-                    const theme = themes.find((t: Theme) => t.id === value);
-                    updateThemeSelection(index, theme || null, null);
-                  }}
-                >
-                  <SelectTrigger size="sm">
-                    <SelectInput 
-                      placeholder="Select a parent theme" 
-                      value={themes.find((t: Theme) => t.id === selection.parentThemeId)?.name || ''}
-                    />
-                    <SelectIcon />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectBackdrop />
-                    <SelectContent>
-                      <SelectDragIndicatorWrapper>
-                        <SelectDragIndicator />
-                      </SelectDragIndicatorWrapper>
-                      {themes.map((theme: Theme) => (
-                        <SelectItem
-                          key={`${theme.id}-${theme.name}`}
-                          label={theme.name}
-                          value={theme.id}
-                        >
-                          <Text>{theme.name}</Text>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </SelectPortal>
-                </Select>
-                {selection.parentThemeId && (
-                  <Text className="text-xs text-gray-500">
-                    {themes.find((t: Theme) => t.id === selection.parentThemeId)?.description}
-                  </Text>
-                )}
-              </VStack>
-
-              {selection.parentThemeId && (
+  
+        <VStack space="md" className="gap-4">
+          {themeSelections.map((selection, index) => (
+            <Card key={index} className="p-3">
+              <VStack space="sm" className='gap-2'>
+                <HStack className="justify-between items-center">
+                  <Text className="text-base font-semibold">Theme {index + 1}</Text>
+                  {selection.parentThemeId && (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      onPress={() => handleClearSelection(index)}
+                    >
+                      <Text className="text-xs text-red-500">Recommencez</Text>
+                    </Button>
+                  )}
+                </HStack>
+                
                 <VStack space="xs">
-                  <Text className="text-sm font-medium">Theme Variation</Text>
+                  <Text className="text-sm font-medium">Parent Theme</Text>
                   <Select
-                    selectedValue={selection.childThemeId}
+                    selectedValue={selection.parentThemeId}
                     onValueChange={(value) => {
-                      const parentTheme = themes.find((t: Theme) => t.id === selection.parentThemeId);
-                      const childTheme = parentTheme?.children.find((c: Theme['children'][0]) => c.id === value);
-                      updateThemeSelection(index, parentTheme || null, childTheme || null);
+                      const theme = themes.find((t: Theme) => t.id === value);
+                      updateThemeSelection(index, theme || null, null);
                     }}
                   >
                     <SelectTrigger size="sm">
                       <SelectInput 
-                        placeholder="Select a theme variation" 
-                        value={themes
-                          .find((t: Theme) => t.id === selection.parentThemeId)
-                          ?.children.find((c: Theme['children'][0]) => c.id === selection.childThemeId)
-                          ?.name || ''}
+                        placeholder="Select a parent theme" 
+                        value={themes.find((t: Theme) => t.id === selection.parentThemeId)?.name || ''}
                       />
                       <SelectIcon />
                     </SelectTrigger>
@@ -181,42 +136,89 @@ export const ModeUserThemes: React.FC = () => {
                         <SelectDragIndicatorWrapper>
                           <SelectDragIndicator />
                         </SelectDragIndicatorWrapper>
-                        {themes
-                          .find((t: Theme) => t.id === selection.parentThemeId)
-                          ?.children.map((child: Theme['children'][0]) => (
-                            <SelectItem
-                              key={child.id}
-                              label={child.name}
-                              value={child.id}
-                            >
-                              <Text>{child.name}</Text>
-                            </SelectItem>
-                          ))}
+                        {themes.map((theme: Theme) => (
+                          <SelectItem
+                            key={`${theme.id}-${theme.name}`}
+                            label={theme.name}
+                            value={theme.id}
+                          >
+                            <Text>{theme.name}</Text>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </SelectPortal>
                   </Select>
-                  {selection.childThemeId && (
+                  {selection.parentThemeId && (
                     <Text className="text-xs text-gray-500">
-                      {themes
-                        .find((t: Theme) => t.id === selection.parentThemeId)
-                        ?.children.find((c: Theme['children'][0]) => c.id === selection.childThemeId)
-                        ?.description}
+                      {themes.find((t: Theme) => t.id === selection.parentThemeId)?.description}
                     </Text>
                   )}
                 </VStack>
-              )}
-            </VStack>
-          </Card>
-        ))}
 
-        <Button
+                {selection.parentThemeId && (
+                  <VStack space="xs">
+                    <Text className="text-sm font-medium">Theme Variation</Text>
+                    <Select
+                      selectedValue={selection.childThemeId}
+                      onValueChange={(value) => {
+                        const parentTheme = themes.find((t: Theme) => t.id === selection.parentThemeId);
+                        const childTheme = parentTheme?.children.find((c: Theme['children'][0]) => c.id === value);
+                        updateThemeSelection(index, parentTheme || null, childTheme || null);
+                      }}
+                    >
+                      <SelectTrigger size="sm">
+                        <SelectInput 
+                          placeholder="Select a theme variation" 
+                          value={themes
+                            .find((t: Theme) => t.id === selection.parentThemeId)
+                            ?.children.find((c: Theme['children'][0]) => c.id === selection.childThemeId)
+                            ?.name || ''}
+                        />
+                        <SelectIcon />
+                      </SelectTrigger>
+                      <SelectPortal>
+                        <SelectBackdrop />
+                        <SelectContent>
+                          <SelectDragIndicatorWrapper>
+                            <SelectDragIndicator />
+                          </SelectDragIndicatorWrapper>
+                          {themes
+                            .find((t: Theme) => t.id === selection.parentThemeId)
+                            ?.children.map((child: Theme['children'][0]) => (
+                              <SelectItem
+                                key={child.id}
+                                label={child.name}
+                                value={child.id}
+                              >
+                                <Text>{child.name}</Text>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </SelectPortal>
+                    </Select>
+                    {selection.childThemeId && (
+                      <Text className="text-xs text-gray-500">
+                        {themes
+                          .find((t: Theme) => t.id === selection.parentThemeId)
+                          ?.children.find((c: Theme['children'][0]) => c.id === selection.childThemeId)
+                          ?.description}
+                      </Text>
+                    )}
+                  </VStack>
+                )}
+              </VStack>
+            </Card>
+          ))}
+        </VStack>
+
+        {/* <Button
           onPress={handleThemeChange}
           disabled={isLoading || themeSelections.some(selection => !selection.parentThemeId || !selection.childThemeId)}
           className="mt-3"
           size="sm"
         >
           <Text>{isLoading ? 'Applying...' : 'Apply Themes'}</Text>
-        </Button>
+        </Button> */}
       </Box>
     </Box>
   );
