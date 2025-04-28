@@ -221,23 +221,29 @@ export const ModeUserThemes: React.FC = () => {
                         </SelectDragIndicatorWrapper>
                         {themes
                           .find(t => t.id === selection.parentThemeId)
-                          ?.children.filter(child => {
-                            if (child.id === selection.childThemeId) return true;
-                            return !themeSelections.some((otherSelection, otherIndex) => 
+                          ?.children
+                          .map((child) => {
+                            // Check if this child theme is used in any other selection with the same parent theme
+                            const isUsed = themeSelections.some((otherSelection, otherIndex) => 
                               otherIndex !== index && 
                               otherSelection.parentThemeId === selection.parentThemeId && 
                               otherSelection.childThemeId === child.id
                             );
-                          })
-                          .map((child) => (
-                            <SelectItem
-                              key={child.id}
-                              label={child.name}
-                              value={child.id}
-                            >
-                              <Text>{child.name}</Text>
-                            </SelectItem>
-                          ))}
+                            
+                            // Only render the SelectItem if it's the current selection or not used elsewhere
+                            if (child.id === selection.childThemeId || !isUsed) {
+                              return (
+                                <SelectItem
+                                  key={child.id}
+                                  label={child.name}
+                                  value={child.id}
+                                >
+                                  <Text>{child.name}</Text>
+                                </SelectItem>
+                              );
+                            }
+                            return null;
+                          })}
                       </SelectContent>
                     </SelectPortal>
                   </Select>
