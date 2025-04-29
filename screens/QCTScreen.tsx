@@ -49,6 +49,9 @@ type RootStackParamList = {
 	Settings: undefined;
 	Help: undefined;
 	ModeUser: undefined;
+	ChatV2List: undefined;
+	ChatV2Room: { roomId: string };
+	ChatV2NewRoom: undefined;
 	// Add other screens if needed
 };
 
@@ -125,9 +128,9 @@ function QCTScreen(): React.JSX.Element {
 
 						<QCTSection
 							icon={<MessageSquare className="text-primary-600" size={24} />}
-							title="Chats"
+							title="Chats (V2)"
 							description="Gérez vos conversations et discussions"
-							onPress={() => navigation.navigate('ChatList')}
+							onPress={() => navigation.navigate('ChatV2List')}
 						/>
 
 						<QCTSection

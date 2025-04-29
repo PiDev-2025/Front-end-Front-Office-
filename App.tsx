@@ -36,6 +36,23 @@ import ModeUserLayout from "./screens/components/ModeUser/ModeUserLayout";
 import { ModeUserSettings } from "./screens/components/ModeUser/ModeUserSettings";
 import { ModeUserThemes } from "./screens/components/ModeUser/ModeUserThemes";
 
+// Import ChatV2 screens
+import ChatV2ListScreen from './screens/components/ChatV2/ChatV2ListScreen';
+import ChatV2RoomScreen from './screens/components/ChatV2/ChatV2RoomScreen';
+import ChatV2NewRoomScreen from './screens/components/ChatV2/ChatV2NewRoomScreen';
+
+// Import API Client initialization
+import { useInitializeApiClient } from './libs/apiClient'; 
+import { initializeStorage, useSetStorageInitialized, isStorageInitializedAtom } from '@/api-client/api-client/src/storage';
+import { ActivityIndicator, View } from 'react-native';
+import { useAtomValue } from 'jotai';
+
+// --- JOTAIL --- Import Jotai Provider and store
+import { Provider as JotaiProvider, createStore } from "jotai";
+
+// Initialize storage for Jotai atomWithStorage *before* component definition
+initializeStorage(AsyncStorage);
+
 const LIGHT_THEME: Theme = {
 	dark: false,
 	colors: NAV_THEME.light,
@@ -61,7 +78,6 @@ const DARK_THEME: Theme = {
 const Stack = createStackNavigator();
 const TabUser = createBottomTabNavigator();
 import { LogIn, Mail, User } from "lucide-react-native";
-
 
 function UserTabs() {
 	return (
@@ -108,17 +124,27 @@ function UserTabs() {
 	);
 }
 
-// --- JOTAIL ---
-import { Provider, createStore } from "jotai";
-// import { DevTools } from "jotai-devtools";
-// import "jotai-devtools/styles.css";
-
+// Create Jotai store
 const customStore = createStore();
 
 // App.(js|ts)
 export default function App(): React.JSX.Element {
 	const { colorScheme, setColorScheme, isDarkColorScheme } = useColorScheme();
 	const [isColorSchemeLoaded, setIsColorSchemeLoaded] = React.useState(false);
+
+	// Get storage initialization status
+	const isStorageReady = useAtomValue(isStorageInitializedAtom);
+
+	// Initialize API client (runs on every render, but ok)
+	useInitializeApiClient();
+
+	// Hook to set storage initialized (runs only once)
+	const setStorageInitialized = useSetStorageInitialized();
+	React.useEffect(() => {
+	  setStorageInitialized();
+	}, [setStorageInitialized]);
+
+	// Theme loading effect
 	React.useEffect(() => {
 		(async () => {
 			const theme = await AsyncStorage.getItem("theme");
@@ -140,12 +166,18 @@ export default function App(): React.JSX.Element {
 			}
 			setIsColorSchemeLoaded(true);
 		})().finally(() => {
-			SplashScreen.hideAsync();
+			// SplashScreen.hideAsync(); // Keep this commented if causing errors
 		});
-	}, []);
+	}, [colorScheme, setColorScheme]); // Added dependencies
 
-	if (!isColorSchemeLoaded) {
-		return null;
+	// **** Wait for BOTH color scheme AND storage to be ready ****
+	if (!isColorSchemeLoaded || !isStorageReady) {
+		// Show a loading indicator while waiting
+		return (
+			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+				<ActivityIndicator size="large" />
+			</View>
+		);
 	}
 
 	return (
@@ -157,7 +189,7 @@ export default function App(): React.JSX.Element {
             host: "https://us.i.posthog.com",
 			}}
 			> */}
-				<Provider store={customStore}>
+				<JotaiProvider store={customStore}>
 					{/* <DevTools store={customStore} /> */}
 					<NavigationContainer>
 						<Stack.Navigator initialRouteName="User">
@@ -312,6 +344,32 @@ export default function App(): React.JSX.Element {
 											title: "Settings",
 										}}
 									/>
+									{/* Add ChatV2 Screens */}
+									<Stack.Screen
+										name="ChatV2List"
+										component={ChatV2ListScreen}
+										options={{
+											headerShown: true,
+											title: "Chat V2",
+										}}
+									/>
+									<Stack.Screen
+										name="ChatV2Room"
+										component={ChatV2RoomScreen}
+										options={({ route }) => ({
+                      headerShown: true,
+                      // @ts-expect-error // TODO: Fix type later
+                      title: route.params?.roomName || 'Chat Room', // Dynamically set title if needed
+                    })}
+									/>
+									<Stack.Screen
+										name="ChatV2NewRoom"
+										component={ChatV2NewRoomScreen}
+										options={{
+											headerShown: true,
+											title: "New Chat Room",
+										}}
+									/>
 									{/* <Stack.Screen
 										name="ProfessionalProfile"
 										component={ProfessionalProfile}
@@ -330,7 +388,7 @@ export default function App(): React.JSX.Element {
 						</Stack.Navigator>
 						{/* </PostHogProvider> */}
 					</NavigationContainer>
-				</Provider>
+				</JotaiProvider>
 			</ThemeProvider>
 		</GluestackUIProvider>
 	);
