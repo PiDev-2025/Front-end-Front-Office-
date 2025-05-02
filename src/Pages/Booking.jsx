@@ -8,7 +8,6 @@ import {
   SettingIcon,
   MapIcon,
 } from "../Components/Icon/Icon";
-import { Link } from "react-router-dom";
 import SecLocation from "./../Components/Pages/Step/Location";
 import BookNow from "../Components/Pages/Step/BookNow";
 import Reservation from "./../Components/Pages/Step/Reservation";

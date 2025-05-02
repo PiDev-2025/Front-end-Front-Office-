@@ -442,6 +442,55 @@ const Reservation = ({
     }
   }, [parkingData]);
 
+  const checkAvailability = async (startDate, endDate) => {
+    try {
+      if (!parkingData?._id || !parkingData.selectedSpotId) {
+        return true;
+      }
+
+      if (!startDate || !endDate) {
+        return true;
+      }
+
+      const response = await axios.get(
+        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingData._id}&spotId=${parkingData.selectedSpotId}`
+      );
+
+      // Vérifier les réservations existantes
+      const existingReservations = response.data;
+      const newStartTime = new Date(startDate).getTime();
+      const newEndTime = new Date(endDate).getTime();
+
+      // Vérifier les chevauchements avec les réservations existantes
+      const hasOverlap = existingReservations.some((reservation) => {
+        if (reservation.status !== "accepted") return false;
+
+        const existingStartTime = new Date(reservation.startTime).getTime();
+        const existingEndTime = new Date(reservation.endTime).getTime();
+
+        return (
+          (newStartTime >= existingStartTime && newStartTime < existingEndTime) ||
+          (newEndTime > existingStartTime && newEndTime <= existingEndTime) ||
+          (newStartTime <= existingStartTime && newEndTime >= existingEndTime)
+        );
+      });
+
+      if (hasOverlap) {
+        setError(
+          "This space is already reserved for the selected period. Please choose another."
+        );
+        return false;
+      }
+
+      setError(""); // Effacer l'erreur si tout est ok
+      return true;
+    } catch (err) {
+      console.error("Erreur lors de la vérification de disponibilité:", err);
+      setError("Erreur lors de la vérification de disponibilité");
+      return false;
+    }
+  };
+
   // Handle reservation submission
   const handleSubmit = async () => {
     try {
@@ -551,45 +600,6 @@ const Reservation = ({
     const timer = setTimeout(verifyAvailability, 500);
     return () => clearTimeout(timer);
   }, [reservationData.startDate, reservationData.endDate]);
-  const checkAvailability = async (startDate, endDate) => {
-    try {
-      if (!parkingData?._id || !parkingData.selectedSpotId) {
-        return true;
-      }
-  
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Veuillez vous connecter pour vérifier la disponibilité");
-        return false;
-      }
-  
-      const response = await axios.get(
-        `http://localhost:3001/api/reservations/checkAvailability/${parkingData._id}/${parkingData.selectedSpotId}`,
-        {
-          params: {
-            startTime: new Date(startDate).toISOString(),
-            endTime: new Date(endDate).toISOString(),
-          },
-        }
-      );
-  
-      // Change this line - check for isAvailable instead of available
-      if (!response.data.isAvailable) {
-        setError(
-          "Cette place n'est pas disponible pour la période sélectionnée"
-        );
-        return false;
-      } else {
-        setError(""); // Efface l'erreur si la place est disponible
-        return true;
-      }
-    } catch (err) {
-      console.error("Erreur lors de la vérification de disponibilité:", err);
-      // En cas d'erreur, on considère que la place est disponible pour ne pas bloquer l'utilisateur
-      setError("");
-      return true;
-    }
-  };
 
   // Handle QR code printing
   const handlePrint = () => {
@@ -763,25 +773,19 @@ const Reservation = ({
                         ? new Date(date.getTime() + 60 * 60 * 1000)
                         : reservationData.endDate;
 
-                    // Mettre à jour les dates immédiatement
-                    setReservationData((prev) => ({
-                      ...prev,
-                      startDate: date,
-                      endDate: newEndDate,
-                    }));
+                    // Vérifier d'abord la disponibilité
+                    const isAvailable = await checkAvailability(
+                      date,
+                      newEndDate
+                    );
 
-                    // Vérifier la disponibilité après un court délai
-                    setTimeout(async () => {
-                      const isAvailable = await checkAvailability(
-                        date,
-                        newEndDate
-                      );
-                      if (!isAvailable) {
-                        setError(
-                          "Cette place n'est pas disponible pour la période sélectionnée"
-                        );
-                      }
-                    }, 300);
+                    if (isAvailable) {
+                      setReservationData((prev) => ({
+                        ...prev,
+                        startDate: date,
+                        endDate: newEndDate,
+                      }));
+                    }
                   }}
                   label="Date et heure d'arrivée"
                 />
@@ -789,22 +793,18 @@ const Reservation = ({
                 <CustomDatePicker
                   selected={reservationData.endDate}
                   onChange={async (date) => {
-                    setReservationData((prev) => ({
-                      ...prev,
-                      endDate: date,
-                    }));
+                    // Vérifier d'abord la disponibilité
+                    const isAvailable = await checkAvailability(
+                      reservationData.startDate,
+                      date
+                    );
 
-                    setTimeout(async () => {
-                      const isAvailable = await checkAvailability(
-                        reservationData.startDate,
-                        date
-                      );
-                      if (!isAvailable) {
-                        setError(
-                          "Cette place n'est pas disponible pour la période sélectionnée"
-                        );
-                      }
-                    }, 300);
+                    if (isAvailable) {
+                      setReservationData((prev) => ({
+                        ...prev,
+                        endDate: date,
+                      }));
+                    }
                   }}
                   label="Date et heure de départ"
                   minDate={

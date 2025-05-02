@@ -6,10 +6,13 @@ import {
   IoInformationCircle,
   IoNotifications,
 } from "react-icons/io5";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { io } from "socket.io-client";
 
 const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [overlappingReservations, setOverlappingReservations] = useState([]);
   const driver = notification.driverId || {};
   const parking = notification.parkingId || {};
   const reservation = notification.reservationId || {};
@@ -22,12 +25,55 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
     );
   }
 
-  const handleResponse = async (response) => {
+  const checkOverlappingReservations = async () => {
     try {
       const token = localStorage.getItem("token");
-      
-      // Première API - mise à jour du statut de la réservation
-      const statusResponse = await axios.put(
+      const response = await axios.get(
+        `http://localhost:3001/api/reservations/by-spot?parkingId=${parking._id}&spotId=${reservation.spotId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const overlapping = response.data.filter((res) => {
+        if (res._id === reservation._id) return false;
+        const resStart = new Date(res.startTime);
+        const resEnd = new Date(res.endTime);
+        const currentStart = new Date(reservation.startTime);
+        const currentEnd = new Date(reservation.endTime);
+
+        return (
+          (resStart < currentEnd && resEnd > currentStart) ||
+          (currentStart < resEnd && currentEnd > resStart)
+        );
+      });
+
+      return overlapping;
+    } catch (error) {
+      console.error("Erreur lors de la vérification des réservations:", error);
+      return [];
+    }
+  };
+
+  const handleResponse = async (response) => {
+    if (response === "accepted") {
+      const overlapping = await checkOverlappingReservations();
+      if (overlapping.length > 0) {
+        setOverlappingReservations(overlapping);
+        setShowConfirmModal(true);
+        return;
+      }
+    }
+    processResponse(response);
+  };
+
+  const processResponse = async (response) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      await axios.put(
         `http://localhost:3001/api/reservations/${reservation._id}/status`,
         { status: response },
         {
@@ -36,13 +82,10 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
           },
         }
       );
-      
-      // Mettre à jour l'état local
+
       onMarkAsRead(notification._id, response);
-      
-      // Vérifier si le statut est "accepted" et la réponse de l'API est "acces"
+
       if (response === "accepted") {
-        // Seconde API - mise à jour de la place de parking
         await axios.patch(
           `http://localhost:3001/parkings/${reservation.parkingId}/spots/${reservation.spotId}`,
           { status: "reserved" },
@@ -52,13 +95,42 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
             },
           }
         );
-        
-        console.log("Place de parking réservée avec succès");
       }
     } catch (err) {
       console.error("Erreur lors de la réponse:", err);
+    } finally {
+      setShowConfirmModal(false);
+      // Force le rafraîchissement de la page après toute l'opération
+      window.location.reload(true);
     }
   };
+
+  const ConfirmationModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+        <h3 className="text-xl font-bold mb-4 text-red-600">⚠️ Attention</h3>
+        <p className="mb-4 text-gray-700">
+          En acceptant cette réservation, {overlappingReservations.length}{" "}
+          autre(s) réservation(s) qui se chevauchent seront automatiquement
+          rejetées.
+        </p>
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={() => setShowConfirmModal(false)}
+            className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-100"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={() => processResponse("accepted")}
+            className="px-4 py-2 bg-green-600 text-black rounded hover:bg-green-700 font-semibold shadow-md"
+          >
+            Confirmer l'acceptation
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   const formattedStartDate = format(
     new Date(reservation.startTime),
@@ -75,7 +147,6 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
   const endTime = new Date(reservation.endTime);
   const durationHours = Math.round((endTime - startTime) / (1000 * 60 * 60));
 
-  // Déterminer le contenu à afficher en fonction du statut
   const renderActionButtons = () => {
     if (reservation.status === "canceled") {
       return (
@@ -105,7 +176,6 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
         </div>
       );
     } else {
-      // Si le statut est "pending" ou "en_attente", afficher les boutons
       return (
         <div className="flex justify-end space-x-2">
           <button
@@ -137,7 +207,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
       <div className="flex flex-col">
         <div className="flex justify-between items-center mb-2">
           <h3 className="font-bold text-gray-800 text-lg">
-          Reservation Request in {parking.name}
+            Reservation Request in {parking.name}
           </h3>
         </div>
 
@@ -174,58 +244,65 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
 
         {renderActionButtons()}
       </div>
+      {showConfirmModal && <ConfirmationModal />}
     </div>
   );
 };
 
-const NotificationItem = ({ notification, onResponse }) => {
-  // Vérifier si c'est une notification de réservation de parking
+const NotificationItem = ({
+  notification,
+  onResponse,
+  onNotificationClick,
+}) => {
+  const handleClick = () => {
+    if (!notification.isRead) {
+      onNotificationClick(notification._id);
+    }
+  };
+
   if (
     notification.parkingId &&
     notification.driverId &&
     notification.reservationId
   ) {
     return (
-      <ParkingReservationNotification
-        notification={notification}
-        onMarkAsRead={onResponse}
-      />
+      <div onClick={handleClick}>
+        <ParkingReservationNotification
+          notification={notification}
+          onMarkAsRead={onResponse}
+        />
+      </div>
     );
   }
 
-  // Logique existante pour les autres types de notifications
-  const getIcon = () => {
-    if (notification.importance === "high") {
-      return <IoAlertCircle className="text-red-500 text-2xl" />;
-    } else if (notification.type === "reservation") {
-      return <IoCheckmarkCircle className="text-green-500 text-2xl" />;
-    } else {
-      return <IoInformationCircle className="text-blue-500 text-2xl" />;
-    }
-  };
-
-  // Formater la date
-  const formattedDate = format(
-    new Date(notification.createdAt),
-    "dd MMMM yyyy à HH:mm",
-    { locale: fr }
-  );
-
   return (
     <div
-      className={`p-4 mb-2 rounded-lg flex items-start ${
+      onClick={handleClick}
+      className={`p-4 mb-2 rounded-lg flex items-start cursor-pointer ${
         notification.isRead
           ? "bg-white border-gray-200"
-          : "bg-[#33fff0] border-l-4 border-blue-500 shadow-md"
+          : "bg-blue-50 border-l-4 border-blue-500 shadow-md"
       }`}
     >
-      <div className="mr-3 mt-1">{getIcon()}</div>
+      <div className="mr-3 mt-1">
+        {notification.importance === "high" ? (
+          <IoAlertCircle className="text-red-500 text-2xl" />
+        ) : notification.type === "reservation" ? (
+          <IoCheckmarkCircle className="text-green-500 text-2xl" />
+        ) : (
+          <IoInformationCircle className="text-blue-500 text-2xl" />
+        )}
+      </div>
       <div className="flex-1">
         <div className="flex justify-between items-center mb-1">
           <h3 className="font-bold text-gray-800">
             {notification.title || "Notification"}
           </h3>
-          <span className="text-xs text-gray-500">{formattedDate}</span>
+          <span className="text-xs text-gray-500">
+            {format(new Date(notification.createdAt), "dd MMMM yyyy à HH:mm", {
+              locale: fr,
+            })}
+          </span>
         </div>
         <p className="text-gray-600 mb-2">
           {notification.message ||
@@ -241,13 +318,14 @@ const NotificationList = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showOnlyUnread, setShowOnlyUnread] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const socketRef = useRef();
+  const observerRef = useRef();
+  const lastNotificationRef = useRef();
 
-  // Fonction pour charger les notifications
-  const loadNotifications = async (pageNum = 1, reset = false) => {
+  const loadNotifications = async (pageNum = 1) => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
@@ -258,11 +336,9 @@ const NotificationList = () => {
         return;
       }
 
-      // Paramètres pour l'API
       const params = new URLSearchParams({
         page: pageNum,
-        limit: 10,
-        onlyUnread: showOnlyUnread,
+        limit: 9,
       });
 
       const response = await axios.get(
@@ -274,20 +350,15 @@ const NotificationList = () => {
         }
       );
 
-      const {
-        notifications: newNotifications,
-        totalPages,
-        total,
-      } = response.data;
+      const { notifications: newNotifications, hasNextPage } = response.data;
 
-      if (reset) {
+      if (pageNum === 1) {
         setNotifications(newNotifications);
       } else {
         setNotifications((prev) => [...prev, ...newNotifications]);
       }
 
-      setHasMore(pageNum < totalPages);
-      setPage(pageNum);
+      setHasMore(hasNextPage);
       setUnreadCount(response.data.total);
       setError(null);
     } catch (err) {
@@ -298,23 +369,9 @@ const NotificationList = () => {
     }
   };
 
-  // Charger les notifications au montage du composant
-  useEffect(() => {
-    loadNotifications(1, true);
-  }, [showOnlyUnread]);
-
-  // Fonction pour marquer une notification comme lue
-  const handleMarkAsRead = async (notificationId) => {
+  const markNotificationAsRead = async (notificationId) => {
     try {
       const token = localStorage.getItem("token");
-
-      if (!token) {
-        setError(
-          "Vous devez être connecté pour marquer une notification comme lue"
-        );
-        return;
-      }
-
       await axios.patch(
         `http://localhost:3001/api/notifications/${notificationId}/read`,
         {},
@@ -325,24 +382,135 @@ const NotificationList = () => {
         }
       );
 
-      // Mettre à jour l'interface utilisateur
       setNotifications((prev) =>
-        prev.map((notification) =>
-          notification._id === notificationId
-            ? { ...notification, isRead: true }
-            : notification
-        )
+        prev.map((n) => (n._id === notificationId ? { ...n, isRead: true } : n))
       );
-
-      // Mettre à jour le compteur de notifications non lues
-      setUnreadCount((prev) => prev - 1);
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
       console.error("Erreur lors du marquage de la notification:", err);
-      setError("Erreur lors du marquage de la notification comme lue");
     }
   };
 
-  // Fonction pour marquer toutes les notifications comme lues
+  const handleNotificationClick = async (notificationId) => {
+    try {
+      await markNotificationAsRead(notificationId);
+    } catch (err) {
+      console.error("Erreur lors du marquage de la notification:", err);
+    }
+  };
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observerRef.current = observer;
+
+    return () => observer.disconnect();
+  }, [hasMore, loading]);
+
+  useEffect(() => {
+    const observer = observerRef.current;
+    const lastElement = lastNotificationRef.current;
+
+    if (lastElement) {
+      observer.observe(lastElement);
+    }
+
+    return () => {
+      if (lastElement) {
+        observer.unobserve(lastElement);
+      }
+    };
+  }, [notifications]);
+
+  useEffect(() => {
+    loadNotifications(page);
+  }, [page]);
+
+  useEffect(() => {
+    socketRef.current = io("http://localhost:3001");
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      socketRef.current.emit("authenticate", token);
+    }
+
+    socketRef.current.on("newNotification", (notification) => {
+      setNotifications((prev) => [notification, ...prev]);
+      setUnreadCount((prev) => prev + 1);
+    });
+
+    socketRef.current.on("notificationUpdate", (updatedNotification) => {
+      setNotifications((prev) =>
+        prev.map((notif) =>
+          notif._id === updatedNotification._id ? updatedNotification : notif
+        )
+      );
+      if (updatedNotification.isRead) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const notificationId = entry.target.dataset.notificationId;
+            const notification = notifications.find(
+              (n) => n._id === notificationId
+            );
+            if (notification && !notification.isRead) {
+              markNotificationAsRead(notificationId);
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    const elements = document.querySelectorAll(".notification-item");
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [notifications]);
+
+  const handleResponse = async (notificationId, response) => {
+    try {
+      setNotifications((prev) =>
+        prev.map((n) => {
+          if (n._id === notificationId) {
+            return {
+              ...n,
+              isRead: true,
+              status: response === "accepted" ? "acceptée" : "refusée",
+              reservationId: {
+                ...n.reservationId,
+                status: response,
+              },
+            };
+          }
+          return n;
+        })
+      );
+    } catch (err) {
+      console.error("Erreur lors de la réponse:", err);
+    }
+  };
+
   const handleMarkAllAsRead = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -364,48 +532,13 @@ const NotificationList = () => {
         }
       );
 
-      // Mettre à jour l'interface utilisateur
       setNotifications((prev) =>
         prev.map((notification) => ({ ...notification, isRead: true }))
       );
-
-      // Mettre à jour le compteur de notifications non lues
       setUnreadCount(0);
     } catch (err) {
       console.error("Erreur lors du marquage des notifications:", err);
       setError("Erreur lors du marquage des notifications comme lues");
-    }
-  };
-
-  // Fonction pour charger plus de notifications
-  const loadMore = () => {
-    if (!loading && hasMore) {
-      loadNotifications(page + 1);
-    }
-  };
-
-  const handleResponse = async (notificationId, response) => {
-    try {
-      // Mettre à jour l'état local
-      setNotifications((prev) =>
-        prev.map((n) => {
-          if (n._id === notificationId) {
-            // Mettre à jour à la fois le statut de la notification et celui de la réservation
-            return {
-              ...n,
-              isRead: true,
-              status: response === "accepted" ? "acceptée" : "refusée",
-              reservationId: {
-                ...n.reservationId,
-                status: response,
-              },
-            };
-          }
-          return n;
-        })
-      );
-    } catch (err) {
-      console.error("Erreur lors de la réponse:", err);
     }
   };
 
@@ -449,23 +582,26 @@ const NotificationList = () => {
         </div>
       ) : (
         <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
-          {notifications.map((notification) => (
-            <NotificationItem
+          {notifications.map((notification, index) => (
+            <div
               key={notification._id}
-              notification={notification}
-              onResponse={handleResponse}
-            />
+              ref={
+                index === notifications.length - 1 ? lastNotificationRef : null
+              }
+              className="notification-item"
+              data-notification-id={notification._id}
+            >
+              <NotificationItem
+                notification={notification}
+                onResponse={handleResponse}
+                onNotificationClick={handleNotificationClick}
+              />
+            </div>
           ))}
 
-          {hasMore && (
-            <div className="text-center mt-4">
-              <button
-                onClick={loadMore}
-                disabled={loading}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400"
-              >
-                {loading ? "Chargement..." : "Charger plus"}
-              </button>
+          {loading && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
             </div>
           )}
         </div>
@@ -476,27 +612,15 @@ const NotificationList = () => {
 
 const NotificationBadge = ({ onClick }) => {
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const socketRef = useRef();
 
-  // Charger le nombre de notifications non lues
   const loadUnreadCount = async () => {
     try {
-      setLoading(true);
       const token = localStorage.getItem("token");
-
-      if (!token) {
-        return;
-      }
-
-      // Paramètres pour compter seulement les notifications non lues
-      const params = new URLSearchParams({
-        page: 1,
-        limit: 1,
-        onlyUnread: true,
-      });
+      if (!token) return;
 
       const response = await axios.get(
-        `http://localhost:3001/api/notifications/all?${params}`,
+        `http://localhost:3001/api/notifications/unread-count`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -504,34 +628,53 @@ const NotificationBadge = ({ onClick }) => {
         }
       );
 
-      setUnreadCount(response.data.total);
+      setUnreadCount(response.data.count);
     } catch (err) {
-      console.error("Erreur lors du chargement des notifications:", err);
-    } finally {
-      setLoading(false);
+      console.error(
+        "Erreur lors du chargement des notifications non lues:",
+        err
+      );
     }
   };
 
-  // Charger au montage et configurer un intervalle pour rafraîchir
   useEffect(() => {
-    loadUnreadCount();
+    socketRef.current = io("http://localhost:3001");
+    const token = localStorage.getItem("token");
 
-    // Rafraîchir toutes les minutes
-    const interval = setInterval(loadUnreadCount, 60000);
+    if (token) {
+      socketRef.current.emit("authenticate", token);
+      loadUnreadCount();
 
-    return () => clearInterval(interval);
+      socketRef.current.on("newNotification", () => {
+        setUnreadCount((prev) => prev + 1);
+      });
+
+      socketRef.current.on("notificationUpdate", (updatedNotification) => {
+        if (updatedNotification.isRead) {
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+      });
+
+      return () => {
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+        }
+      };
+    }
   }, []);
 
   return (
     <button
-      onClick={onClick}
-      className="relative p-2 rounded-full hover:bg-gray-100"
-      aria-label="Notifications"
+      onClick={() => {
+        onClick();
+        loadUnreadCount();
+      }}
+      className="relative p-2 rounded-full hover:bg-[#eef2ff] dark:hover:bg-[#2e3251]"
     >
-      <IoNotifications className="text-xl" />
+      <IoNotifications className="text-xl text-[#4338ca] dark:text-[#818cf8]" />
       {unreadCount > 0 && (
-        <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-          {unreadCount > 9 ? "9+" : unreadCount}
+        <span className="absolute -top-1 -right-1 text-xs rounded-full w-5 h-5 flex items-center justify-center bg-red-500 text-white">
+          {unreadCount > 99 ? "99+" : unreadCount}
         </span>
       )}
     </button>

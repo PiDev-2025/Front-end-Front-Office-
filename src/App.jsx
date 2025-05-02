@@ -27,6 +27,7 @@ import NotFound from './Pages/NotFound';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { MapboxProvider } from './context/MapboxContext';
+import { NotificationProvider } from './Pages/Notifications/notificationContext';
 
 
 import Profile from './Pages/profile';
@@ -65,6 +66,7 @@ const App = () => {
       <SearchProvider>
         <FavoritesProvider>
           <AuthProvider>
+          <NotificationProvider>
             <ToastContainer />
             <Routes>
               <Route path="/" element={<DefaultLayout />}>
@@ -107,6 +109,7 @@ const App = () => {
                 />
               </Route>
             </Routes>
+            </NotificationProvider>
           </AuthProvider>
         </FavoritesProvider>
       </SearchProvider>

@@ -325,10 +325,8 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
 
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${id}`
       );
 
       if (response.data?.length > 0) {
@@ -568,13 +566,29 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
       );
       const parkingData = response.data;
 
-      const formattedSpots = parkingData.spots.map((spot) => ({
-        id: spot.id,
-        position: { left: spot.x, top: spot.y },
-        rotation: spot.rotation,
-        size: { width: spot.width, height: spot.height },
-        isOccupied: spot.status === "occupied",
-        isReserved: spot.status === "reserved",
+      // Obtenir la date actuelle
+      const now = new Date();
+
+      const formattedSpots = await Promise.all(parkingData.spots.map(async (spot) => {
+        // Vérifier s'il existe une réservation active pour cette place
+        const reservationResponse = await axios.get(
+          `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
+        );
+        
+        const activeReservation = reservationResponse.data.find(reservation => {
+          const startTime = new Date(reservation.startTime);
+          const endTime = new Date(reservation.endTime);
+          return now >= startTime && now <= endTime && reservation.status === 'accepted';
+        });
+
+        return {
+          id: spot.id,
+          position: { left: spot.x, top: spot.y },
+          rotation: spot.rotation,
+          size: { width: spot.width, height: spot.height },
+          isOccupied: spot.status === "occupied",
+          isReserved: !!activeReservation,
+        };
       }));
 
       const formattedStreets =
