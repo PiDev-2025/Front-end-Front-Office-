@@ -367,8 +367,12 @@ const Reservation = ({
   const [error, setError] = useState("");
   const [qrCode, setQrCode] = useState(null);
   const [calculatedPrice, setCalculatedPrice] = useState(0);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(1); // 1: dates, 2: vehicle type
   const [paymentMethod, setPaymentMethod] = useState("cash");
+
+  // Add this constant definition
+  const commonClasses =
+    "bg-white p-8 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg";
 
   useEffect(() => {
     if (!parkingData?.pricing?.hourly) return;
@@ -709,11 +713,18 @@ const Reservation = ({
     printWindow.print();
   };
 
-  // Navigate to next step
-  const nextStep = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    } else {
+  // Navigate to next step or confirm
+  const handleNextOrConfirm = async () => {
+    if (currentStep === 1 && isStepValid()) {
+      // Vérifier la disponibilité avant de passer à l'étape suivante
+      const isAvailable = await checkAvailability(
+        reservationData.startDate,
+        reservationData.endDate
+      );
+      if (isAvailable) {
+        setCurrentStep(2);
+      }
+    } else if (currentStep === 2 && isStepValid()) {
       handleSubmit();
     }
   };
@@ -723,370 +734,142 @@ const Reservation = ({
     switch (currentStep) {
       case 1: // Date selection
         const minDuration = 60 * 60 * 1000; // 1 heure en millisecondes
-
-        const isValidDuration =
+        return (
           reservationData.startDate &&
           reservationData.endDate &&
-          new Date(reservationData.endDate) >
-            new Date(reservationData.startDate) &&
-          new Date(reservationData.endDate) -
-            new Date(reservationData.startDate) >=
-            minDuration;
-
-        // Si la durée est valide, vérifier la disponibilité
-        if (isValidDuration && error.includes("disponible")) {
-          return false;
-        }
-        return isValidDuration;
+          new Date(reservationData.endDate) > new Date(reservationData.startDate) &&
+          new Date(reservationData.endDate) - new Date(reservationData.startDate) >= minDuration &&
+          !error.includes("disponible")
+        );
       case 2: // Vehicle type
         return !!reservationData.vehicleType;
-      case 3: // Payment method
-        return !!paymentMethod;
       default:
         return false;
     }
   };
 
   // Render content based on current step
-  const renderStepContent = () => {
-    const commonClasses =
-      "bg-white p-8 rounded-2xl border-2 transition-all duration-300 hover:shadow-lg";
-
-    switch (currentStep) {
-      case 1: // Date selection
-        return (
-          <div className="space-y-6">
-            <div className={`${commonClasses} border-blue-100`}>
-              <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
-                <div className="bg-blue-50 p-3 rounded-full mr-4">
-                  <Calendar className="text-blue-600" size={24} />
-                </div>
-                Dates de stationnement
-              </h3>
-
-              <div className="flex flex-col space-y-8">
-                <CustomDatePicker
-                  selected={reservationData.startDate}
-                  onChange={async (date) => {
-                    const newEndDate =
-                      date > reservationData.endDate
-                        ? new Date(date.getTime() + 60 * 60 * 1000)
-                        : reservationData.endDate;
-
-                    // Vérifier d'abord la disponibilité
-                    const isAvailable = await checkAvailability(
-                      date,
-                      newEndDate
-                    );
-
-                    if (isAvailable) {
-                      setReservationData((prev) => ({
-                        ...prev,
-                        startDate: date,
-                        endDate: newEndDate,
-                      }));
-                    }
-                  }}
-                  label="Date et heure d'arrivée"
-                />
-
-                <CustomDatePicker
-                  selected={reservationData.endDate}
-                  onChange={async (date) => {
-                    // Vérifier d'abord la disponibilité
-                    const isAvailable = await checkAvailability(
-                      reservationData.startDate,
-                      date
-                    );
-
-                    if (isAvailable) {
-                      setReservationData((prev) => ({
-                        ...prev,
-                        endDate: date,
-                      }));
-                    }
-                  }}
-                  label="Date et heure de départ"
-                  minDate={
-                    new Date(
-                      reservationData.startDate.getTime() + 60 * 60 * 1000
-                    )
-                  }
-                />
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <div className="flex items-center text-blue-700 mb-4">
-                  <div className="bg-blue-50 p-2 rounded-full mr-3">
-                    <Clock size={20} className="text-blue-600" />
-                  </div>
-                  <span className="font-semibold text-gray-800">
-                    Durée totale
-                  </span>
-                </div>
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
-                  {(() => {
-                    const diff =
-                      new Date(reservationData.endDate) -
-                      new Date(reservationData.startDate);
-                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor(
-                      (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-                    );
-                    const minutes = Math.floor(
-                      (diff % (1000 * 60 * 60)) / (1000 * 60)
-                    );
-
-                    let result = [];
-                    if (days > 0)
-                      result.push(`${days} jour${days > 1 ? "s" : ""}`);
-                    if (hours > 0)
-                      result.push(`${hours} heure${hours > 1 ? "s" : ""}`);
-                    if (days === 0 && minutes > 0)
-                      result.push(`${minutes} minute${minutes > 1 ? "s" : ""}`);
-
-                    return result.join(" et ") || "0 minute";
-                  })()}{" "}
-                </div>
-              </div>
+  return (
+    <div className="space-y-6">
+      {currentStep === 1 && (
+        <div className={commonClasses + " border-blue-100"}>
+          <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
+            <div className="bg-blue-50 p-3 rounded-full mr-4">
+              <Calendar className="text-blue-600" size={24} />
             </div>
-          </div>
-        );
+            Dates de stationnement
+          </h3>
 
-      case 2: // Vehicle type selection
-        return (
-          <div className={`${commonClasses} border-green-100`}>
-            <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
-              <div className="bg-green-50 p-3 rounded-full mr-4">
-                <Car className="text-green-600" size={24} />
-              </div>
-              Type de véhicule
-            </h3>
-            <VehicleTypeSelector
-              selectedType={reservationData.vehicleType}
-              onSelect={(type) =>
-                setReservationData((prev) => ({ ...prev, vehicleType: type }))
-              }
+          <div className="flex flex-col space-y-8">
+            <CustomDatePicker
+              selected={reservationData.startDate}
+              onChange={async (date) => {
+                const newEndDate = date > reservationData.endDate
+                  ? new Date(date.getTime() + 60 * 60 * 1000)
+                  : reservationData.endDate;
+
+                const isAvailable = await checkAvailability(date, newEndDate);
+                if (isAvailable) {
+                  setReservationData((prev) => ({
+                    ...prev,
+                    startDate: date,
+                    endDate: newEndDate,
+                  }));
+                }
+              }}
+              label="Date et heure d'arrivée"
+              isStartDate
+            />
+
+            <CustomDatePicker
+              selected={reservationData.endDate}
+              onChange={async (date) => {
+                const isAvailable = await checkAvailability(
+                  reservationData.startDate,
+                  date
+                );
+                if (isAvailable) {
+                  setReservationData((prev) => ({
+                    ...prev,
+                    endDate: date,
+                  }));
+                }
+              }}
+              label="Date et heure de départ"
+              minDate={reservationData.startDate}
             />
           </div>
-        );
-
-      case 3: // Payment method
-        return (
-          <div className="space-y-6">
-            <div className={`${commonClasses} border-purple-100`}>
-              <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
-                <div className="bg-purple-50 p-3 rounded-full mr-4">
-                  <CreditCard className="text-purple-600" size={24} />
-                </div>
-                Méthode de paiement
-              </h3>
-              <PaymentMethodSelector
-                selected={paymentMethod}
-                onSelect={setPaymentMethod}
-              />
-            </div>
-
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200">
-              <div className="flex items-start">
-                <div className="bg-white p-3 rounded-full mr-4 shadow-sm">
-                  <AlertCircle size={24} className="text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-blue-800 mb-2">
-                    Information importante
-                  </h4>
-                  <p className="text-blue-700 text-sm leading-relaxed">
-                    Le paiement sera effectué sur place. Veuillez vous présenter
-                    avec votre QR code pour accéder au parking.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Nouvelle section pour le nom du parking et places disponibles */}
-      <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl mb-8 border-2 border-gray-200 shadow-md text-center">
-        {/* Titre centré */}
-        <h2 className="text-3xl font-bold text-gray-800 mb-3">
-          {parkingData?.name || "Nom du parking"}
-        </h2>
-
-        {/* Informations alignées au centre */}
-        <div className="flex justify-center items-center space-x-4">
-          {/* Nombre de places disponibles */}
-          <div className="flex items-center">
-            <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
-            <span className="font-medium text-gray-700">
-              {parkingData?.availableSpots ?? 0} places disponibles
-            </span>
-          </div>
-
-          <span className="text-gray-400">|</span>
-
-          {/* Adresse */}
-          <div className="text-gray-600 flex items-center">
-            <MapPin size={16} className="mr-1" />
-            {parkingData?.address || "Adresse du parking"}
-          </div>
         </div>
-      </div>
+      )}
 
-      {/* Main form grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left column - Current step content */}
-        <div>{renderStepContent()}</div>
-
-        {/* Right column - Summary and action button */}
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
-            <h3 className="text-lg font-semibold mb-6 flex items-center text-gray-800">
-              Récapitulatif
-            </h3>
-
-            {/* Reservation details */}
-            <div className="space-y-4 mb-6">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Parking</span>
-                <span className="font-medium">{parkingData?.name}</span>
-              </div>
-
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Début</span>
-                <span className="font-medium">
-                  {reservationData.startDate.toLocaleString("fr-FR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Fin</span>
-                <span className="font-medium">
-                  {reservationData.endDate.toLocaleString("fr-FR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-
-              {reservationData.vehicleType && (
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-gray-600">Type de véhicule</span>
-                  <span className="font-medium">
-                    {reservationData.vehicleType}
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Total A payer</span>
-                <span className="font-medium">{calculatedPrice}Dt</span>
-              </div>
-
-              {currentStep >= 3 && (
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-gray-600">Méthode de paiement</span>
-                  <span className="font-medium">
-                    {paymentMethod === "card" ? "Carte bancaire" : "Espèces"}
-                  </span>
-                </div>
-              )}
+      {currentStep === 2 && (
+        <div className={commonClasses + " border-green-100"}>
+          <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
+            <div className="bg-green-50 p-3 rounded-full mr-4">
+              <Car className="text-green-600" size={24} />
             </div>
+            Type de véhicule
+          </h3>
+          <VehicleTypeSelector
+            selectedType={reservationData.vehicleType}
+            onSelect={(type) =>
+              setReservationData((prev) => ({ ...prev, vehicleType: type }))
+            }
+          />
+        </div>
+      )}
 
-            {/* Error message */}
-            {error && (
-              <div
-                className={`p-3 rounded-lg mb-4 flex items-center ${
-                  error.includes("disponible")
-                    ? "bg-yellow-50 text-yellow-700"
-                    : "bg-red-50 text-red-700"
-                }`}
-              >
-                <AlertCircle
-                  size={18}
-                  className={`mr-2 ${
-                    error.includes("disponible")
-                      ? "text-yellow-500"
-                      : "text-red-500"
-                  }`}
-                />
-                {error}
-              </div>
+      {/* Error message */}
+      {error && (
+        <div className="p-3 rounded-lg mb-4 bg-red-50 text-red-700 flex items-center">
+          <AlertCircle size={18} className="mr-2" />
+          {error}
+        </div>
+      )}
+
+      {/* Prix et bouton Next/Confirm */}
+      <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md sticky bottom-6">
+        <PriceSummary
+          priceDetails={[
+            `Durée: ${Math.ceil(
+              (new Date(reservationData.endDate) -
+                new Date(reservationData.startDate)) /
+                (1000 * 60 * 60)
+            )} heures`,
+            `Prix par heure: ${parkingData?.pricing?.hourly}Dt`,
+          ]}
+          totalPrice={calculatedPrice}
+        />
+
+        <div className="flex gap-4 mt-4">
+          {currentStep === 2 && (
+            <button
+              onClick={() => setCurrentStep(1)}
+              className="flex-1 py-3 px-6 rounded-xl bg-gray-200 text-black hover:bg-gray-300 transition-colors"
+            >
+              Retour
+            </button>
+          )}
+          <button
+            onClick={handleNextOrConfirm}
+            disabled={loading || !isStepValid()}
+            className={`flex-1 py-3 px-6 rounded-xl flex items-center justify-center transition-colors text-black ${
+              loading || !isStepValid()
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          >
+            {loading ? (
+              <>
+                <span className="animate-spin mr-2">⌛</span>
+                Traitement...
+              </>
+            ) : currentStep === 1 ? (
+              "Suivant"
+            ) : (
+              "Confirmer la réservation"
             )}
-
-            {/* Boutons en ligne */}
-
-            <div className="flex justify-between w-full">
-              {/* Bouton retour (affiché seulement si currentStep > 1) */}
-              {currentStep > 1 && (
-                <button
-                  onClick={() => setCurrentStep(currentStep - 1)}
-                  className="py-2 px-6 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
-                >
-                  Retour
-                </button>
-              )}
-
-              {/* Espacement pour s'assurer que les boutons restent aux extrémités */}
-              <div className="flex-1"></div>
-
-              {/* Bouton d'action */}
-              <button
-                onClick={nextStep}
-                disabled={loading || !isStepValid()}
-                className={`py-4 px-6 text-lg font-medium rounded-xl flex items-center justify-center transition-colors ${
-                  loading || !isStepValid()
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700 text-black"
-                }`}
-              >
-                {loading ? (
-                  <>
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-black"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Traitement...
-                  </>
-                ) : currentStep < 3 ? (
-                  "Continuer"
-                ) : (
-                  "Confirmer et payer"
-                )}
-              </button>
-            </div>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -1099,10 +882,7 @@ const Reservation = ({
             setQrCode(null);
             onContinue();
           }}
-          onViewReservations={() => {
-            setQrCode(null);
-            navigate("/mes-reservations");
-          }}
+          onViewReservations={() => navigate("/mes-reservations")}
         />
       )}
     </div>

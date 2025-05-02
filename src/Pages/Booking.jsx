@@ -22,7 +22,7 @@ const Booking = () => {
   const location = useLocation();
   const [reservationData, setReservationData] = useState({
     startDate: new Date(),
-    endDate: new Date(Date.now() + 60*60*1000), // +1h
+    endDate: new Date(Date.now() + 60 * 60 * 1000), // +1h
     vehicleType: "",
     // autres champs nécessaires
   });
@@ -61,26 +61,15 @@ const Booking = () => {
     },
     {
       id: 3,
-      icon: <MapIcon color={3 <= tabActiveId ? "#1E19D8" : "#737373"} />,
-      title: "Select Spot",
+      icon: <SettingIcon color={3 <= tabActiveId ? "#1E19D8" : "#737373"} />,
+      title: "Spot Selection & Reservation",
     },
     {
       id: 4,
-      icon: <SettingIcon color={4 <= tabActiveId ? "#1E19D8" : "#737373"} />,
-      title: "Reservation",
-    },
-    {
-      id: 5,
-      icon: <DocumentIcon color={5 <= tabActiveId ? "#1E19D8" : "#737373"} />,
+      icon: <DocumentIcon color={4 <= tabActiveId ? "#1E19D8" : "#737373"} />,
       title: "Confirmation",
     },
   ];
-
-  const handleSpotSelection = (spotId) => {
-    console.log("Selected spot ID:", spotId);
-    setSelectedSpot(spotId);
-    setTabActiveId(4); // Move to the reservation step after spot selection
-  };
 
   const showContent = (e) => {
     switch (e) {
@@ -98,55 +87,42 @@ const Booking = () => {
           />
         );
       case 3:
-        if (!selectedParking || (!selectedParking.id && !selectedParking._id)) {
-          console.log(
-            "No parking selected or no parking ID available, redirecting to step 2"
-          );
-          setTabActiveId(2);
-          return null;
-        }
-        console.log(
-          "Rendering ParkingLiveView with parking ID:",
-          selectedParking.id
-        );
         return (
-          <ParkingLiveView
-            parkingId={selectedParking.id || selectedParking._id}
-            onSpotSelected={handleSpotSelection}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl shadow-lg">
+              <ParkingLiveView
+                parkingId={selectedParking?.id || selectedParking?._id}
+                onSpotSelected={(spotId) => {
+                  setSelectedSpot(spotId);
+                  if (selectedParking) {
+                    selectedParking.selectedSpotId = spotId;
+                  }
+                  // Basculer automatiquement vers le formulaire de réservation
+                  const element = document.querySelector('.reservation-form');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+              />
+            </div>
+            <div className="reservation-form">
+              <Reservation
+                parkingData={{
+                  ...selectedParking,
+                  selectedSpotId: selectedSpot,
+                  pricing: selectedParking?.pricing,
+                }}
+                reservationData={reservationData}
+                setReservationData={setReservationData}
+                onContinue={(reservationData) => {
+                  console.log("Reservation completed:", reservationData);
+                  setTabActiveId(4);
+                }}
+              />
+            </div>
+          </div>
         );
       case 4:
-        if (!selectedParking) {
-          console.log("No parking selected, redirecting to step 2");
-          setTabActiveId(2);
-          return null;
-        }
-        if (!selectedSpot) {
-          console.log("No spot selected, redirecting to step 3");
-          setTabActiveId(3);
-          return null;
-        }
-        if (!selectedParking?.pricing) {
-          console.error("Parking pricing missing!", selectedParking);
-          setTabActiveId(2);
-          return null;
-        }
-        return (
-          <Reservation
-            parkingData={{
-              ...selectedParking,
-              selectedSpotId: selectedSpot,
-              pricing: selectedParking.pricing,
-            }}
-            reservationData={reservationData}
-            setReservationData={setReservationData}
-            onContinue={(reservationData) => {
-              console.log("Reservation completed:", reservationData);
-              setTabActiveId(5);
-            }}
-          />
-        );
-      case 5:
         return <Confirmation />;
       default:
         return <SecLocation />;

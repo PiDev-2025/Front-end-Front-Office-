@@ -619,7 +619,7 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
     );
   };
 
-  const locateParkingSpot = () => {
+  const locateParkingSpot = async () => {
     setSearchError(null);
     setSearchSuccess(null);
     
@@ -649,6 +649,9 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
         x: -spot.position.left + 400 / scale - 30,
         y: -spot.position.top + 200 / scale - 60,
       });
+
+      // Déclencher automatiquement la réservation
+      onSpotSelected(fullId);
     } else {
       setSearchError(`Parking spot ${selectedSpotId} not found`);
       setHighlightedSpot(null);
@@ -665,6 +668,14 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
   }) => {
     const spotNumber = id.replace("parking-spot-", "");
     const isHighlighted = highlightedSpot === id;
+
+    const handleSpotClick = () => {
+      if (!isOccupied && !isReserved) {
+        setSelectedSpotId(spotNumber);
+        setHighlightedSpot(id);
+        onSpotSelected(id);
+      }
+    };
 
     let bgColor, borderStyle, statusText, statusEmoji;
 
@@ -715,7 +726,9 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
             : "none",
           transition: "all 0.3s ease",
           zIndex: isHighlighted ? 10 : 1,
+          cursor: isOccupied || isReserved ? "not-allowed" : "pointer",
         }}
+        onClick={handleSpotClick}
         title={`Spot ${spotNumber} - ${statusText}`}
       >
         <span style={{ fontSize: "12px", marginBottom: "4px" }}>{statusEmoji}</span>
@@ -735,14 +748,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
         </span>
       </div>
     );
-  };
-
-  const goToReservationDetails = () => {
-    if (!highlightedSpot) {
-      setSearchError("Please select an available parking spot first");
-      return;
-    }
-    onSpotSelected(highlightedSpot);
   };
 
   const StreetRender = (street) => {
@@ -1038,8 +1043,12 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
             ref={inputRef}
             onKeyPress={(e) => e.key === 'Enter' && locateParkingSpot()}
           />
-          <LocateButton onClick={locateParkingSpot}>
-            Locate Spot
+          <LocateButton 
+            onClick={() => {
+              locateParkingSpot();
+            }}
+          >
+            Locate & Reserve
           </LocateButton>
         </SpotFinderInput>
         
@@ -1054,13 +1063,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
             {searchSuccess}
           </SuccessMessage>
         )}
-        
-        <ReserveButton
-          onClick={goToReservationDetails}
-          className={highlightedSpot ? 'active' : 'disabled'}
-        >
-          Reserve This Spot
-        </ReserveButton>
       </SpotFinder>
 
       <DndProvider backend={HTML5Backend}>
@@ -1156,9 +1158,7 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
         <h3>How to reserve your spot:</h3>
         <ol>
           <li>Enter your preferred parking spot number in the search box</li>
-          <li>Click "Locate Spot" to find it on the map</li>
-          <li>If the spot is available, click "Reserve This Spot"</li>
-          <li>Complete your reservation details on the next screen</li>
+          <li>Click "Locate & Reserve" to find and reserve it on the map</li>
         </ol>
         <Tip>
           💡 Tip: You can zoom in/out with the buttons or by scrolling, and drag to pan the map
