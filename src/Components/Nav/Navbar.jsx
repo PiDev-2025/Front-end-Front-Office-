@@ -71,11 +71,21 @@ const Navbar = () => {
   const shouldShowScanQR = () => {
     return userRole === "Employe";
   };
+  const DriverReservations = () => {
+    return userRole === "Driver";
+  };
 
   // Function to check if Parking should be visible
   const shouldShowParking = () => {
     return userRole === "Owner";
   };
+    // Function to check if Parking should be visible
+    const OwnerResevations = () => {
+      return userRole === "Owner";
+    };
+    const OwnerClaims = () => {
+      return userRole === "Owner";
+    };
 
   // Function to check if Notifications should be visible
   const shouldShowNotifications = () => {
@@ -129,15 +139,17 @@ const Navbar = () => {
                 FAQ
               </NavLink>
             </li>
-            <li className="w-full">
-              <NavLink
-                to="/contact"
-                onClick={() => setToogleMenuResponsive(false)}
-                className="font-medium text-black"
-              >
-                Contact
-              </NavLink>
-            </li>
+            {DriverReservations() && (
+              <li className="w-full">
+                <NavLink
+                  to="/contact"
+                  onClick={() => setToogleMenuResponsive(false)}
+                  className="font-medium text-black"
+                >
+                  Claim
+                </NavLink>
+              </li>
+            )}
 
             {/* Show Parking only for Owner role in mobile menu */}
             {shouldShowParking() && (
@@ -164,9 +176,30 @@ const Navbar = () => {
                 </NavLink>
               </li>
             )}
-
+            {OwnerResevations() && (
+              <li className="w-full">
+                <NavLink
+                  to="/OwnerReservations"
+                  onClick={() => setToogleMenuResponsive(false)}
+                  className="font-medium text-black"
+                >
+                  Reservations
+                </NavLink>
+              </li>
+            )}
+            {OwnerClaims() && (
+              <li className="w-full">
+                <NavLink
+                  to="/OwnerClaims"
+                  onClick={() => setToogleMenuResponsive(false)}
+                  className="font-medium text-black"
+                >
+                  Claims
+                </NavLink>
+              </li>
+            )}
             {/* Réservations link for mobile menu */}
-            {user && (
+            {DriverReservations() && (
               <li className="w-full">
                 <NavLink
                   to="/mes-reservations"
@@ -291,18 +324,23 @@ const Navbar = () => {
                 FAQ
               </NavLink>
             </li>
-            <li>
-              <NavLink
-                to="/contact"
-                className={
-                  navabarScroll && !ToogleMenuResponsive
-                    ? "text-Mwhite"
-                    : "text-Mblack"
-                }
-              >
-                Contact
-              </NavLink>
-            </li>
+            {DriverReservations() && (
+              <li>
+                <NavLink
+                  to="/contact"
+                  className={
+                    navabarScroll && !ToogleMenuResponsive
+                      ? "text-Mwhite"
+                      : "text-Mblack"
+                  }
+                >
+                  <span className="flex items-center">
+                    <span className="mr-1"></span>
+                    Claim
+                  </span>
+                </NavLink>
+              </li>
+            )}
 
             {/* Show Parking only for Owner role in desktop menu */}
             {shouldShowParking() && (
@@ -337,7 +375,7 @@ const Navbar = () => {
             )}
 
             {/* Ajouter le lien Mes réservations (visible seulement si l'utilisateur est connecté) */}
-            {user && (
+            {DriverReservations() && (
               <li>
                 <NavLink
                   to="/mes-reservations"
@@ -350,6 +388,42 @@ const Navbar = () => {
                   <span className="flex items-center">
                     <span className="mr-1"></span>
                     Réservations
+                  </span>
+                </NavLink>
+              </li>
+            )}
+          
+          
+          {OwnerResevations() && (
+              <li>
+                <NavLink
+                  to="/OwnerReservations"
+                  className={
+                    navabarScroll && !ToogleMenuResponsive
+                      ? "text-Mwhite"
+                      : "text-Mblack"
+                  }
+                >
+                  <span className="flex items-center">
+                    <span className="mr-1"></span>
+                    Réservations
+                  </span>
+                </NavLink>
+              </li>
+            )}
+            {OwnerClaims() && (
+              <li>
+                <NavLink
+                  to="/OwnerClaims"
+                  className={
+                    navabarScroll && !ToogleMenuResponsive
+                      ? "text-Mwhite"
+                      : "text-Mblack"
+                  }
+                >
+                  <span className="flex items-center">
+                    <span className="mr-1"></span>
+                    Claims
                   </span>
                 </NavLink>
               </li>

@@ -127,6 +127,38 @@ const LoginPopup = ({ onClose }) => {
   );
 };
 
+// Add this new component near the top with other component definitions
+const TunisianPlate = ({ number, region = 'تونس' }) => {
+  const formatNumber = (num) => {
+    if (!num) return '';
+    // Clean the number and pad with zeros if needed
+    const cleaned = num.toString().replace(/\D/g, '');
+    return cleaned.padStart(3, '0');
+  };
+
+  return (
+    <div className="inline-flex items-center bg-white border-2 border-black rounded-lg px-4 py-2 font-bold">
+      <span className="text-xl">{formatNumber(number)}</span>
+      <span className="mx-2 text-gray-400">|</span>
+      <span className="text-xl font-arabic">{region}</span>
+    </div>
+  );
+};
+
+// Add these utility functions
+const formatPlateNumber = (value) => {
+  if (!value) return '';
+  // Remove any non-digit characters
+  const cleaned = value.replace(/\D/g, '');
+  // Limit to 4 digits
+  return cleaned.slice(0, 4);
+};
+
+const validatePlateNumber = (number) => {
+  const regex = /^\d{1,4}$/;
+  return regex.test(number);
+};
+
 const BookNow = ({ parkingData, onContinue }) => {
   const { id } = useParams();
   const [parking, setParking] = useState(null);
@@ -139,6 +171,25 @@ const BookNow = ({ parkingData, onContinue }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const { isLoaded } = useMapbox();
+  const [plateNumber, setPlateNumber] = useState('');
+  const [region] = useState('تونس'); // Default region
+
+  // Add this helper function at the top with other constants
+  const formatTunisianLicensePlate = (number, region) => {
+    if (!number) return '';
+    
+    // Remove any non-digit characters
+    const cleaned = number.toString().replace(/\D/g, '');
+    
+    // Format as Tunisian license plate (TUN XXXX)
+    return `${cleaned} ${region}`;
+  };
+  
+  const validateTunisianLicensePlate = (number) => {
+    // Basic validation for Tunisian license plate format
+    const regex = /^\d{1,4}$/;
+    return regex.test(number.toString().replace(/\D/g, ''));
+  };
 
   // Ajoutez cette fonction pour vérifier le token manuellement
   const checkAuthentication = () => {
@@ -232,8 +283,6 @@ useEffect(() => {
     el.className = 'parking-marker';
     el.innerHTML = `
       <svg width="30" height="45" viewBox="0 0 30 45">
-        <path fill="#22C55E" d="M15 0C6.7 0 0 6.7 0 15c0 8.3 15 30 15 30s15-21.7 15-30c0-8.3-6.7-15-15-15z"/>
-        <circle fill="white" cx="15" cy="15" r="7"/>
       </svg>
     `;
 
@@ -299,6 +348,13 @@ const handleReservation = () => {
   }
 };
 
+// Add this to your form handling or wherever you handle the plate number input
+const handlePlateNumberChange = (e) => {
+  const value = e.target.value;
+  const formatted = formatPlateNumber(value);
+  setPlateNumber(formatted);
+};
+
 if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>;
 if (error) return <div className="bg-red-50 text-red-600 p-4 rounded-lg text-center">{error}</div>;
 
@@ -315,6 +371,8 @@ if (availabilityPercentage < 20) {
 const parkingName = parking.name || parking.nameP || "Parking";
 const parkingDescription = parking.description || "";
 const parkingLocation = parking.location || "";
+
+
 
 return (
   <div className="max-w-7xl mx-auto px-4 py-8 bg-gray-50 min-h-screen">
@@ -445,33 +503,43 @@ return (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <TitleBox icon="💰">Pricing</TitleBox>
           <div className="p-6 space-y-4">
+            {/* Hourly Rate */}
             <PricingCard 
               icon="⏱️"
               label="Per Hour"
               price={parking.pricing?.hourly || parking.pricing?.perHour || 0}
             />
+            
+            {/* Daily Rate */}
             {(parking.pricing?.daily > 0 || parking.pricing?.perDay > 0) && (
               <PricingCard 
                 icon="📅"
                 label="Per Day"
                 price={parking.pricing?.daily || parking.pricing?.perDay}
               />
-              
             )}
+            
+            {/* Weekly Rate */}
             {(parking.pricing?.weekly > 0 || parking.pricing?.perWeek > 0) && (
               <PricingCard
-              icon="📅"
+                icon="📆"
                 label="Per Week"
                 price={parking.pricing?.weekly || parking.pricing?.perWeek}
               />
-              
             )}
             
-            
-              
-=         
+            {/* Monthly Rate */}
+            {parking.pricing?.monthly > 0 && (
+              <PricingCard
+                icon="📋"
+                label="Per Month"
+                price={parking.pricing.monthly}
+              />
+            )}
           </div>
         </div>
+
+        {/* Add the plate number input here */}
 
         {/* Features Card */}
         {parking.features && parking.features.length > 0 && (

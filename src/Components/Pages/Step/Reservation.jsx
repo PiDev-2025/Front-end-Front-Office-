@@ -66,6 +66,11 @@ const PAYMENT_METHODS = [
   { id: "cash", label: "Espèces", icon: <DollarSign size={18} /> },
 ];
 
+const PLATE_FORMATS = [
+  { id: 'ar', label: 'تونس', value: 'تونس' },
+  { id: 'fr', label: 'TUN', value: 'TUN' },
+];
+
 // Ajout des styles personnalisés pour le DatePicker
 const datePickerStyles = `
   .react-datepicker {
@@ -291,6 +296,70 @@ const PaymentMethodSelector = ({ selected, onSelect }) => (
   </div>
 );
 
+// Ajouter le composant de sélection de matricule
+const PlateNumberInput = ({ onPlateChange }) => {
+  const [format, setFormat] = useState('ar');
+  const [leftNumber, setLeftNumber] = useState('');
+  const [rightNumber, setRightNumber] = useState('');
+
+  const handleChange = () => {
+    const plateNumber = `${leftNumber} ${format === 'ar' ? 'تونس' : 'TUN'} ${rightNumber}`;
+    onPlateChange(plateNumber);
+  };
+
+  return (
+    <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+      <h4 className="font-semibold text-gray-700 mb-4">Numéro de matricule (optionnel)</h4>
+      
+      <div className="flex items-center space-x-4">
+        {/* Numéro gauche */}
+        <input
+          type="text"
+          value={leftNumber}
+          onChange={(e) => {
+            setLeftNumber(e.target.value);
+            handleChange();
+          }}
+          placeholder="000"
+          className="w-24 p-2 border border-gray-300 rounded-lg text-center"
+          maxLength={3}
+        />
+
+        {/* Sélecteur de format */}
+        <div className="flex-1">
+          <select
+            value={format}
+            onChange={(e) => {
+              setFormat(e.target.value);
+              handleChange();
+            }}
+            className="w-full p-2 border border-gray-300 rounded-lg text-center bg-white"
+          >
+            {PLATE_FORMATS.map(format => (
+              <option key={format.id} value={format.id}>
+                {format.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Numéro droite */}
+        <input
+          type="text"
+          value={rightNumber}
+          onChange={(e) => {
+            setRightNumber(e.target.value);
+            handleChange();
+          }}
+          placeholder="0000"
+          className="w-24 p-2 border border-gray-300 rounded-lg text-center"
+          maxLength={4}
+        />
+      </div>
+    </div>
+  );
+};
+
 // Price details component
 const PriceSummary = ({ priceDetails, totalPrice }) => (
   <div className="space-y-3 bg-white p-4 rounded-xl border-2 border-gray-200">
@@ -496,6 +565,7 @@ const Reservation = ({
         vehicleType: reservationData.vehicleType,
         totalPrice: calculatedPrice,
         paymentMethod: paymentMethod,
+        matricule: reservationData.matricule, // Ajouter cette ligne
         userId: localStorage.getItem("userId"),
       };
       console.log("Payload complet:", {
@@ -868,6 +938,11 @@ const Reservation = ({
                 setReservationData((prev) => ({ ...prev, vehicleType: type }))
               }
             />
+            <PlateNumberInput
+              onPlateChange={(plateNumber) =>
+                setReservationData((prev) => ({ ...prev, matricule: plateNumber }))
+              }
+            />
           </div>
         );
 
@@ -985,6 +1060,7 @@ const Reservation = ({
                 </span>
               </div>
 
+              {/* Ajouter le champ matricule après le type de véhicule */}
               {reservationData.vehicleType && (
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                   <span className="text-gray-600">Type de véhicule</span>
@@ -993,6 +1069,17 @@ const Reservation = ({
                   </span>
                 </div>
               )}
+
+              {/* Nouveau bloc pour la matricule */}
+              {reservationData.matricule && (
+                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                  <span className="text-gray-600">Matricule</span>
+                  <span className="font-medium text-blue-600">
+                    {reservationData.matricule}
+                  </span>
+                </div>
+              )}
+
               <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="text-gray-600">Total A payer</span>
                 <span className="font-medium">{calculatedPrice}Dt</span>
