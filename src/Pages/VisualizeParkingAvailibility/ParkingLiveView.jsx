@@ -3,165 +3,160 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 
 const ReservationDetails = ({ reservation }) => {
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("fr-FR", {
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
+  const formatDate = (date) => {
+    return new Date(date).toLocaleString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  return (
-    <div>
-      <h2
-        style={{
-          fontSize: "1.5rem",
-          fontWeight: "600",
-          marginBottom: "1rem",
-          color: "#1e293b",
-        }}
-      >
-        Réservation #{reservation.id.slice(0, 6)}
-      </h2>
+  if (!reservation) return null;
 
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h3
-          style={{
-            fontSize: "1.1rem",
-            fontWeight: "500",
-            marginBottom: "0.5rem",
-            color: "#334155",
-          }}
-        >
-          Véhicule: {reservation.vehicleType}
+  return (
+    <div style={{ padding: "1.5rem" }}>
+      <div style={{ marginBottom: "2rem" }}>
+        <h3 style={{ 
+          color: "#334155", 
+          fontSize: "1.5rem", 
+          fontWeight: "600",
+          marginBottom: "1rem"
+        }}>
+          Détails de la réservation
         </h3>
       </div>
 
-      <div
-        style={{
-          backgroundColor: "#f8fafc",
-          borderRadius: "8px",
-          padding: "1rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: "#64748b" }}>FROM:</span>
-          <span style={{ fontWeight: "500" }}>
-            {formatDate(reservation.startTime)}
-          </span>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginTop: "0.5rem",
-          }}
-        >
-          <span style={{ color: "#64748b" }}>TO:</span>
-          <span style={{ fontWeight: "500" }}>
-            {formatDate(reservation.endTime)}
-          </span>
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          gap: "1rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: "#f0fdf4",
-            color: "#166534",
-            padding: "0.75rem",
-            borderRadius: "8px",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: "0.875rem", color: "#22c55e" }}>Statut</div>
-          <div style={{ fontWeight: "600" }}>
-            {reservation.status === "accepted"
-              ? "accepted"
-              : reservation.status === "pending"
-              ? "pending"
-              : "cancled"}
+      <div style={{
+        backgroundColor: "#f8fafc",
+        borderRadius: "12px",
+        padding: "1.5rem",
+        marginBottom: "1.5rem"
+      }}>
+        <h4 style={{ 
+          color: "#475569", 
+          fontSize: "1.1rem", 
+          fontWeight: "600",
+          marginBottom: "1rem"
+        }}>
+          Informations du client
+        </h4>
+        <div style={{ marginBottom: "1rem" }}>
+          <div style={{ marginBottom: "0.5rem" }}>
+            <span style={{ color: "#64748b" }}>Nom:</span>
+            <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{reservation.client?.name}</span>
           </div>
-        </div>
-
-        <div
-          style={{
-            backgroundColor: "#f0f9ff",
-            color: "#075985",
-            padding: "0.75rem",
-            borderRadius: "8px",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: "0.875rem", color: "#0ea5e9" }}>Paiement</div>
-          <div style={{ fontWeight: "600" }}>
-            {reservation.paymentStatus === "completed" ? "Succesful" : "Pending"}
+          <div>
+            <span style={{ color: "#64748b" }}>Téléphone:</span>
+            <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{reservation.client?.phone}</span>
           </div>
         </div>
       </div>
 
-      <div
-        style={{
-          backgroundColor: "#f8fafc",
-          borderRadius: "8px",
-          padding: "1rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <span style={{ color: "#64748b" }}>Prix total:</span>
-          <span
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: "600",
-              color: "#1e293b",
-            }}
-          >
-            {reservation.totalPrice.toFixed(2)} TND
-          </span>
+      <div style={{
+        backgroundColor: "#f8fafc",
+        borderRadius: "12px",
+        padding: "1.5rem",
+        marginBottom: "1.5rem"
+      }}>
+        <h4 style={{ 
+          color: "#475569", 
+          fontSize: "1.1rem", 
+          fontWeight: "600",
+          marginBottom: "1rem"
+        }}>
+          Détails de la place
+        </h4>
+        <div style={{ marginBottom: "0.5rem" }}>
+          <span style={{ color: "#64748b" }}>Place N°:</span>
+          <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{reservation.spotId.replace('parking-spot-', '')}</span>
         </div>
-      </div>
-
-      {reservation.client && (
         <div>
-          <h3
-            style={{
-              fontSize: "1rem",
-              fontWeight: "500",
-              marginBottom: "0.5rem",
-              color: "#334155",
-            }}
-          >
-            Informations client
-          </h3>
-          <div
-            style={{
-              backgroundColor: "#f8fafc",
-              borderRadius: "8px",
-              padding: "1rem",
-            }}
-          >
-            <p style={{ marginBottom: "0.25rem" }}>{reservation.client.name}</p>
-            <p style={{ color: "#64748b" }}>{reservation.client.phone}</p>
+          <span style={{ color: "#64748b" }}>Type de véhicule:</span>
+          <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{reservation.vehicleType}</span>
+        </div>
+      </div>
+
+      <div style={{
+        backgroundColor: "#f8fafc",
+        borderRadius: "12px",
+        padding: "1.5rem",
+        marginBottom: "1.5rem"
+      }}>
+        <h4 style={{ 
+          color: "#475569", 
+          fontSize: "1.1rem", 
+          fontWeight: "600",
+          marginBottom: "1rem"
+        }}>
+          Horaires & Paiement
+        </h4>
+        <div style={{ marginBottom: "0.5rem" }}>
+          <div style={{ marginBottom: "0.5rem" }}>
+            <span style={{ color: "#64748b" }}>Début:</span>
+            <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{formatDate(reservation.startTime)}</span>
+          </div>
+          <div style={{ marginBottom: "0.5rem" }}>
+            <span style={{ color: "#64748b" }}>Fin:</span>
+            <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{formatDate(reservation.endTime)}</span>
           </div>
         </div>
-      )}
+        <div style={{ 
+          marginTop: "1rem",
+          padding: "1rem",
+          backgroundColor: "#eef2ff",
+          borderRadius: "8px"
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ color: "#4f46e5", fontWeight: "600" }}>Total:</span>
+            <span style={{ color: "#4f46e5", fontSize: "1.25rem", fontWeight: "700" }}>
+              {reservation.totalPrice.toFixed(2)} TND
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        backgroundColor: "#f8fafc",
+        borderRadius: "12px",
+        padding: "1.5rem"
+      }}>
+        <h4 style={{ 
+          color: "#475569", 
+          fontSize: "1.1rem", 
+          fontWeight: "600",
+          marginBottom: "1rem"
+        }}>
+          Statut
+        </h4>
+        <div style={{ 
+          display: "flex", 
+          gap: "1rem",
+          alignItems: "center" 
+        }}>
+          <div style={{
+            padding: "0.5rem 1rem",
+            borderRadius: "9999px",
+            backgroundColor: reservation.status === 'accepted' ? '#dcfce7' : '#fee2e2',
+            color: reservation.status === 'accepted' ? '#15803d' : '#991b1b',
+            fontWeight: "500",
+            fontSize: "0.875rem"
+          }}>
+            {reservation.status === 'accepted' ? 'Confirmée' : 'En attente'}
+          </div>
+          <div style={{
+            padding: "0.5rem 1rem",
+            borderRadius: "9999px",
+            backgroundColor: reservation.paymentStatus === 'completed' ? '#dcfce7' : '#fef9c3',
+            color: reservation.paymentStatus === 'completed' ? '#15803d' : '#854d0e',
+            fontWeight: "500",
+            fontSize: "0.875rem"
+          }}>
+            {reservation.paymentStatus === 'completed' ? 'Payée' : 'En attente de paiement'}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -191,6 +186,10 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedDateTime, setSelectedDateTime] = useState(new Date());
+  const [tempDateTime, setTempDateTime] = useState(new Date());
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [selectedSpotForToggle, setSelectedSpotForToggle] = useState(null);
 
   const styles = {
     container: {
@@ -325,14 +324,26 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
 
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${id}`
       );
 
       if (response.data?.length > 0) {
-        setSelectedReservation(response.data[0]);
+        // Utiliser la première réservation active trouvée avec les infos client
+        let selectedReservation = response.data[0];
+        // Vérifier si la réservation est active à la date sélectionnée
+        const selectedTime = selectedDateTime.getTime();
+        const reservation = response.data.find(res => {
+          const startTime = new Date(res.startTime).getTime();
+          const endTime = new Date(res.endTime).getTime();
+          return selectedTime >= startTime && selectedTime <= endTime;
+        });
+
+        if (reservation) {
+          setSelectedReservation(reservation);
+        } else {
+          setSelectedReservation(null);
+        }
       } else {
         setSelectedReservation(null);
       }
@@ -560,7 +571,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
   };
 
   // Fonction pour charger les données du parking
-  const loadParkingData = async () => {
+  const loadParkingData = async (dateTime = new Date()) => {
     try {
       setLoading(true);
       const response = await axios.get(
@@ -568,15 +579,37 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
       );
       const parkingData = response.data;
 
-      const formattedSpots = parkingData.spots.map((spot) => ({
-        id: spot.id,
-        position: { left: spot.x, top: spot.y },
-        rotation: spot.rotation,
-        size: { width: spot.width, height: spot.height },
-        isOccupied: spot.status === "occupied",
-        isReserved: spot.status === "reserved",
+      const formattedSpots = await Promise.all(parkingData.spots.map(async (spot) => {
+        // Pour chaque spot, vérifier les réservations actives à la date sélectionnée
+        const reservationResponse = await axios.get(
+          `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
+        );
+        
+        // Convertir la date sélectionnée en timestamp pour comparaison
+        const selectedTimestamp = dateTime.getTime();
+        
+        const activeReservation = reservationResponse.data.find(reservation => {
+          const startTime = new Date(reservation.startTime).getTime();
+          const endTime = new Date(reservation.endTime).getTime();
+          return (
+            selectedTimestamp >= startTime && 
+            selectedTimestamp <= endTime && 
+            reservation.status === 'accepted'
+          );
+        });
+
+        return {
+          id: spot.id,
+          position: { left: spot.x, top: spot.y },
+          rotation: spot.rotation,
+          size: { width: spot.width, height: spot.height },
+          isOccupied: spot.status === "occupied",
+          isReserved: !!activeReservation,
+          reservationId: activeReservation?._id // Stocker l'ID de la réservation si elle existe
+        };
       }));
 
+      // Reste de la fonction inchangé...
       const formattedStreets =
         parkingData.layout?.streets?.map((street) => ({
           id: street.id,
@@ -591,20 +624,21 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
       setParkingSpots(formattedSpots);
       setStreets(formattedStreets);
 
-      // Calculate parking dimensions
       const dimensions = calculateParkingDimensions(
         formattedSpots,
         formattedStreets
       );
       setParkingDimensions(dimensions);
 
+      // Mettre à jour les informations du parking avec le nouveau compte des places disponibles
+      const availableCount = formattedSpots.filter(
+        spot => !spot.isOccupied && !spot.isReserved
+      ).length;
+
       setParkingInfo({
         name: parkingData.name || "Parking",
         totalSpots: parkingData.totalSpots || parkingData.spots.length,
-        availableSpots:
-          parkingData.availableSpots ||
-          parkingData.spots.filter((spot) => spot.status === "available")
-            .length,
+        availableSpots: availableCount
       });
 
       setLoading(false);
@@ -724,6 +758,108 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
     }
   };
 
+  // Ajouter cette fonction pour gérer l'application de la nouvelle date
+  const applyDateTimeChange = () => {
+    setSelectedDateTime(tempDateTime);
+    loadParkingData(tempDateTime);
+  };
+
+  const handleSpotClick = (spot) => {
+    if (spot.isReserved) {
+      fetchReservationDetails(spot.id);
+    } else {
+      setSelectedSpotForToggle(spot);
+      setShowConfirmation(true);
+    }
+  };
+
+  const handleConfirmToggle = async () => {
+    if (selectedSpotForToggle) {
+      await toggleOccupancy(selectedSpotForToggle.id);
+    }
+    setShowConfirmation(false);
+    setSelectedSpotForToggle(null);
+  };
+
+  const renderConfirmationModal = () => {
+    if (!showConfirmation) return null;
+
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          padding: '2rem',
+          borderRadius: '0.75rem',
+          width: '90%',
+          maxWidth: '400px',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+        }}>
+          <h2 style={{ 
+            fontSize: '1.5rem',
+            fontWeight: '600',
+            color: '#1e293b',
+            marginBottom: '1rem'
+          }}>
+            Confirmation
+          </h2>
+          <p style={{ 
+            color: '#475569',
+            marginBottom: '1.5rem'
+          }}>
+            Êtes-vous sûr de vouloir {selectedSpotForToggle?.isOccupied ? 'libérer' : 'occuper'} la place {selectedSpotForToggle?.id.replace('parking-spot-', '')} ?
+          </p>
+          <div style={{
+            display: 'flex',
+            gap: '1rem',
+            justifyContent: 'flex-end'
+          }}>
+            <button
+              onClick={() => setShowConfirmation(false)}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#e2e8f0',
+                color: '#475569',
+                border: 'none',
+                borderRadius: '0.375rem',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleConfirmToggle}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.375rem',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              Confirmer
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Fonction pour dessiner une place de parking
   const renderParkingSpot = (spot) => {
     const spotWidth = spot.size?.width || 60;
@@ -734,19 +870,16 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
       available: {
         fillColor: "#10b981",
         borderColor: "#059669",
-        text: "P",
         opacity: 0.9,
       },
       reserved: {
         fillColor: "#f59e0b",
         borderColor: "#d97706",
-        text: "R",
         opacity: 0.9,
       },
       occupied: {
         fillColor: "#ef4444",
         borderColor: "#dc2626",
-        text: "X",
         opacity: 0.9,
       },
     };
@@ -756,18 +889,10 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
       : spot.isReserved
       ? "reserved"
       : "available";
-    const { fillColor, borderColor, text, opacity } = spotStyle[status];
+    const { fillColor, borderColor, opacity } = spotStyle[status];
 
-    // Fonction de gestion du clic selon le statut
-    const handleSpotClick = () => {
-      if (status === "reserved") {
-        // Si la place est réservée, afficher les détails de réservation
-        fetchReservationDetails(spot.id);
-      } else {
-        // Sinon, utiliser la fonction toggleOccupancy normale
-        toggleOccupancy(spot.id);
-      }
-    };
+    // Extraire l'ID numérique du spotId (enlever 'parking-spot-')
+    const spotNumber = spot.id.replace('parking-spot-', '');
 
     return (
       <div
@@ -780,12 +905,12 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
           height: `${spotHeight}px`,
           transform: `rotate(${spot.rotation}rad)`,
           transformOrigin: "center center",
-          cursor: "pointer", // Toujours pointer car les deux actions sont possibles
+          cursor: "pointer",
           transition: "all 0.3s ease",
           filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))",
         }}
-        onClick={handleSpotClick}
-        title={`Place ${spot.id} - ${
+        onClick={() => handleSpotClick(spot)}
+        title={`Place ${spotNumber} - ${
           status === "available"
             ? "Disponible"
             : status === "reserved"
@@ -841,7 +966,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
             fill="none"
           />
 
-          {/* Texte avec effet de profondeur */}
+          {/* Numéro de la place avec effet de profondeur */}
           <text
             x={spotWidth / 2}
             y={spotHeight / 2}
@@ -852,8 +977,9 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
             dominantBaseline="middle"
             filter="url(#text-shadow)"
           >
-            {text}
+            {spotNumber}
           </text>
+          
           <defs>
             <filter
               id="text-shadow"
@@ -870,20 +996,6 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
               />
             </filter>
           </defs>
-
-          {/* Icône de voiture pour les places occupées */}
-          {status === "occupied" && (
-            <g
-              transform={`translate(${spotWidth / 2 - 10}, ${
-                spotHeight / 2 - 6
-              })`}
-            >
-              <rect x="0" y="4" width="20" height="8" rx="2" fill="#1e293b" />
-              <rect x="4" y="0" width="12" height="6" rx="1" fill="#334155" />
-              <circle cx="5" cy="12" r="2" fill="#1e293b" />
-              <circle cx="15" cy="12" r="2" fill="#1e293b" />
-            </g>
-          )}
         </svg>
       </div>
     );
@@ -1296,11 +1408,107 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
         </div>
       </div>
 
+      {/* Sélecteur de date/heure avec bouton Appliquer */}
+      <div style={{ 
+        display: "flex",
+        alignItems: "center",
+        gap: "1rem",
+        marginBottom: "1rem",
+        padding: "0 40px"
+      }}>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          backgroundColor: "#f8fafc",
+          padding: "0.5rem 1rem",
+          borderRadius: "0.5rem",
+          border: "1px solid #e2e8f0",
+          flex: "1"
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="2"/>
+            <line x1="16" y1="2" x2="16" y2="6" strokeWidth="2"/>
+            <line x1="8" y1="2" x2="8" y2="6" strokeWidth="2"/>
+            <line x1="3" y1="10" x2="21" y2="10" strokeWidth="2"/>
+          </svg>
+          <input
+            type="datetime-local"
+            value={tempDateTime.toISOString().slice(0, 16)}
+            onChange={(e) => {
+              const newDate = new Date(e.target.value);
+              setTempDateTime(newDate);
+            }}
+            style={{
+              border: "none",
+              backgroundColor: "transparent",
+              color: "#1e293b",
+              fontSize: "0.875rem",
+              cursor: "pointer",
+              flex: "1"
+            }}
+          />
+        </div>
+
+        <button
+          onClick={applyDateTimeChange}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            padding: "0.5rem 1.5rem",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            border: "none",
+            borderRadius: "0.5rem",
+            cursor: "pointer",
+            fontSize: "0.875rem",
+            fontWeight: "500",
+            transition: "background-color 0.2s"
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M20 6L9 17l-5-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          Appliquer
+        </button>
+
+        <button
+          onClick={() => {
+            const now = new Date();
+            setTempDateTime(now);
+            setSelectedDateTime(now);
+            loadParkingData(now);
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            padding: "0.5rem 1rem",
+            backgroundColor: "#e2e8f0",
+            color: "#475569",
+            border: "none",
+            borderRadius: "0.5rem",
+            cursor: "pointer",
+            fontSize: "0.875rem",
+            fontWeight: "500",
+            transition: "background-color 0.2s"
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" strokeWidth="2"/>
+            <path d="M3 3v5h5" strokeWidth="2"/>
+          </svg>
+          Maintenant
+        </button>
+      </div>
+
       {/* Contenu principal */}
       <div style={{ display: "flex", flex: 1, gap: "1rem" }}>
         {/* Partie gauche - Parking */}
         <div style={{ flex: 2, marginLeft: "40px" }}>
           {renderNotification()}
+          {renderConfirmationModal()}
           <div
             ref={containerRef}
             style={{

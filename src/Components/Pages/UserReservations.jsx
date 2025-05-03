@@ -584,5 +584,4 @@ const UserReservations = () => {
     );
 };
 
-
 export default UserReservations;

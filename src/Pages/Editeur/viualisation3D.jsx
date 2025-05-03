@@ -114,17 +114,24 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
       const parkingData = response.data;
       console.log("parkiiing data ", parkingData);
 
-      setParkingSpots(
-        parkingData.spots.map((spot) => ({
-          id: spot.id,
-          position: { left: spot.x, top: spot.y },
-          rotation: spot.rotation,
-          size: { width: spot.width, height: spot.height },
-          isOccupied: spot.status === "occupied",
-          status: spot.status
-        }))
+      // Charger les places avec vérification de disponibilité
+      const spotsWithAvailability = await Promise.all(
+        parkingData.spots.map(async (spot) => {
+          const availability = await checkSpotAvailability(spot);
+          return {
+            id: spot.id,
+            position: { left: spot.x, top: spot.y },
+            rotation: spot.rotation,
+            size: { width: spot.width, height: spot.height },
+            isOccupied: availability.isOccupied,
+            status: availability.isReserved ? 'reserved' : (availability.isOccupied ? 'occupied' : 'available')
+          };
+        })
       );
 
+      setParkingSpots(spotsWithAvailability);
+
+      // Reste du code inchangé...
       if (parkingData.layout?.streets) {
         setStreets(
           parkingData.layout.streets.map((street) => ({
@@ -149,16 +156,9 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
         );
       }
       if (parkingData.layout?.viewSettings) {
-        // Définir l'échelle si disponible dans les données
         if (parkingData.layout.viewSettings.scale) {
           setScale(parkingData.layout.viewSettings.scale);
-          console.log(
-            "Échelle récupérée:",
-            parkingData.layout.viewSettings.scale
-          );
         }
-
-        // Définir la position (offset) si disponible dans les données
         if (
           parkingData.layout.viewSettings.offsetX !== undefined &&
           parkingData.layout.viewSettings.offsetY !== undefined
@@ -167,16 +167,7 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
             x: parkingData.layout.viewSettings.offsetX,
             y: parkingData.layout.viewSettings.offsetY,
           });
-          console.log(
-            "Offset récupéré:",
-            parkingData.layout.viewSettings.offsetX,
-            parkingData.layout.viewSettings.offsetY
-          );
         }
-      } else {
-        console.log(
-          "Aucun paramètre de vue trouvé, utilisation des valeurs par défaut"
-        );
       }
     } catch (error) {
       console.error("Erreur lors du chargement du parking:", error);
@@ -548,6 +539,65 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
         arrow.id === id ? { ...arrow, size: newSize } : arrow
       )
     );
+  };
+
+  const checkSpotAvailability = async (spot) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
+      );
+
+      const reservations = response.data;
+      const currentTime = new Date().getTime();
+
+      // Si le statut de la place est déjà "occupied" dans la base de données
+      if (spot.status === 'occupied') {
+        return {
+          isAvailable: false,
+          isOccupied: true,
+          isReserved: false
+        };
+      }
+
+      // Vérifier les réservations existantes
+      const hasActiveReservation = reservations.some((reservation) => {
+        if (reservation.status !== "accepted") return false;
+
+        const startTime = new Date(reservation.startTime).getTime();
+        const endTime = new Date(reservation.endTime).getTime();
+
+        // Si la réservation est dépassée, on ne la compte pas
+        if (endTime < currentTime) {
+          return false;
+        }
+
+        // Si la réservation est en cours ou à venir
+        return (currentTime >= startTime && currentTime <= endTime) || startTime > currentTime;
+      });
+
+      // Si une réservation est active pour maintenant ou future
+      if (hasActiveReservation) {
+        return {
+          isAvailable: false,
+          isOccupied: false,
+          isReserved: true
+        };
+      }
+
+      // Si aucune réservation active n'existe et la place n'est pas occupée
+      return {
+        isAvailable: true,
+        isOccupied: false,
+        isReserved: false
+      };
+    } catch (error) {
+      console.error("Error checking spot availability:", error);
+      return {
+        isAvailable: false,
+        isOccupied: false,
+        isReserved: false
+      };
+    }
   };
 
   return (

@@ -27,6 +27,7 @@ import NotFound from './Pages/NotFound';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { MapboxProvider } from './context/MapboxContext';
+import { NotificationProvider } from './Pages/Notifications/notificationContext';
 
 
 import Profile from './Pages/profile';
@@ -42,8 +43,13 @@ import PrivateRoute from './Pages/PrivateRoute';
 import ParkingPlan from "./Pages/Editeur/viualisation3D";
 import ParkingLiveView3D from "./Pages/VisualizeParkingAvailibility/ParkingLiveView";
 import Visualize3d from "./Pages/VisualizeParkingAvailibility/Visualize3d";
+
 import ListSubsDriver from "./Pages/ListSubsDriver";
 import PeakHoursDashboard from "./Pages/PeakHoursDashboard";
+
+import OwnerReservations from './Components/Pages/OwnerReservations';
+import OwnerClaims from "./Components/Pages/OwnerClaims";
+
 
 
 const App = () => {
@@ -67,6 +73,7 @@ const App = () => {
       <SearchProvider>
         <FavoritesProvider>
           <AuthProvider>
+          <NotificationProvider>
             <ToastContainer />
             <Routes>
               <Route path="/" element={<DefaultLayout />}>
@@ -99,8 +106,13 @@ const App = () => {
                 <Route path="ScanQr" element={<EmployeeProfile />} />
                 <Route path="my-parkings" element={<ParkingListOwner />} />
                 <Route path="ParkingRequestForm" element={<ParkingRequestForm />} />
+
                 <Route path="/my-subscriptions" element={<ListSubsDriver />} />
                 <Route path="/TodaysPrediction" element={<PeakHoursDashboard />} />
+
+                <Route path="OwnerReservations" element={<OwnerReservations/>} />
+                <Route path="OwnerClaims" element={< OwnerClaims/>} />
+
                 <Route 
                   path="/mes-reservations" 
                   element={
@@ -111,6 +123,7 @@ const App = () => {
                 />
               </Route>
             </Routes>
+            </NotificationProvider>
           </AuthProvider>
         </FavoritesProvider>
       </SearchProvider>
