@@ -79,6 +79,11 @@ const Navbar = () => {
   const shouldShowParking = () => {
     return userRole === "Owner";
   };
+
+  const shouldShowPrediction = () => {
+    return userRole === "Driver";
+  };
+
     // Function to check if Parking should be visible
     const OwnerResevations = () => {
       return userRole === "Owner";
@@ -86,6 +91,7 @@ const Navbar = () => {
     const OwnerClaims = () => {
       return userRole === "Owner";
     };
+
 
   // Function to check if Notifications should be visible
   const shouldShowNotifications = () => {
@@ -214,7 +220,7 @@ const Navbar = () => {
             {/* Notifications for mobile - only show if user is Owner or Employee */}
             {user && shouldShowNotifications() && (
               <li className="w-full">
-                <div 
+                <div
                   className="font-medium text-black flex items-center cursor-pointer"
                   onClick={() => setShowNotifications(!showNotifications)}
                 >
@@ -227,7 +233,6 @@ const Navbar = () => {
                 )}
               </li>
             )}
-
             {/* Show Logout or Login Button */}
             <li className="w-full">
               {user ? (
@@ -373,7 +378,20 @@ const Navbar = () => {
                 </NavLink>
               </li>
             )}
-
+            {shouldShowPrediction() && (
+              <li>
+                <NavLink
+                  to="/TodaysPrediction"
+                  className={
+                    navabarScroll && !ToogleMenuResponsive
+                      ? "text-Mwhite"
+                      : "text-Mblack"
+                  }
+                >
+                  Parkini Prediction
+                </NavLink>
+              </li>
+            )}
             {/* Ajouter le lien Mes réservations (visible seulement si l'utilisateur est connecté) */}
             {DriverReservations() && (
               <li>

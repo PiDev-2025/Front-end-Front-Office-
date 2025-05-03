@@ -43,8 +43,13 @@ import PrivateRoute from './Pages/PrivateRoute';
 import ParkingPlan from "./Pages/Editeur/viualisation3D";
 import ParkingLiveView3D from "./Pages/VisualizeParkingAvailibility/ParkingLiveView";
 import Visualize3d from "./Pages/VisualizeParkingAvailibility/Visualize3d";
+
+import ListSubsDriver from "./Pages/ListSubsDriver";
+import PeakHoursDashboard from "./Pages/PeakHoursDashboard";
+
 import OwnerReservations from './Components/Pages/OwnerReservations';
 import OwnerClaims from "./Components/Pages/OwnerClaims";
+
 
 
 const App = () => {
@@ -101,8 +106,13 @@ const App = () => {
                 <Route path="ScanQr" element={<EmployeeProfile />} />
                 <Route path="my-parkings" element={<ParkingListOwner />} />
                 <Route path="ParkingRequestForm" element={<ParkingRequestForm />} />
+
+                <Route path="/my-subscriptions" element={<ListSubsDriver />} />
+                <Route path="/TodaysPrediction" element={<PeakHoursDashboard />} />
+
                 <Route path="OwnerReservations" element={<OwnerReservations/>} />
                 <Route path="OwnerClaims" element={< OwnerClaims/>} />
+
                 <Route 
                   path="/mes-reservations" 
                   element={
