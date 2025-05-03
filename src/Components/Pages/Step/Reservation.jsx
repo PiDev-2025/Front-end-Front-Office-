@@ -65,13 +65,12 @@ const PAYMENT_METHODS = [
   { id: "online", label: "Carte bancaire", icon: <CreditCard size={18} /> },
   { id: "cash", label: "Espèces", icon: <DollarSign size={18} /> },
 ];
-
-<<<<<<< HEAD
-=======
 const PLATE_FORMATS = [
   { id: 'ar', label: 'تونس', value: 'تونس' },
   { id: 'fr', label: 'TUN', value: 'TUN' },
 ];
+
+
 
 // Ajout des styles personnalisés pour le DatePicker
 const datePickerStyles = `
@@ -144,7 +143,6 @@ const datePickerStyles = `
   }
 `;
 
->>>>>>> main
 // Modifier le CustomDatePicker pour gérer la date minimum
 const CustomDatePicker = ({
   selected,
@@ -504,6 +502,8 @@ const Reservation = ({
   const [calculatedPrice, setCalculatedPrice] = useState(0);
   const [currentStep, setCurrentStep] = useState(1); // 1: dates, 2: vehicle type
   const [paymentMethod, setPaymentMethod] = useState("cash");
+
+
 
   // Add this constant definition
   const commonClasses =
@@ -900,86 +900,118 @@ const Reservation = ({
 
   // Render content based on current step
   return (
-    <div className="space-y-6">
-      
-      {currentStep === 1 && (
-        <div className={commonClasses + " border-blue-100"}>
-          <h3 className="text-xl font-bold mb-1 flex items-center text-gray-800">
-            <div className="bg-blue-50 p-3 rounded-full mr-1">
-              <Calendar className="text-blue-600" size={24} />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Main content layout with improved vertical alignment */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+        {/* Left column - Current step content (takes 2/3 width on desktop) */}
+        <div className="lg:col-span-2 space-y-6">
+          {currentStep === 1 && (
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-blue-100 shadow-md">
+              <h3 className="text-xl font-bold mb-6 flex items-center text-gray-800">
+                <div className="bg-blue-50 p-3 rounded-full mr-3">
+                  <Calendar className="text-blue-600" size={24} />
+                </div>
+                Dates de stationnement
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <CustomDatePicker
+                  selected={reservationData.startDate}
+                  onChange={async (date) => {
+                    const newEndDate =
+                      date > reservationData.endDate
+                        ? new Date(date.getTime() + 60 * 60 * 1000)
+                        : reservationData.endDate;
+
+                    const isAvailable = await checkAvailability(date, newEndDate);
+                    if (isAvailable) {
+                      setReservationData((prev) => ({
+                        ...prev,
+                        startDate: date,
+                        endDate: newEndDate,
+                      }));
+                    }
+                  }}
+                  label="Date et heure d'arrivée"
+                  isStartDate
+                />
+
+                <CustomDatePicker
+                  selected={reservationData.endDate}
+                  onChange={async (date) => {
+                    const isAvailable = await checkAvailability(
+                      reservationData.startDate,
+                      date
+                    );
+                    if (isAvailable) {
+                      setReservationData((prev) => ({
+                        ...prev,
+                        endDate: date,
+                      }));
+                    }
+                  }}
+                  label="Date et heure de départ"
+                  minDate={reservationData.startDate}
+                />
+              </div>
+
+              <div className="mt-6">
+                <PlateNumberInput
+                  onPlateChange={(plateNumber) =>
+                    setReservationData((prev) => ({ ...prev, matricule: plateNumber }))
+                  }
+                />
+              </div>
             </div>
-            Dates de stationnement
-          </h3>
+          )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <CustomDatePicker
-              selected={reservationData.startDate}
-              onChange={async (date) => {
-                const newEndDate =
-                  date > reservationData.endDate
-                    ? new Date(date.getTime() + 60 * 60 * 1000)
-                    : reservationData.endDate;
+          {currentStep === 2 && (
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-blue-100 shadow-md h-full">
+              <h3 className="text-xl font-bold mb-6 flex items-center text-gray-800">
+                <div className="bg-blue-50 p-3 rounded-full mr-3">
+                  <Car className="text-blue-600" size={24} />
+                </div>
+                Type de véhicule
+              </h3>
 
-                const isAvailable = await checkAvailability(date, newEndDate);
-                if (isAvailable) {
-                  setReservationData((prev) => ({
-                    ...prev,
-                    startDate: date,
-                    endDate: newEndDate,
-                  }));
-                }
-              }}
-              label="Date et heure d'arrivée"
-              isStartDate
-            />
-
-            <CustomDatePicker
-              selected={reservationData.endDate}
-              onChange={async (date) => {
-                const isAvailable = await checkAvailability(
-                  reservationData.startDate,
-                  date
-                );
-                if (isAvailable) {
-                  setReservationData((prev) => ({
-                    ...prev,
-                    endDate: date,
-                  }));
-                }
-              }}
-              label="Date et heure de départ"
-              minDate={reservationData.startDate}
-            />
-            <PlateNumberInput
-              onPlateChange={(plateNumber) =>
-                setReservationData((prev) => ({ ...prev, matricule: plateNumber }))
-              }
-            />
-          </div>
+              <div className="my-8">
+                <VehicleTypeSelector
+                  selectedType={reservationData.vehicleType}
+                  onSelect={(type) =>
+                    setReservationData((prev) => ({ ...prev, vehicleType: type }))
+                  }
+                />
+              </div>
+              
+              <div className="mt-10 pt-6 border-t border-gray-100">
+                <h4 className="font-semibold text-gray-700 mb-5">Méthode de paiement</h4>
+                <PaymentMethodSelector
+                  selected={paymentMethod}
+                  onSelect={setPaymentMethod}
+                />
+              </div>
+            </div>
+          )}
+          
+          {/* Error message - improved position and spacing */}
+          {error && (
+            <div className="p-4 rounded-lg bg-red-50 text-red-700 flex items-center mt-5">
+              <AlertCircle size={18} className="mr-2 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
         </div>
-      )}
 
-<<<<<<< HEAD
-      {currentStep === 2 && (
-        <div className={commonClasses + " border-green-100"}>
-          <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
-            <div className="bg-green-50 p-3 rounded-full mr-1">
-              <Car className="text-green-600" size={24} />
-=======
-      {/* Main form grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left column - Current step content */}
-        <div>{renderStepContent()}</div>
-
-        {/* Right column - Summary and action button */}
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
-            <h3 className="text-lg font-semibold mb-6 flex items-center text-gray-800">
+        {/* Right column - Summary with improved vertical alignment */}
+        <div className="self-start"> {/* Added self-start to align at the top */}
+          <div className="bg-white p-5 sm:p-6 rounded-xl border-2 border-gray-200 shadow-md sticky top-6">
+            <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-100 flex items-center">
+              <ListChecks className="mr-2 text-blue-500" size={18} />
               Récapitulatif
             </h3>
 
-            {/* Reservation details */}
-            <div className="space-y-4 mb-6">
+            {/* Reservation details with improved spacing */}
+            <div className="space-y-3 mb-5">
               <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                 <span className="text-gray-600">Parking</span>
                 <span className="font-medium">{parkingData?.name}</span>
@@ -1011,7 +1043,6 @@ const Reservation = ({
                 </span>
               </div>
 
-              {/* Ajouter le champ matricule après le type de véhicule */}
               {reservationData.vehicleType && (
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                   <span className="text-gray-600">Type de véhicule</span>
@@ -1021,7 +1052,6 @@ const Reservation = ({
                 </div>
               )}
 
-              {/* Nouveau bloc pour la matricule */}
               {reservationData.matricule && (
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100">
                   <span className="text-gray-600">Matricule</span>
@@ -1030,84 +1060,68 @@ const Reservation = ({
                   </span>
                 </div>
               )}
-
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Total A payer</span>
-                <span className="font-medium">{calculatedPrice}Dt</span>
-              </div>
-
-              {currentStep >= 3 && (
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-gray-600">Méthode de paiement</span>
+              
+              <div className="mt-4 pt-2 border-t-2 border-gray-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Durée</span>
                   <span className="font-medium">
-                    {paymentMethod === "card" ? "Carte bancaire" : "Espèces"}
+                    {Math.ceil(
+                      (new Date(reservationData.endDate) -
+                        new Date(reservationData.startDate)) /
+                        (1000 * 60 * 60)
+                    )} heures
                   </span>
                 </div>
-              )}
->>>>>>> main
+                
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-gray-600">Prix par heure</span>
+                  <span className="font-medium">{parkingData?.pricing?.hourly}Dt</span>
+                </div>
+                
+                <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-200">
+                  <span className="font-semibold text-gray-800">Total</span>
+                  <span className="font-bold text-xl text-blue-600">{calculatedPrice}Dt</span>
+                </div>
+              </div>
             </div>
-            Type de véhicule
-          </h3>
-          <VehicleTypeSelector
-            selectedType={reservationData.vehicleType}
-            onSelect={(type) =>
-              setReservationData((prev) => ({ ...prev, vehicleType: type }))
-            }
-          />
-        </div>
-      )}
 
-      {/* Error message */}
-      {error && (
-        <div className="p-3 rounded-lg mb-2 bg-red-50 text-red-700 flex items-center">
-          <AlertCircle size={18} className="mr-2" />
-          {error}
-        </div>
-      )}
-
-      {/* Prix et bouton Next/Confirm */}
-      <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md sticky bottom-6">
-        <PriceSummary
-          priceDetails={[
-            `Durée: ${Math.ceil(
-              (new Date(reservationData.endDate) -
-                new Date(reservationData.startDate)) /
-                (1000 * 60 * 60)
-            )} heures`,
-            `Prix par heure: ${parkingData?.pricing?.hourly}Dt`,
-          ]}
-          totalPrice={calculatedPrice}
-        />
-
-        <div className="flex gap-4 mt-4">
-          {currentStep === 2 && (
-            <button
-              onClick={() => setCurrentStep(1)}
-              className="flex-1 py-3 px-6 rounded-xl bg-gray-200 text-black hover:bg-gray-300 transition-colors"
-            >
-              Retour
-            </button>
-          )}
-          <button
-            onClick={handleNextOrConfirm}
-            disabled={loading || !isStepValid()}
-            className={`flex-1 py-3 px-6 rounded-xl flex items-center justify-center transition-colors text-black ${
-              loading || !isStepValid()
-                ? "bg-gray-300 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {loading ? (
-              <>
-                <span className="animate-spin mr-2">⌛</span>
-                Traitement...
-              </>
-            ) : currentStep === 1 ? (
-              "Next"
-            ) : (
-              "Confirm reservation"
-            )}
-          </button>
+            {/* Action buttons with improved spacing and alignment */}
+            <div className="flex flex-col gap-3 mt-6">
+              {currentStep === 2 && (
+                <button
+                  onClick={() => setCurrentStep(1)}
+                  className="w-full py-3 px-5 rounded-xl bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors flex items-center justify-center"
+                >
+                  <ArrowRight className="mr-2 transform rotate-180" size={16} /> Retour
+                </button>
+              )}
+              <button
+                onClick={handleNextOrConfirm}
+                disabled={loading || !isStepValid()}
+                className={`w-full py-3 px-5 rounded-xl flex items-center justify-center transition-colors font-medium ${
+                  loading || !isStepValid()
+                    ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                    : "bg-blue-600 hover:bg-blue-700 text-black"
+                }`}
+              >
+                {loading ? (
+                  <>
+                    <span className="animate-spin mr-2">⌛</span>
+                    Traitement...
+                  </>
+                ) : currentStep === 1 ? (
+                  <>
+                    Suivant <ArrowRight className="ml-1" size={16} />
+                  </>
+                ) : (
+                  <>
+                    Confirmer la réservation
+                    <CheckCircle2 className="ml-1" size={16} />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
