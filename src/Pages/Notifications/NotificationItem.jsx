@@ -13,6 +13,8 @@ import { io } from "socket.io-client";
 const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [overlappingReservations, setOverlappingReservations] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isConfirmProcessing, setIsConfirmProcessing] = useState(false);
   const driver = notification.driverId || {};
   const parking = notification.parkingId || {};
   const reservation = notification.reservationId || {};
@@ -20,7 +22,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
   if (!driver.email || !parking.name || !reservation.startTime) {
     return (
       <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 rounded-md">
-        Données de réservation incomplètes
+        Incomplete reservation data
       </div>
     );
   }
@@ -52,7 +54,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
 
       return overlapping;
     } catch (error) {
-      console.error("Erreur lors de la vérification des réservations:", error);
+      console.error("Error checking reservations:", error);
       return [];
     }
   };
@@ -71,6 +73,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
 
   const processResponse = async (response) => {
     try {
+      setIsProcessing(true);
       const token = localStorage.getItem("token");
 
       await axios.put(
@@ -97,10 +100,10 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
         );
       }
     } catch (err) {
-      console.error("Erreur lors de la réponse:", err);
+      console.error("Error processing response:", err);
     } finally {
       setShowConfirmModal(false);
-      // Force le rafraîchissement de la page après toute l'opération
+      setIsProcessing(false);
       window.location.reload(true);
     }
   };
@@ -108,24 +111,39 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
   const ConfirmationModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-        <h3 className="text-xl font-bold mb-4 text-red-600">⚠️ Attention</h3>
+        <h3 className="text-xl font-bold mb-4 text-red-600">⚠️ Warning</h3>
         <p className="mb-4 text-gray-700">
-          En acceptant cette réservation, {overlappingReservations.length}{" "}
-          autre(s) réservation(s) qui se chevauchent seront automatiquement
-          rejetées.
+          By accepting this reservation, {overlappingReservations.length}{" "}
+          overlapping reservation(s) will be automatically rejected.
         </p>
         <div className="flex justify-end space-x-3">
           <button
             onClick={() => setShowConfirmModal(false)}
-            className="px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-100"
+            disabled={isConfirmProcessing}
+            className={`px-4 py-2 text-gray-600 border border-gray-300 rounded hover:bg-gray-100 ${
+              isConfirmProcessing ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            Annuler
+            Cancel
           </button>
           <button
-            onClick={() => processResponse("accepted")}
-            className="px-4 py-2 bg-green-600 text-black rounded hover:bg-green-700 font-semibold shadow-md"
+            onClick={() => {
+              setIsConfirmProcessing(true);
+              processResponse("accepted");
+            }}
+            disabled={isConfirmProcessing}
+            className={`flex items-center justify-center px-4 py-2 bg-green-600 text-black rounded hover:bg-green-700 font-semibold shadow-md min-w-[160px] ${
+              isConfirmProcessing ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            Confirmer l'acceptation
+            {isConfirmProcessing ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black mr-2"></div>
+                Processing...
+              </>
+            ) : (
+              "Confirm Acceptance"
+            )}
           </button>
         </div>
       </div>
@@ -134,12 +152,12 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
 
   const formattedStartDate = format(
     new Date(reservation.startTime),
-    "dd MMMM yyyy à HH:mm",
+    "dd MMMM yyyy 'at' HH:mm",
     { locale: fr }
   );
   const formattedEndDate = format(
     new Date(reservation.endTime),
-    "dd MMMM yyyy à HH:mm",
+    "dd MMMM yyyy 'at' HH:mm",
     { locale: fr }
   );
 
@@ -148,6 +166,15 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
   const durationHours = Math.round((endTime - startTime) / (1000 * 60 * 60));
 
   const renderActionButtons = () => {
+    if (isProcessing) {
+      return (
+        <div className="flex items-center justify-center p-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4b3f7a]"></div>
+          <span className="ml-2 text-[#4b3f7a]">Processing...</span>
+        </div>
+      );
+    }
+
     if (reservation.status === "canceled") {
       return (
         <div className="p-2 bg-[#4b3f7a] border border-green-200 rounded-md hover:bg-red-600 text-white text-center transition-colors shadow-sm">
@@ -180,16 +207,22 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
         <div className="flex justify-end space-x-2">
           <button
             onClick={() => handleResponse("rejected")}
-            className="px-4 py-2 text-sm font-medium bg-[#fe1d27] text-white rounded-md hover:bg-red-600 transition-colors shadow-sm"
+            disabled={isProcessing}
+            className={`px-4 py-2 text-sm font-medium bg-[#fe1d27] text-white rounded-md hover:bg-red-600 transition-colors shadow-sm ${
+              isProcessing ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            Refuser
+            Reject
           </button>
 
           <button
             onClick={() => handleResponse("accepted")}
-            className="px-4 py-2 text-sm font-medium bg-[#3fd30c] text-white rounded-md hover:bg-green-600 transition-colors shadow-sm"
+            disabled={isProcessing}
+            className={`px-4 py-2 text-sm font-medium bg-[#3fd30c] text-white rounded-md hover:bg-green-600 transition-colors shadow-sm ${
+              isProcessing ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            Accepter
+            Accept
           </button>
         </div>
       );
@@ -207,7 +240,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
       <div className="flex flex-col">
         <div className="flex justify-between items-center mb-2">
           <h3 className="font-bold text-gray-800 text-lg">
-            Reservation Request in {parking.name}
+            Reservation Request for {parking.name}
           </h3>
         </div>
 
@@ -299,7 +332,7 @@ const NotificationItem = ({
             {notification.title || "Notification"}
           </h3>
           <span className="text-xs text-gray-500">
-            {format(new Date(notification.createdAt), "dd MMMM yyyy à HH:mm", {
+            {format(new Date(notification.createdAt), "dd MMMM yyyy 'at' HH:mm", {
               locale: fr,
             })}
           </span>
@@ -307,7 +340,7 @@ const NotificationItem = ({
         <p className="text-gray-600 mb-2">
           {notification.message ||
             notification.messageRequested ||
-            "Aucun message"}
+            "No message"}
         </p>
       </div>
     </div>
@@ -331,7 +364,7 @@ const NotificationList = () => {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        setError("Vous devez être connecté pour voir vos notifications");
+        setError("You must be logged in to view your notifications");
         setLoading(false);
         return;
       }
@@ -362,8 +395,8 @@ const NotificationList = () => {
       setUnreadCount(response.data.total);
       setError(null);
     } catch (err) {
-      console.error("Erreur lors du chargement des notifications:", err);
-      setError("Erreur lors du chargement des notifications");
+      console.error("Error loading notifications:", err);
+      setError("Error loading notifications");
     } finally {
       setLoading(false);
     }
@@ -387,7 +420,7 @@ const NotificationList = () => {
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
-      console.error("Erreur lors du marquage de la notification:", err);
+      console.error("Error marking notification as read:", err);
     }
   };
 
@@ -395,7 +428,7 @@ const NotificationList = () => {
     try {
       await markNotificationAsRead(notificationId);
     } catch (err) {
-      console.error("Erreur lors du marquage de la notification:", err);
+      console.error("Error marking notification as read:", err);
     }
   };
 
@@ -507,7 +540,7 @@ const NotificationList = () => {
         })
       );
     } catch (err) {
-      console.error("Erreur lors de la réponse:", err);
+      console.error("Error responding to notification:", err);
     }
   };
 
@@ -516,9 +549,7 @@ const NotificationList = () => {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        setError(
-          "Vous devez être connecté pour marquer les notifications comme lues"
-        );
+        setError("You must be logged in to mark notifications as read");
         return;
       }
 
@@ -537,8 +568,8 @@ const NotificationList = () => {
       );
       setUnreadCount(0);
     } catch (err) {
-      console.error("Erreur lors du marquage des notifications:", err);
-      setError("Erreur lors du marquage des notifications comme lues");
+      console.error("Error marking notifications as read:", err);
+      setError("Error marking notifications as read");
     }
   };
 
@@ -561,7 +592,7 @@ const NotificationList = () => {
               onClick={handleMarkAllAsRead}
               className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200"
             >
-              Tout marquer comme lu
+              Mark all as read
             </button>
           )}
         </div>
@@ -578,7 +609,7 @@ const NotificationList = () => {
 
       {notifications.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          <p>Aucune notification à afficher</p>
+          <p>No notifications to display</p>
         </div>
       ) : (
         <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
@@ -631,7 +662,7 @@ const NotificationBadge = ({ onClick }) => {
       setUnreadCount(response.data.count);
     } catch (err) {
       console.error(
-        "Erreur lors du chargement des notifications non lues:",
+        "Error loading unread notifications count:",
         err
       );
     }

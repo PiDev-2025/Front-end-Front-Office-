@@ -70,7 +70,6 @@ const RetryButton = styled.button`
 `;
 
 const ParkingContainer = styled.div`
-  padding: 20px;
   margin-top: 20px;
   display: flex;
   flex-direction: column;
@@ -244,7 +243,7 @@ const ReserveButton = styled.button`
 `;
 
 const ParkingArea = styled.div`
-  width: 100%;
+  width: 95%;
   height: 500px;
   background-color: #1c1c24;
   border: 1px solid #16213e;
@@ -252,7 +251,7 @@ const ParkingArea = styled.div`
   overflow: hidden;
   position: relative;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-  cursor: ${props => props.isDragging ? 'grabbing' : 'grab'};
+  cursor: ${(props) => (props.isDragging ? "grabbing" : "grab")};
 `;
 
 const ParkingContent = styled.div`
@@ -260,8 +259,9 @@ const ParkingContent = styled.div`
   height: 100%;
   position: absolute;
   transform-origin: top left;
-  transform: ${props => `scale(${props.scale}) translate(${props.offsetX}px, ${props.offsetY}px)`};
-  transition: ${props => props.isDragging ? 'none' : 'transform 0.1s ease'};
+  transform: ${(props) =>
+    `scale(${props.scale}) translate(${props.offsetX}px, ${props.offsetY}px)`};
+  transition: ${(props) => (props.isDragging ? "none" : "transform 0.1s ease")};
 `;
 
 const CoordinatesIndicator = styled.div`
@@ -352,7 +352,11 @@ const Tip = styled.p`
   font-style: italic;
 `;
 
-const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
+const ParkingPlan2D = ({
+  parkingId: propParkingId,
+  onSpotSelected,
+  selectedDates,
+}) => {
   const { id: urlParkingId } = useParams();
   const parkingId = propParkingId || urlParkingId;
   const navigate = useNavigate();
@@ -378,9 +382,11 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
   const [showLogo, setShowLogo] = useState(true);
   const [searchError, setSearchError] = useState(null);
   const [searchSuccess, setSearchSuccess] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const inputRef = useRef(null);
-  
+
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
@@ -399,6 +405,69 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
     }
   }, [parkingId]);
 
+  const checkSpotAvailability = async (spot, startDate, endDate) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
+      );
+
+      const reservations = response.data;
+      const requestedStartTime = new Date(startDate).getTime();
+      const requestedEndTime = new Date(endDate).getTime();
+      const currentTime = new Date().getTime();
+
+      // Si le statut de la place est déjà "occupied" dans la base de données
+      if (spot.status === "occupied") {
+        return {
+          isAvailable: false,
+          isOccupied: true,
+          isReserved: false,
+        };
+      }
+
+      // Vérifier les réservations existantes
+      const hasReservation = reservations.some((reservation) => {
+        if (reservation.status !== "accepted") return false;
+
+        const existingStartTime = new Date(reservation.startTime).getTime();
+        const existingEndTime = new Date(reservation.endTime).getTime();
+
+        // Vérifier si la période demandée chevauche une réservation future
+        return (
+          (requestedStartTime >= existingStartTime &&
+            requestedStartTime < existingEndTime) ||
+          (requestedEndTime > existingStartTime &&
+            requestedEndTime <= existingEndTime) ||
+          (requestedStartTime <= existingStartTime &&
+            requestedEndTime >= existingEndTime)
+        );
+      });
+
+      // Si une réservation existe pour cette période
+      if (hasReservation) {
+        return {
+          isAvailable: false,
+          isOccupied: false,
+          isReserved: true,
+        };
+      }
+
+      // Si aucune réservation n'existe et la place n'est pas occupée
+      return {
+        isAvailable: true,
+        isOccupied: false,
+        isReserved: false,
+      };
+    } catch (error) {
+      console.error("Error checking spot availability:", error);
+      return {
+        isAvailable: false,
+        isOccupied: false,
+        isReserved: false,
+      };
+    }
+  };
+
   const loadParkingData = async () => {
     try {
       setLoading(true);
@@ -407,40 +476,44 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
       );
       const parkingData = response.data;
 
-      // Obtenir la date actuelle
-      const now = new Date();
+      const formattedSpots = await Promise.all(
+        parkingData.spots.map(async (spot) => {
+          const availability =
+            selectedDates?.startDate && selectedDates?.endDate
+              ? await checkSpotAvailability(
+                  spot,
+                  selectedDates.startDate,
+                  selectedDates.endDate
+                )
+              : { isAvailable: true, isOccupied: false, isReserved: false };
 
-      const formattedSpots = await Promise.all(parkingData.spots.map(async (spot) => {
-        // Vérifier s'il existe une réservation active pour cette place
-        const reservationResponse = await axios.get(
-          `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
-        );
-        
-        const activeReservation = reservationResponse.data.find(reservation => {
-          const startTime = new Date(reservation.startTime);
-          const endTime = new Date(reservation.endTime);
-          return now >= startTime && now <= endTime && reservation.status === 'accepted';
-        });
-
-        return {
-          id: spot.id,
-          position: { left: spot.x, top: spot.y },
-          rotation: spot.rotation || 0,
-          size: { width: spot.width || 60, height: spot.height || 120 },
-          isOccupied: spot.status === "occupied",
-          isReserved: !!activeReservation,
-        };
-      }));
+          return {
+            id: spot.id,
+            position: { left: spot.x, top: spot.y },
+            rotation: spot.rotation || 0,
+            size: { width: spot.width || 60, height: spot.height || 120 },
+            isOccupied: availability.isOccupied,
+            isReserved: availability.isReserved,
+          };
+        })
+      );
 
       if (parkingData.layout?.viewSettings) {
-        const { scale: dbScale, offsetX, offsetY } = parkingData.layout.viewSettings;
+        const {
+          scale: dbScale,
+          offsetX,
+          offsetY,
+        } = parkingData.layout.viewSettings;
         if (dbScale) setScale(dbScale - 0.15);
         if (offsetX !== undefined && offsetY !== undefined) {
           setOffset({ x: offsetX, y: offsetY });
         }
       }
 
-      if (parkingData.layout?.streets && parkingData.layout.streets.length > 0) {
+      if (
+        parkingData.layout?.streets &&
+        parkingData.layout.streets.length > 0
+      ) {
         const formattedStreets = parkingData.layout.streets.map((street) => ({
           id: street.id,
           position: { left: street.x, top: street.y },
@@ -474,7 +547,8 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
         totalSpots: parkingData.totalSpots || parkingData.spots.length,
         availableSpots:
           parkingData.availableSpots ||
-          formattedSpots.filter((spot) => !spot.isOccupied && !spot.isReserved).length,
+          formattedSpots.filter((spot) => !spot.isOccupied && !spot.isReserved)
+            .length,
       });
 
       setParkingSpots(formattedSpots);
@@ -485,6 +559,18 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (selectedDates?.startDate && selectedDates?.endDate) {
+      setIsRefreshing(true);
+      loadParkingData().then(() => {
+        setRefreshKey((prev) => prev + 1);
+        setTimeout(() => {
+          setIsRefreshing(false);
+        }, 500);
+      });
+    }
+  }, [selectedDates?.startDate, selectedDates?.endDate]);
 
   const zoomIn = () => {
     setScale((prevScale) => Math.min(prevScale * 1.2, 3));
@@ -509,35 +595,44 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
 
     if (itemType === "street") {
       const id = `street-${streets.length + 1}`;
-      setStreets([...streets, {
-        id,
-        position: { left: gridAlignedLeft, top: gridAlignedTop },
-        rotation: 0,
-        width: 80,
-        length: 300,
-        hasEntrance: false,
-        hasExit: false,
-        isDashed: true,
-      }]);
+      setStreets([
+        ...streets,
+        {
+          id,
+          position: { left: gridAlignedLeft, top: gridAlignedTop },
+          rotation: 0,
+          width: 80,
+          length: 300,
+          hasEntrance: false,
+          hasExit: false,
+          isDashed: true,
+        },
+      ]);
     } else if (itemType === "parkingSpot") {
       const newId = `parking-spot-${parkingSpots.length}`;
-      setParkingSpots([...parkingSpots, {
-        id: newId,
-        position: { left: gridAlignedLeft, top: gridAlignedTop },
-        rotation: 0,
-        size: { width: 60, height: 120 },
-        isOccupied: false,
-        isReserved: false,
-      }]);
+      setParkingSpots([
+        ...parkingSpots,
+        {
+          id: newId,
+          position: { left: gridAlignedLeft, top: gridAlignedTop },
+          rotation: 0,
+          size: { width: 60, height: 120 },
+          isOccupied: false,
+          isReserved: false,
+        },
+      ]);
     } else if (itemType === "arrow") {
       const id = `arrow-${arrows.length + 1}`;
-      setArrows([...arrows, {
-        id,
-        position: { left: gridAlignedLeft, top: gridAlignedTop },
-        rotation: 0,
-        size: { width: 20, height: 60 },
-        color: "#FFFFFF",
-      }]);
+      setArrows([
+        ...arrows,
+        {
+          id,
+          position: { left: gridAlignedLeft, top: gridAlignedTop },
+          rotation: 0,
+          size: { width: 20, height: 60 },
+          color: "#FFFFFF",
+        },
+      ]);
     }
   };
 
@@ -622,7 +717,7 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
   const locateParkingSpot = async () => {
     setSearchError(null);
     setSearchSuccess(null);
-    
+
     if (!selectedSpotId.trim()) {
       setHighlightedSpot(null);
       setSearchError("Please enter a parking spot number");
@@ -637,20 +732,23 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
 
     if (spot) {
       if (spot.isReserved || spot.isOccupied) {
-        setSearchError(`Spot ${selectedSpotId} is currently ${spot.isReserved ? "reserved" : "occupied"}`);
+        setSearchError(
+          `Spot ${selectedSpotId} is currently ${
+            spot.isReserved ? "reserved" : "occupied"
+          }`
+        );
         setHighlightedSpot(null);
         return;
       }
 
       setHighlightedSpot(fullId);
       setSearchSuccess(`Spot ${selectedSpotId} is available!`);
-      
+
       setOffset({
         x: -spot.position.left + 400 / scale - 30,
         y: -spot.position.top + 200 / scale - 60,
       });
 
-      // Déclencher automatiquement la réservation
       onSpotSelected(fullId);
     } else {
       setSearchError(`Parking spot ${selectedSpotId} not found`);
@@ -721,8 +819,10 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
           fontWeight: "bold",
           boxShadow: isHighlighted
             ? "0 0 15px 5px rgba(52,152,219,0.7)"
-            : isOccupied || isReserved
-            ? "0 2px 5px rgba(0,0,0,0.2)"
+            : isOccupied
+            ? "0 2px 5px rgba(231,76,60,0.4)"
+            : isReserved
+            ? "0 2px 5px rgba(243,156,18,0.4)"
             : "none",
           transition: "all 0.3s ease",
           zIndex: isHighlighted ? 10 : 1,
@@ -731,7 +831,9 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
         onClick={handleSpotClick}
         title={`Spot ${spotNumber} - ${statusText}`}
       >
-        <span style={{ fontSize: "12px", marginBottom: "4px" }}>{statusEmoji}</span>
+        <span style={{ fontSize: "12px", marginBottom: "4px" }}>
+          {statusEmoji}
+        </span>
         <span
           style={{
             fontSize: "14px",
@@ -808,7 +910,9 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
                 marginLeft: "5px",
               }}
             >
-              <span style={{ color: "#fff", fontSize: "14px", fontWeight: "bold" }}>
+              <span
+                style={{ color: "#fff", fontSize: "14px", fontWeight: "bold" }}
+              >
                 E
               </span>
             </div>
@@ -832,7 +936,8 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
                   left: 0,
                   width: "100%",
                   height: "100%",
-                  background: "repeating-linear-gradient(45deg, #f1c40f, #f1c40f 5px, #e74c3c 5px, #e74c3c 10px)",
+                  background:
+                    "repeating-linear-gradient(45deg, #f1c40f, #f1c40f 5px, #e74c3c 5px, #e74c3c 10px)",
                   borderRadius: "4px",
                 }}
               />
@@ -873,7 +978,8 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
                   left: 0,
                   width: "100%",
                   height: "100%",
-                  background: "repeating-linear-gradient(45deg, #f1c40f, #f1c40f 5px, #e74c3c 5px, #e74c3c 10px)",
+                  background:
+                    "repeating-linear-gradient(45deg, #f1c40f, #f1c40f 5px, #e74c3c 5px, #e74c3c 10px)",
                   borderRadius: "4px",
                 }}
               />
@@ -890,7 +996,9 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
                 marginRight: "5px",
               }}
             >
-              <span style={{ color: "#fff", fontSize: "14px", fontWeight: "bold" }}>
+              <span
+                style={{ color: "#fff", fontSize: "14px", fontWeight: "bold" }}
+              >
                 S
               </span>
             </div>
@@ -1013,7 +1121,7 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
             </span>
           </ParkingStats>
         </div>
-        
+
         <ParkingControls>
           <ControlButton onClick={zoomOut} title="Zoom Out">
             <span>🔍</span>
@@ -1030,7 +1138,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
           </ControlButton>
         </ParkingControls>
       </ParkingHeader>
-
       <SpotFinder>
         <SpotFinderInput>
           <SpotLabel htmlFor="spotLocator">Find your parking spot:</SpotLabel>
@@ -1041,9 +1148,9 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
             onChange={(e) => setSelectedSpotId(e.target.value)}
             placeholder="Enter spot number (e.g. 42)"
             ref={inputRef}
-            onKeyPress={(e) => e.key === 'Enter' && locateParkingSpot()}
+            onKeyPress={(e) => e.key === "Enter" && locateParkingSpot()}
           />
-          <LocateButton 
+          <LocateButton
             onClick={() => {
               locateParkingSpot();
             }}
@@ -1051,20 +1158,11 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
             Locate & Reserve
           </LocateButton>
         </SpotFinderInput>
-        
-        {searchError && (
-          <ErrorMessage>
-            {searchError}
-          </ErrorMessage>
-        )}
-        
-        {searchSuccess && (
-          <SuccessMessage>
-            {searchSuccess}
-          </SuccessMessage>
-        )}
-      </SpotFinder>
 
+        {searchError && <ErrorMessage>{searchError}</ErrorMessage>}
+
+        {searchSuccess && <SuccessMessage>{searchSuccess}</SuccessMessage>}
+      </SpotFinder>
       <DndProvider backend={HTML5Backend}>
         <ParkingArea
           ref={parkingAreaRef}
@@ -1075,7 +1173,32 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
           onMouseLeave={handleMouseLeave}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
+          style={{
+            transition: "opacity 0.3s ease",
+            opacity: isRefreshing ? 0.5 : 1,
+          }}
         >
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 1000,
+              display: isRefreshing ? "block" : "none",
+            }}
+          >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                border: "4px solid #f3f3f3",
+                borderTop: "4px solid #3498db",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            />
+          </div>
           <ParkingContent
             scale={scale}
             offsetX={offset.x}
@@ -1118,30 +1241,31 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
               />
             ))}
           </ParkingContent>
-          
+
           {showLogo && <ParkingLogo />}
-          
+
           <CoordinatesIndicator>
-            Zoom: {scale.toFixed(2)}x | Position: {Math.round(offset.x)}, {Math.round(offset.y)}
+            Zoom: {scale.toFixed(2)}x | Position: {Math.round(offset.x)},{" "}
+            {Math.round(offset.y)}
           </CoordinatesIndicator>
         </ParkingArea>
       </DndProvider>
 
       <Legend>
         <LegendItem>
-          <LegendIcon className="available"></LegendIcon>
+          <LegendIcon className="available" />
           <span>Available</span>
         </LegendItem>
         <LegendItem>
-          <LegendIcon className="occupied"></LegendIcon>
+          <LegendIcon className="occupied" />
           <span>Occupied</span>
         </LegendItem>
         <LegendItem>
-          <LegendIcon className="reserved"></LegendIcon>
+          <LegendIcon className="reserved" />
           <span>Reserved</span>
         </LegendItem>
         <LegendItem>
-          <LegendIcon className="street"></LegendIcon>
+          <LegendIcon className="street" />
           <span>Street</span>
         </LegendItem>
         <LegendItem>
@@ -1153,7 +1277,7 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
           <span>Exit</span>
         </LegendItem>
       </Legend>
-      
+
       <Instructions>
         <h3>How to reserve your spot:</h3>
         <ol>
@@ -1161,11 +1285,21 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
           <li>Click "Locate & Reserve" to find and reserve it on the map</li>
         </ol>
         <Tip>
-          💡 Tip: You can zoom in/out with the buttons or by scrolling, and drag to pan the map
+          💡 Tip: You can zoom in/out with the buttons or by scrolling, and drag
+          to pan the map
         </Tip>
       </Instructions>
     </ParkingContainer>
   );
 };
+
+const style = document.createElement("style");
+style.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(style);
 
 export default ParkingPlan2D;

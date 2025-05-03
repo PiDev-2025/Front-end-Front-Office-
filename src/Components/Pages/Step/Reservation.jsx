@@ -66,77 +66,6 @@ const PAYMENT_METHODS = [
   { id: "cash", label: "Espèces", icon: <DollarSign size={18} /> },
 ];
 
-// Ajout des styles personnalisés pour le DatePicker
-const datePickerStyles = `
-  .react-datepicker {
-    font-family: 'Inter', sans-serif;
-    border: none;
-    border-radius: 0.99rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    overflow: hidden;
-  }
-  
-  .react-datepicker__header {
-    background-color: #2563eb;
-    border-bottom: none;
-    padding: 1rem;
-    color: white;
-  }
-  
-  .react-datepicker__current-month {
-    color: white;
-    font-weight: 600;
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .react-datepicker__day-name {
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 500;
-  }
-  
-  .react-datepicker__day {
-    border-radius: 0.375rem;
-    transition: all 0.2s;
-    width: 2.5rem;
-    height: 2.5rem;
-    line-height: 2.5rem;
-    margin: 0.2rem;
-  }
-  
-  .react-datepicker__day:hover {
-    background-color: #e5edff;
-  }
-  
-  .react-datepicker__day--selected {
-    background-color: #2563eb !important;
-    color: white !important;
-    font-weight: 600;
-  }
-  
-  .react-datepicker__time-container {
-    border-left: 1px solid #e5e7eb;
-  }
-  
-  .react-datepicker__time-list-item {
-    transition: all 0.2s;
-    height: 2.5rem !important;
-    line-height: 2.5rem !important;
-    margin: 0 !important;
-    padding: 0 1rem !important;
-  }
-  
-  .react-datepicker__time-list-item:hover {
-    background-color: #e5edff !important;
-  }
-  
-  .react-datepicker__time-list-item--selected {
-    background-color: #2563eb !important;
-    color: white !important;
-    font-weight: 600;
-  }
-`;
-
 // Modifier le CustomDatePicker pour gérer la date minimum
 const CustomDatePicker = ({
   selected,
@@ -189,15 +118,9 @@ const CustomDatePicker = ({
           maxTime={getMaxTime()}
           locale="fr"
           className="w-full py-3 px-12 border border-gray-300 rounded-lg text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-          calendarClassName="bg-white border border-gray-200 rounded-lg shadow-lg"
-          dayClassName={(date) =>
-            date.getDate() === selected?.getDate() &&
-            date.getMonth() === selected?.getMonth()
-              ? "bg-blue-500 text-black rounded-full"
-              : "text-gray-700 hover:bg-blue-100"
-          }
-          popperClassName="z-50"
+          popperClassName="time-picker-popper"
           popperPlacement="bottom-start"
+          calendarClassName="react-datepicker-inline"
           popperModifiers={[
             {
               name: "offset",
@@ -205,16 +128,14 @@ const CustomDatePicker = ({
                 offset: [0, 8],
               },
             },
+            {
+              name: "preventOverflow",
+              options: {
+                boundary: window,
+              },
+            },
           ]}
           showPopperArrow={false}
-          autoComplete="off"
-          disabledKeyboardNavigation
-          placeholderText="Sélectionner date et heure"
-          timeInputLabel="Heure:"
-          filterTime={(time) => {
-            const minutes = time.getMinutes();
-            return minutes === 0 || minutes === 30;
-          }}
         />
         <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
           {isStartDate ? (
@@ -223,43 +144,114 @@ const CustomDatePicker = ({
             <Clock className="w-5 h-5 text-blue-500" />
           )}
         </div>
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-          <ChevronDown className="w-5 h-5 text-gray-400" />
-        </div>
       </div>
+      <style jsx global>{`
+        .react-datepicker {
+          font-family: 'Inter', sans-serif !important;
+          border: none !important;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+          display: flex !important;
+          flex-direction: row !important;
+        }
+        .react-datepicker__month-container {
+          float: none !important;
+        }
+        .react-datepicker__time-container {
+          border-left: 1px solid #e5e7eb !important;
+          width: 100px !important;
+          float: none !important;
+        }
+        .react-datepicker__time-container .react-datepicker__time {
+          border-radius: 0 0.5rem 0.5rem 0;
+        }
+        .react-datepicker__header {
+          background-color: #2563eb !important;
+          border-bottom: none !important;
+          padding: 1rem !important;
+          color: white !important;
+        }
+        .react-datepicker-time__header {
+          color: white !important;
+        }
+        .react-datepicker__current-month {
+          color: white !important;
+          font-weight: 600 !important;
+        }
+        .react-datepicker__day-name {
+          color: rgba(255, 255, 255, 0.8) !important;
+        }
+        .react-datepicker__day {
+          border-radius: 0.375rem !important;
+          margin: 0.2rem !important;
+          width: 2rem !important;
+          line-height: 2rem !important;
+          font-size: 0.875rem !important;
+        }
+        .react-datepicker__day:hover {
+          background-color: #e5edff !important;
+        }
+        .react-datepicker__day--selected {
+          background-color: #2563eb !important;
+          color: white !important;
+        }
+        .react-datepicker__time-box {
+          width: 100px !important;
+        }
+        .react-datepicker__time-list {
+          height: 280px !important;
+        }
+        .react-datepicker__time-list-item {
+          height: 40px !important;
+          line-height: 40px !important;
+          font-size: 0.875rem !important;
+          padding: 0 1rem !important;
+        }
+        .react-datepicker__time-list-item:hover {
+          background-color: #e5edff !important;
+        }
+        .react-datepicker__time-list-item--selected {
+          background-color: #2563eb !important;
+          color: white !important;
+        }
+        .time-picker-popper {
+          z-index: 9999 !important;
+        }
+      `}</style>
     </div>
   );
 };
 
 // Vehicle type selector component
 const VehicleTypeSelector = ({ selectedType, onSelect }) => (
-  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+  <div className="grid grid-cols-3 md:grid-cols-5 gap-2 max-w-full">
     {VEHICLE_TYPES.map((type) => (
       <div
         key={type.value}
         onClick={() => onSelect(type.value)}
-        className={`p-3 border rounded-2xl cursor-pointer transition-all flex flex-col items-center text-center shadow-sm
+        className={`p-2 border rounded-lg cursor-pointer transition-all flex flex-col items-center text-center shadow-sm
           ${
             selectedType === type.value
-              ? "border-blue-500 bg-blue-50 shadow-lg scale-105"
+              ? "border-blue-500 bg-blue-50 shadow-md scale-102"
               : "border-gray-200 hover:border-blue-300 hover:bg-blue-50/50"
           }`}
       >
         {/* Image */}
-        <div className="bg-gray-100 p-3 rounded-xl w-16 h-16 flex justify-center items-center mb-3">
+        <div className="bg-gray-100 p-2 rounded-lg w-12 h-12 flex justify-center items-center mb-1">
           <img
             src={type.image}
             alt={type.label}
-            className="w-12 h-12 object-contain"
+            className="w-8 h-8 object-contain"
           />
         </div>
 
         {/* Label */}
-        <p className="font-semibold text-gray-800">{type.label}</p>
+        <p className="font-medium text-gray-800 text-xs leading-tight">
+          {type.label}
+        </p>
 
         {/* Check icon if selected */}
         {selectedType === type.value && (
-          <CheckCircle2 size={24} className="text-blue-500 mt-2" />
+          <CheckCircle2 size={16} className="text-blue-500 mt-1" />
         )}
       </div>
     ))}
@@ -473,7 +465,8 @@ const Reservation = ({
         const existingEndTime = new Date(reservation.endTime).getTime();
 
         return (
-          (newStartTime >= existingStartTime && newStartTime < existingEndTime) ||
+          (newStartTime >= existingStartTime &&
+            newStartTime < existingEndTime) ||
           (newEndTime > existingStartTime && newEndTime <= existingEndTime) ||
           (newStartTime <= existingStartTime && newEndTime >= existingEndTime)
         );
@@ -604,6 +597,16 @@ const Reservation = ({
     const timer = setTimeout(verifyAvailability, 500);
     return () => clearTimeout(timer);
   }, [reservationData.startDate, reservationData.endDate]);
+
+  // Ajouter cet useEffect pour le scroll automatique
+  useEffect(() => {
+    if (currentStep === 2) {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  }, [currentStep]);
 
   // Handle QR code printing
   const handlePrint = () => {
@@ -737,8 +740,11 @@ const Reservation = ({
         return (
           reservationData.startDate &&
           reservationData.endDate &&
-          new Date(reservationData.endDate) > new Date(reservationData.startDate) &&
-          new Date(reservationData.endDate) - new Date(reservationData.startDate) >= minDuration &&
+          new Date(reservationData.endDate) >
+            new Date(reservationData.startDate) &&
+          new Date(reservationData.endDate) -
+            new Date(reservationData.startDate) >=
+            minDuration &&
           !error.includes("disponible")
         );
       case 2: // Vehicle type
@@ -751,22 +757,24 @@ const Reservation = ({
   // Render content based on current step
   return (
     <div className="space-y-6">
+      
       {currentStep === 1 && (
         <div className={commonClasses + " border-blue-100"}>
-          <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
-            <div className="bg-blue-50 p-3 rounded-full mr-4">
+          <h3 className="text-xl font-bold mb-1 flex items-center text-gray-800">
+            <div className="bg-blue-50 p-3 rounded-full mr-1">
               <Calendar className="text-blue-600" size={24} />
             </div>
             Dates de stationnement
           </h3>
 
-          <div className="flex flex-col space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <CustomDatePicker
               selected={reservationData.startDate}
               onChange={async (date) => {
-                const newEndDate = date > reservationData.endDate
-                  ? new Date(date.getTime() + 60 * 60 * 1000)
-                  : reservationData.endDate;
+                const newEndDate =
+                  date > reservationData.endDate
+                    ? new Date(date.getTime() + 60 * 60 * 1000)
+                    : reservationData.endDate;
 
                 const isAvailable = await checkAvailability(date, newEndDate);
                 if (isAvailable) {
@@ -805,7 +813,7 @@ const Reservation = ({
       {currentStep === 2 && (
         <div className={commonClasses + " border-green-100"}>
           <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
-            <div className="bg-green-50 p-3 rounded-full mr-4">
+            <div className="bg-green-50 p-3 rounded-full mr-1">
               <Car className="text-green-600" size={24} />
             </div>
             Type de véhicule
@@ -821,7 +829,7 @@ const Reservation = ({
 
       {/* Error message */}
       {error && (
-        <div className="p-3 rounded-lg mb-4 bg-red-50 text-red-700 flex items-center">
+        <div className="p-3 rounded-lg mb-2 bg-red-50 text-red-700 flex items-center">
           <AlertCircle size={18} className="mr-2" />
           {error}
         </div>
@@ -865,9 +873,9 @@ const Reservation = ({
                 Traitement...
               </>
             ) : currentStep === 1 ? (
-              "Suivant"
+              "Next"
             ) : (
-              "Confirmer la réservation"
+              "Confirm reservation"
             )}
           </button>
         </div>

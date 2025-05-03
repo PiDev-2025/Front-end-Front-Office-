@@ -92,6 +92,10 @@ const Booking = () => {
             <div className="bg-white rounded-xl shadow-lg">
               <ParkingLiveView
                 parkingId={selectedParking?.id || selectedParking?._id}
+                selectedDates={{
+                  startDate: reservationData.startDate,
+                  endDate: reservationData.endDate,
+                }}
                 onSpotSelected={(spotId) => {
                   setSelectedSpot(spotId);
                   if (selectedParking) {
