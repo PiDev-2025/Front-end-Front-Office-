@@ -161,12 +161,43 @@ const EmployeeParkingScanner = () => {
         try {
           const reservationData = JSON.parse(result.text);
 
-          // Check if this is reservation data based on your specific QR code format
-          if (reservationData.id && reservationData.parkingName) {
-            // Standardize field names to match our component's expected structure
+          // Check if this is a confirmation QR code (from Confirmation component)
+          if (
+            reservationData.reservationId &&
+            reservationData.startTime &&
+            reservationData.endTime
+          ) {
+            // Handle QR code from Confirmation component
+            const standardizedData = {
+              reservationId: reservationData.reservationId,
+              parkingId:
+                reservationData.parkingId || reservationData.reservationId,
+              parkingName: reservationData.parkingName || "Parking Space",
+              startTime: reservationData.startTime,
+              endTime: reservationData.endTime,
+              vehicleType: reservationData.vehicleType,
+              status: reservationData.status || "pending",
+              paymentStatus: reservationData.paymentStatus || "pending",
+              generatedAt: new Date().toISOString(),
+            };
+
+            // Format dates for display
+            standardizedData.formattedStartTime = new Date(
+              standardizedData.startTime
+            ).toLocaleString();
+            standardizedData.formattedEndTime = new Date(
+              standardizedData.endTime
+            ).toLocaleString();
+            standardizedData.formattedGeneratedAt = new Date().toLocaleString();
+
+            setParsedReservation(standardizedData);
+            setShowModal(true);
+          }
+          // Handle old format QR code
+          else if (reservationData.id && reservationData.parkingName) {
             const standardizedData = {
               reservationId: reservationData.id,
-              parkingId: reservationData.id, // Using same ID as there's no specific parkingId in QR
+              parkingId: reservationData.id,
               parkingName: reservationData.parkingName,
               startTime: reservationData.startTime,
               endTime: reservationData.endTime,
@@ -176,7 +207,6 @@ const EmployeeParkingScanner = () => {
               generatedAt: new Date().toISOString(),
             };
 
-            // Format dates for display
             if (standardizedData.startTime) {
               standardizedData.formattedStartTime = new Date(
                 standardizedData.startTime
@@ -187,11 +217,10 @@ const EmployeeParkingScanner = () => {
                 standardizedData.endTime
               ).toLocaleString();
             }
-            
             standardizedData.formattedGeneratedAt = new Date().toLocaleString();
 
             setParsedReservation(standardizedData);
-            setShowModal(true); // Show modal with reservation details
+            setShowModal(true);
           } else {
             setParsedReservation(null);
           }
@@ -200,7 +229,7 @@ const EmployeeParkingScanner = () => {
           setParsedReservation(null);
         }
 
-        stopCamera(); // Stop the camera after successful scan
+        stopCamera();
         setError(null);
       } catch (err) {
         setError(err.message);
@@ -297,14 +326,18 @@ const EmployeeParkingScanner = () => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Authentication token not found");
 
-      const url = `http://localhost:3001/reservations/${reservationId}/status`;
+      // Update both status and paymentStatus based on accept/reject decision
+      const url = `http://localhost:3001/api/reservations/${reservationId}/statusPayment`;
       const response = await fetch(url, {
-        method: "PATCH",
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({
+          status: newStatus,
+          paymentStatus: newStatus === "accepted" ? "completed" : "failed",
+        }),
       });
 
       if (!response.ok) {
@@ -319,8 +352,12 @@ const EmployeeParkingScanner = () => {
 
       const updatedReservation = await response.json();
 
-      // Update the parsed reservation with new status
-      setParsedReservation((prev) => ({ ...prev, status: newStatus }));
+      // Update the parsed reservation with new status and payment status
+      setParsedReservation((prev) => ({
+        ...prev,
+        status: newStatus,
+        paymentStatus: newStatus === "accepted" ? "completed" : "failed",
+      }));
 
       // If accepted and it's for a parking we manage, update spots
       if (newStatus === "accepted" && parsedReservation?.parkingId) {
@@ -352,8 +389,8 @@ const EmployeeParkingScanner = () => {
   }
 
   // Get status color and icon
-  const getStatusConfig = (status) => {
-    switch (status) {
+  const getStatusConfig = (paymentStatus) => {
+    switch (paymentStatus) {
       case "accepted":
         return {
           bgColor: "bg-green-100",
