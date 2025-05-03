@@ -339,9 +339,10 @@ const handleReservation = () => {
   if (onContinue && parkingToUse) {
     onContinue(parkingToUse);
   } else {
+    console.log("Selected parking data:", parkingData); // Utilisez parkingData au lieu de selectedParking
     navigate('/booking', { 
       state: { 
-        selectedParking: parkingToUse,
+        parkingData: parkingToUse,
         step: 3 
       }
     });

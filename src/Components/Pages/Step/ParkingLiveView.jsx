@@ -3,9 +3,361 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import styled, { keyframes } from "styled-components";
 
-const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
-  const { id: urlParkingId } = useParams(); // Si utilisation de React Router
+// Animations
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+// Styled Components
+const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  font-size: 18px;
+  color: #2c3e50;
+`;
+
+const Spinner = styled.div`
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: ${spin} 1s linear infinite;
+  margin-bottom: 20px;
+`;
+
+const ErrorContainer = styled.div`
+  padding: 20px;
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  font-size: 18px;
+  color: #e74c3c;
+`;
+
+const ErrorIcon = styled.div`
+  font-size: 40px;
+  margin-bottom: 20px;
+`;
+
+const RetryButton = styled.button`
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #2980b9;
+  }
+`;
+
+const ParkingContainer = styled.div`
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+`;
+
+const ParkingHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  width: 100%;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+`;
+
+const ParkingTitle = styled.h1`
+  margin: 0;
+  color: #2c3e50;
+  font-size: 24px;
+`;
+
+const ParkingStats = styled.div`
+  margin-top: 8px;
+  color: #7f8c8d;
+  display: flex;
+  gap: 15px;
+`;
+
+const ParkingControls = styled.div`
+  display: flex;
+  gap: 10px;
+  align-items: center;
+`;
+
+const ControlButton = styled.button`
+  padding: 8px 12px;
+  background-color: #34495e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #2c3e50;
+  }
+`;
+
+const ZoomLevel = styled.div`
+  padding: 8px 12px;
+  background-color: #ecf0f1;
+  color: #2c3e50;
+  border-radius: 4px;
+  font-weight: bold;
+  min-width: 60px;
+  text-align: center;
+`;
+
+const SpotFinder = styled.div`
+  width: 100%;
+  margin-bottom: 20px;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+`;
+
+const SpotFinderInput = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+`;
+
+const SpotLabel = styled.label`
+  font-size: 16px;
+  font-weight: 500;
+  color: #2c3e50;
+  white-space: nowrap;
+`;
+
+const SpotInput = styled.input`
+  padding: 10px 15px;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 16px;
+  flex-grow: 1;
+  max-width: 200px;
+
+  &:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  }
+`;
+
+const LocateButton = styled.button`
+  padding: 10px 20px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #2980b9;
+  }
+`;
+
+const SearchMessage = styled.div`
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-weight: 500;
+  animation: ${fadeIn} 0.3s ease-out;
+`;
+
+const ErrorMessage = styled(SearchMessage)`
+  background-color: #ffebee;
+  color: #c62828;
+`;
+
+const SuccessMessage = styled(SearchMessage)`
+  background-color: #e8f5e9;
+  color: #2e7d32;
+`;
+
+const ReserveButton = styled.button`
+  padding: 12px 20px;
+  width: 100%;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &.active {
+    background-color: #2ecc71;
+    color: white;
+
+    &:hover {
+      background-color: #27ae60;
+    }
+  }
+
+  &.disabled {
+    background-color: #95a5a6;
+    color: white;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+`;
+
+const ParkingArea = styled.div`
+  width: 95%;
+  height: 500px;
+  background-color: #1c1c24;
+  border: 1px solid #16213e;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  cursor: ${(props) => (props.isDragging ? "grabbing" : "grab")};
+`;
+
+const ParkingContent = styled.div`
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  transform-origin: top left;
+  transform: ${(props) =>
+    `scale(${props.scale}) translate(${props.offsetX}px, ${props.offsetY}px)`};
+  transition: ${(props) => (props.isDragging ? "none" : "transform 0.1s ease")};
+`;
+
+const CoordinatesIndicator = styled.div`
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+`;
+
+const Legend = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+`;
+
+const LegendItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+`;
+
+const LegendIcon = styled.div`
+  width: 20px;
+  height: 20px;
+  border-radius: 2px;
+
+  &.available {
+    border: 2px dashed rgba(100, 100, 100, 1);
+  }
+
+  &.occupied {
+    background-color: #e74c3c;
+  }
+
+  &.reserved {
+    background-color: #f39c12;
+  }
+
+  &.street {
+    background-color: #3a3a3a;
+  }
+
+  &.entrance {
+    background-color: #3498db;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    color: white;
+  }
+
+  &.exit {
+    background-color: #e74c3c;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    color: white;
+  }
+`;
+
+const Instructions = styled.div`
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  width: 100%;
+`;
+
+const Tip = styled.p`
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  color: #0d47a1;
+  font-style: italic;
+`;
+
+const ParkingPlan2D = ({
+  parkingId: propParkingId,
+  onSpotSelected,
+  selectedDates,
+}) => {
+  const { id: urlParkingId } = useParams();
   const parkingId = propParkingId || urlParkingId;
   const navigate = useNavigate();
   const gridSize = 50;
@@ -23,40 +375,128 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
     availableSpots: 0,
   });
 
-  // État pour les places de parking
   const [parkingSpots, setParkingSpots] = useState([]);
   const [selectedSpotId, setSelectedSpotId] = useState("");
   const [highlightedSpot, setHighlightedSpot] = useState(null);
-  // État pour les rues
   const [streets, setStreets] = useState([]);
-
-  // État pour l'image du logo
   const [showLogo, setShowLogo] = useState(true);
+  const [searchError, setSearchError] = useState(null);
+  const [searchSuccess, setSearchSuccess] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Initialiser les places de parking par défaut
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
   useEffect(() => {
     if (!parkingId) {
       setLoading(false);
     }
   }, []);
 
-  // Chargement du parking existant si parkingId est fourni
   useEffect(() => {
     if (parkingId) {
       loadParkingData();
     }
   }, [parkingId]);
 
-  // Fonction pour charger les données du parking existant
+  const checkSpotAvailability = async (spot, startDate, endDate) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
+      );
+
+      const reservations = response.data;
+      const requestedStartTime = new Date(startDate).getTime();
+      const requestedEndTime = new Date(endDate).getTime();
+      const currentTime = new Date().getTime();
+
+      // Si le statut de la place est déjà "occupied" dans la base de données
+      if (spot.status === "occupied") {
+        return {
+          isAvailable: false,
+          isOccupied: true,
+          isReserved: false,
+        };
+      }
+
+      // Vérifier les réservations existantes
+      const hasReservation = reservations.some((reservation) => {
+        if (reservation.status !== "accepted") return false;
+
+        const existingStartTime = new Date(reservation.startTime).getTime();
+        const existingEndTime = new Date(reservation.endTime).getTime();
+
+        // Vérifier si la période demandée chevauche une réservation future
+        return (
+          (requestedStartTime >= existingStartTime &&
+            requestedStartTime < existingEndTime) ||
+          (requestedEndTime > existingStartTime &&
+            requestedEndTime <= existingEndTime) ||
+          (requestedStartTime <= existingStartTime &&
+            requestedEndTime >= existingEndTime)
+        );
+      });
+
+      // Si une réservation existe pour cette période
+      if (hasReservation) {
+        return {
+          isAvailable: false,
+          isOccupied: false,
+          isReserved: true,
+        };
+      }
+
+      // Si aucune réservation n'existe et la place n'est pas occupée
+      return {
+        isAvailable: true,
+        isOccupied: false,
+        isReserved: false,
+      };
+    } catch (error) {
+      console.error("Error checking spot availability:", error);
+      return {
+        isAvailable: false,
+        isOccupied: false,
+        isReserved: false,
+      };
+    }
+  };
+
   const loadParkingData = async () => {
     try {
       setLoading(true);
-      console.log("Chargement des données du parking:", parkingId);
-
       const response = await axios.get(
         `http://localhost:3001/parkings/parkings/${parkingId}`
       );
       const parkingData = response.data;
+
+      const formattedSpots = await Promise.all(
+        parkingData.spots.map(async (spot) => {
+          const availability =
+            selectedDates?.startDate && selectedDates?.endDate
+              ? await checkSpotAvailability(
+                  spot,
+                  selectedDates.startDate,
+                  selectedDates.endDate
+                )
+              : { isAvailable: true, isOccupied: false, isReserved: false };
+
+          return {
+            id: spot.id,
+            position: { left: spot.x, top: spot.y },
+            rotation: spot.rotation || 0,
+            size: { width: spot.width || 60, height: spot.height || 120 },
+            isOccupied: availability.isOccupied,
+            isReserved: availability.isReserved,
+          };
+        })
+      );
 
       if (parkingData.layout?.viewSettings) {
         const {
@@ -68,25 +508,8 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
         if (offsetX !== undefined && offsetY !== undefined) {
           setOffset({ x: offsetX, y: offsetY });
         }
-        console.log("Loaded view settings:", {
-          scale: dbScale,
-          offset: { x: offsetX, y: offsetY },
-        });
-      } else {
-        console.log("No view settings found, using defaults");
       }
-      // Formatage des places de parking avec support pour les places réservées
-      const formattedSpots = parkingData.spots.map((spot) => ({
-        id: spot.id,
-        position: { left: spot.x, top: spot.y },
-        rotation: spot.rotation || 0,
-        size: { width: spot.width || 60, height: spot.height || 120 },
-        isOccupied: spot.status === "occupied",
-        isReserved: spot.status === "reserved",
-      }));
-      setParkingSpots(formattedSpots);
 
-      // Formatage des rues
       if (
         parkingData.layout?.streets &&
         parkingData.layout.streets.length > 0
@@ -103,116 +526,123 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
         }));
         setStreets(formattedStreets);
       } else {
-        console.log("Aucune rue trouvée dans les données du parking");
         setStreets([]);
       }
 
-      // Formatage des flèches corrigé pour correspondre à l'ancien code
       if (parkingData.layout?.arrows && parkingData.layout.arrows.length > 0) {
         const formattedArrows = parkingData.layout.arrows.map((arrow) => ({
           id: arrow.id,
           position: { left: arrow.x, top: arrow.y },
           rotation: arrow.rotation || 0,
-          size: {
-            width: arrow.width || 20,
-            height: arrow.length || 60,
-          },
+          size: { width: arrow.width || 20, height: arrow.length || 60 },
           color: arrow.color || "#FFFFFF",
         }));
-        console.log("Arrow data from API:", parkingData.layout.arrows);
-        console.log("Formatted Arrows:", formattedArrows);
         setArrows(formattedArrows);
       } else {
-        console.log("Aucune flèche trouvée dans les données du parking");
         setArrows([]);
       }
 
-      // Ajouter les informations du parking
       setParkingInfo({
         name: parkingData.name || "Parking",
         totalSpots: parkingData.totalSpots || parkingData.spots.length,
         availableSpots:
           parkingData.availableSpots ||
-          parkingData.spots.filter((spot) => spot.status === "available")
+          formattedSpots.filter((spot) => !spot.isOccupied && !spot.isReserved)
             .length,
       });
 
+      setParkingSpots(formattedSpots);
       setLoading(false);
     } catch (error) {
-      console.error("Erreur lors du chargement du parking:", error);
-      setError("Impossible de charger les données du parking");
+      console.error("Error loading parking data:", error);
+      setError("Failed to load parking data. Please try again later.");
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (selectedDates?.startDate && selectedDates?.endDate) {
+      setIsRefreshing(true);
+      loadParkingData().then(() => {
+        setRefreshKey((prev) => prev + 1);
+        setTimeout(() => {
+          setIsRefreshing(false);
+        }, 500);
+      });
+    }
+  }, [selectedDates?.startDate, selectedDates?.endDate]);
+
   const zoomIn = () => {
     setScale((prevScale) => Math.min(prevScale * 1.2, 3));
   };
+
   const zoomOut = () => {
     setScale((prevScale) => Math.max(prevScale / 1.2, 0.3));
   };
-  // Toggle logo visibility
-  const toggleLogo = () => {
-    setShowLogo(!showLogo);
-  };
-  // Reset zoom and pan
+
   const resetView = () => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
   };
+
   const handleDrop = (e) => {
     const itemType = e.dataTransfer.getData("itemType");
     const rect = e.currentTarget.getBoundingClientRect();
     const left = (e.clientX - rect.left) / scale - offset.x;
     const top = (e.clientY - rect.top) / scale - offset.y;
-    // Aligner sur la grille
     const gridAlignedLeft = Math.round(left / gridSize) * gridSize;
     const gridAlignedTop = Math.round(top / gridSize) * gridSize;
+
     if (itemType === "street") {
-      // Ajouter une nouvelle rue à la position de drop
       const id = `street-${streets.length + 1}`;
-      const newStreet = {
-        id,
-        position: { left: gridAlignedLeft, top: gridAlignedTop },
-        rotation: 0,
-        width: 80,
-        length: 300,
-        hasEntrance: false,
-        hasExit: false,
-        isDashed: true,
-      };
-      setStreets([...streets, newStreet]);
+      setStreets([
+        ...streets,
+        {
+          id,
+          position: { left: gridAlignedLeft, top: gridAlignedTop },
+          rotation: 0,
+          width: 80,
+          length: 300,
+          hasEntrance: false,
+          hasExit: false,
+          isDashed: true,
+        },
+      ]);
     } else if (itemType === "parkingSpot") {
-      // Ajouter une nouvelle place à la position de drop
       const newId = `parking-spot-${parkingSpots.length}`;
-      const newSpot = {
-        id: newId,
-        position: { left: gridAlignedLeft, top: gridAlignedTop },
-        rotation: 0,
-        size: { width: 60, height: 120 },
-        isOccupied: false,
-        isReserved: false,
-      };
-      setParkingSpots([...parkingSpots, newSpot]);
+      setParkingSpots([
+        ...parkingSpots,
+        {
+          id: newId,
+          position: { left: gridAlignedLeft, top: gridAlignedTop },
+          rotation: 0,
+          size: { width: 60, height: 120 },
+          isOccupied: false,
+          isReserved: false,
+        },
+      ]);
     } else if (itemType === "arrow") {
-      // Ajouter une nouvelle flèche à la position de drop
       const id = `arrow-${arrows.length + 1}`;
-      const newArrow = {
-        id,
-        position: { left: gridAlignedLeft, top: gridAlignedTop },
-        rotation: 0,
-        size: { width: 20, height: 60 },
-        color: "#FFFFFF",
-      };
-      setArrows([...arrows, newArrow]);
+      setArrows([
+        ...arrows,
+        {
+          id,
+          position: { left: gridAlignedLeft, top: gridAlignedTop },
+          rotation: 0,
+          size: { width: 20, height: 60 },
+          color: "#FFFFFF",
+        },
+      ]);
     }
   };
+
   const handleMouseDown = (e) => {
     if (e.button === 0) {
-      // Left mouse button
       setIsDragging(true);
       setStartPosition({ x: e.clientX, y: e.clientY });
     }
   };
+
   const handleMouseMove = (e) => {
     if (isDragging) {
       const dx = e.clientX - startPosition.x;
@@ -224,12 +654,15 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
       setStartPosition({ x: e.clientX, y: e.clientY });
     }
   };
+
   const handleMouseUp = () => {
     setIsDragging(false);
   };
+
   const handleMouseLeave = () => {
     setIsDragging(false);
   };
+
   useEffect(() => {
     window.addEventListener("mouseup", handleMouseUp);
     return () => {
@@ -238,16 +671,14 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
   }, []);
 
   const handleDragOver = (e) => {
-    e.preventDefault(); // Nécessaire pour permettre le drop
+    e.preventDefault();
   };
 
-  // Dessine une grille de fond pour meilleure visualisation
   const renderGrid = () => {
     const gridLines = [];
-    const gridCount = 30; // Nombre de lignes dans chaque direction
+    const gridCount = 30;
 
     for (let i = 0; i <= gridCount; i++) {
-      // Lignes horizontales
       gridLines.push(
         <line
           key={`h-${i}`}
@@ -259,8 +690,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
           strokeWidth={0.5}
         />
       );
-
-      // Lignes verticales
       gridLines.push(
         <line
           key={`v-${i}`}
@@ -285,45 +714,48 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
     );
   };
 
-  const locateParkingSpot = () => {
-    // Si l'entrée est vide, annuler la mise en surbrillance
+  const locateParkingSpot = async () => {
+    setSearchError(null);
+    setSearchSuccess(null);
+
     if (!selectedSpotId.trim()) {
       setHighlightedSpot(null);
+      setSearchError("Please enter a parking spot number");
       return;
     }
 
-    // Format de recherche complet (ex: "parking-spot-42")
     const fullId = selectedSpotId.startsWith("parking-spot-")
       ? selectedSpotId
       : `parking-spot-${selectedSpotId}`;
 
-    // Vérifier si la place existe
     const spot = parkingSpots.find((spot) => spot.id === fullId);
 
     if (spot) {
-      // Vérifier si la place est réservée
       if (spot.isReserved || spot.isOccupied) {
-        alert(
-          `Attention : La place ${selectedSpotId} est actuellement réservée.`
+        setSearchError(
+          `Spot ${selectedSpotId} is currently ${
+            spot.isReserved ? "reserved" : "occupied"
+          }`
         );
         setHighlightedSpot(null);
-        return; 
+        return;
       }
 
       setHighlightedSpot(fullId);
+      setSearchSuccess(`Spot ${selectedSpotId} is available!`);
 
-      // Centrer la vue sur la place sélectionnée
       setOffset({
         x: -spot.position.left + 400 / scale - 30,
         y: -spot.position.top + 200 / scale - 60,
       });
+
+      onSpotSelected(fullId);
     } else {
-      alert(`La place de parking ${selectedSpotId} n'existe pas.`);
+      setSearchError(`Parking spot ${selectedSpotId} not found`);
       setHighlightedSpot(null);
     }
   };
 
-  // Rendu personnalisé pour les places de parking avec support pour places réservées
   const ParkingSpotRender = ({
     id,
     position,
@@ -332,32 +764,39 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
     isOccupied,
     isReserved,
   }) => {
-    // Extraire le numéro de la place depuis l'ID
     const spotNumber = id.replace("parking-spot-", "");
-
-    // Déterminer si cette place est en surbrillance
     const isHighlighted = highlightedSpot === id;
 
-    // Déterminer le style en fonction du statut
-    let bgColor, borderStyle, statusText;
+    const handleSpotClick = () => {
+      if (!isOccupied && !isReserved) {
+        setSelectedSpotId(spotNumber);
+        setHighlightedSpot(id);
+        onSpotSelected(id);
+      }
+    };
+
+    let bgColor, borderStyle, statusText, statusEmoji;
 
     if (isHighlighted) {
-      // Style pour la place mise en surbrillance
-      bgColor = "#3498db"; // Bleu vif
+      bgColor = "#3498db";
       borderStyle = "3px solid #2980b9";
-      statusText = "Sélectionnée";
+      statusText = "Selected";
+      statusEmoji = "🔍";
     } else if (isOccupied) {
-      bgColor = "#e74c3c"; // Rouge pour occupé
+      bgColor = "#e74c3c";
       borderStyle = "2px solid #c0392b";
-      statusText = "Occupée";
+      statusText = "Occupied";
+      statusEmoji = "⛔";
     } else if (isReserved) {
-      bgColor = "#f39c12"; // Orange pour réservé
+      bgColor = "#f39c12";
       borderStyle = "2px solid #d35400";
-      statusText = "Réservée";
+      statusText = "Reserved";
+      statusEmoji = "🕒";
     } else {
       bgColor = "transparent";
       borderStyle = "2px dashed rgba(255, 255, 255, 0.7)";
-      statusText = "Libre";
+      statusText = "Available";
+      statusEmoji = "✅";
     }
 
     return (
@@ -373,20 +812,28 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
           border: borderStyle,
           borderRadius: 4,
           display: "flex",
+          flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
           color: isHighlighted || isOccupied || isReserved ? "white" : "#8cf",
           fontWeight: "bold",
           boxShadow: isHighlighted
             ? "0 0 15px 5px rgba(52,152,219,0.7)"
-            : isOccupied || isReserved
-            ? "0 2px 5px rgba(0,0,0,0.2)"
+            : isOccupied
+            ? "0 2px 5px rgba(231,76,60,0.4)"
+            : isReserved
+            ? "0 2px 5px rgba(243,156,18,0.4)"
             : "none",
           transition: "all 0.3s ease",
           zIndex: isHighlighted ? 10 : 1,
+          cursor: isOccupied || isReserved ? "not-allowed" : "pointer",
         }}
-        title={`Place ${spotNumber} - ${statusText}`}
+        onClick={handleSpotClick}
+        title={`Spot ${spotNumber} - ${statusText}`}
       >
+        <span style={{ fontSize: "12px", marginBottom: "4px" }}>
+          {statusEmoji}
+        </span>
         <span
           style={{
             fontSize: "14px",
@@ -405,15 +852,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
     );
   };
 
-  // In ParkingPlan2D
-  const goToReservationDetails = () => {
-    if (!highlightedSpot) {
-      alert("Veuillez sélectionner une place de parking d'abord.");
-      return;
-    }
-    onSpotSelected(highlightedSpot); // Utilisez directement onSpotSelected
-  };
-  // Rendu personnalisé pour les rues - Amélioré pour mieux correspondre à l'ancien code
   const StreetRender = (street) => {
     return (
       <div
@@ -432,7 +870,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
           zIndex: 0,
         }}
       >
-        {/* Marquage central */}
         <div
           style={{
             position: "absolute",
@@ -447,7 +884,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
             zIndex: 1,
           }}
         />
-        {/* Entrée avec barrière */}
         {street.hasEntrance && (
           <div
             style={{
@@ -462,7 +898,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
               zIndex: 2,
             }}
           >
-            {/* Badge Entrée */}
             <div
               style={{
                 width: "26px",
@@ -481,7 +916,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
                 E
               </span>
             </div>
-            {/* Barrière d'entrée */}
             <div
               style={{
                 position: "relative",
@@ -492,20 +926,9 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
                 borderRadius: "4px",
                 transform: "rotate(0deg)",
                 transformOrigin: "left center",
-                transition: "transform 1.5s ease",
-                // Animation de la barrière
                 animation: "barrierEntrance 8s infinite",
               }}
             >
-              <style>
-                {`
-                  @keyframes barrierEntrance {
-                    0%, 50%, 100% { transform: rotate(0deg); }
-                    12.5%, 37.5%, 62.5%, 87.5% { transform: rotate(-90deg); }
-                  }
-                `}
-              </style>
-              {/* Rayures sur la barrière */}
               <div
                 style={{
                   position: "absolute",
@@ -521,7 +944,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
             </div>
           </div>
         )}
-        {/* Sortie avec barrière */}
         {street.hasExit && (
           <div
             style={{
@@ -536,7 +958,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
               zIndex: 2,
             }}
           >
-            {/* Barrière de sortie */}
             <div
               style={{
                 position: "relative",
@@ -547,20 +968,9 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
                 borderRadius: "4px",
                 transform: "rotate(0deg)",
                 transformOrigin: "right center",
-                transition: "transform 1.5s ease",
-                // Animation de la barrière avec décalage
                 animation: "barrierExit 8s infinite",
               }}
             >
-              <style>
-                {`
-                  @keyframes barrierExit {
-                    0%, 50%, 100% { transform: rotate(0deg); }
-                    25%, 75% { transform: rotate(90deg); }
-                  }
-                `}
-              </style>
-              {/* Rayures sur la barrière */}
               <div
                 style={{
                   position: "absolute",
@@ -574,7 +984,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
                 }}
               />
             </div>
-            {/* Badge Sortie */}
             <div
               style={{
                 width: "26px",
@@ -598,7 +1007,7 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
       </div>
     );
   };
-  // Rendu des flèches directionnelles - Corrigé pour utiliser correctement les dimensions
+
   const ArrowRender = ({ id, position, rotation, size, color }) => {
     const arrowWidth = size.width || 20;
     const arrowHeight = size.height || 60;
@@ -642,6 +1051,7 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
       </div>
     );
   };
+
   const ParkingLogo = () => {
     return (
       <div
@@ -653,7 +1063,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
           borderRadius: "8px",
           overflow: "hidden",
           boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-          transformOrigin: "top left",
           opacity: 0.85,
           transition: "opacity 0.3s ease",
           backgroundColor: "rgba(0,0,0,0.6)",
@@ -679,257 +1088,124 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
     );
   };
 
-  // Afficher un indicateur de chargement pendant le chargement des données
   if (loading) {
     return (
-      <div
-        style={{
-          padding: "20px",
-          marginTop: "20px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "400px",
-          fontSize: "18px",
-          color: "#2c3e50",
-        }}
-      >
-        Chargement du plan de parking...
-      </div>
+      <LoadingContainer>
+        <Spinner />
+        <p>Loading parking plan...</p>
+      </LoadingContainer>
     );
   }
 
-  // Afficher un message d'erreur si le chargement a échoué
   if (error) {
     return (
-      <div
-        style={{
-          padding: "20px",
-          marginTop: "20px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "400px",
-          fontSize: "18px",
-          color: "#e74c3c",
-        }}
-      >
-        {error}
-      </div>
+      <ErrorContainer>
+        <ErrorIcon>⚠️</ErrorIcon>
+        <p>{error}</p>
+        <RetryButton onClick={loadParkingData}>Retry</RetryButton>
+      </ErrorContainer>
     );
   }
 
   return (
-    <div
-      className="parking-plan-container"
-      style={{
-        padding: "20px",
-        marginTop: "20px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center", // Centre horizontalement tous les éléments
-        width: "100%",
-      }}
-    >
-      <div
-        className="parking-spot-locator"
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "15px",
-          marginBottom: "20px",
-          width: "800px",
-          maxWidth: "100%",
-        }}
-      >
-        <label
-          htmlFor="spotLocator"
-          style={{
-            fontSize: "16px",
-            fontWeight: "500",
-            color: "#2c3e50",
-          }}
-        >
-          Numéro de place:
-        </label>
-        <input
-          id="spotLocator"
-          type="text"
-          value={selectedSpotId}
-          onChange={(e) => setSelectedSpotId(e.target.value)}
-          placeholder="ex: 42"
-          style={{
-            padding: "8px 12px",
-            borderRadius: "4px",
-            border: "1px solid #bdc3c7",
-            width: "100px",
-            fontSize: "16px",
-          }}
-        />
-        <button
-          onClick={locateParkingSpot}
-          style={{
-            padding: "8px 15px",
-            backgroundColor: "#3498db",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            fontSize: "16px",
-            fontWeight: "500",
-            cursor: "pointer",
-          }}
-        >
-          Localiser
-        </button>
-        <button
-          onClick={goToReservationDetails}
-          disabled={!highlightedSpot}
-          style={{
-            padding: "8px 15px",
-            backgroundColor: highlightedSpot ? "#2ecc71" : "#95a5a6",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            fontSize: "16px",
-            fontWeight: "500",
-            cursor: highlightedSpot ? "pointer" : "not-allowed",
-            opacity: highlightedSpot ? 1 : 0.7,
-          }}
-        >
-          Go to Reservation Details
-        </button>
-      </div>
-      <div
-        className="parking-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "20px",
-          width: "800px", // Même largeur que le plan
-          maxWidth: "100%", // Responsive
-        }}
-      >
+    <ParkingContainer>
+      <ParkingHeader>
         <div>
-          <h1 style={{ margin: 0, color: "#2c3e50", fontWeight: "bold" }}>
-            {parkingInfo.name}
-          </h1>
-          <div style={{ marginTop: "8px", color: "#7f8c8d" }}>
-            <span style={{ marginRight: "15px" }}>
-              <strong>Total:</strong> {parkingInfo.totalSpots} places
+          <ParkingTitle>{parkingInfo.name}</ParkingTitle>
+          <ParkingStats>
+            <span>
+              <strong>Total:</strong> {parkingInfo.totalSpots} spots
             </span>
             <span>
-              <strong>Disponibles:</strong> {parkingInfo.availableSpots} places
+              <strong>Available:</strong> {parkingInfo.availableSpots} spots
             </span>
-          </div>
+          </ParkingStats>
         </div>
-        <div
-          className="parking-controls"
-          style={{ display: "flex", gap: "10px" }}
-        >
-          <button
-            onClick={zoomOut}
-            style={{
-              padding: "8px 12px",
-              backgroundColor: "#34495e",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              cursor: "pointer",
-              fontWeight: "500",
-            }}
-          >
-            <span style={{ fontSize: "16px" }}>🔍</span>
-            <span style={{ fontSize: "18px" }}>−</span>
-          </button>
-          <div
-            style={{
-              padding: "8px 12px",
-              backgroundColor: "#ecf0f1",
-              color: "#2c3e50",
-              borderRadius: "4px",
-              fontWeight: "bold",
-            }}
-          >
-            {Math.round(scale * 100)}%
-          </div>
-          <button
-            onClick={zoomIn}
-            style={{
-              padding: "8px 12px",
-              backgroundColor: "#34495e",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              cursor: "pointer",
-              fontWeight: "500",
-            }}
-          >
-            <span style={{ fontSize: "16px" }}>🔍</span>
-            <span style={{ fontSize: "18px" }}>+</span>
-          </button>
-          <button
-            onClick={resetView}
-            style={{
-              padding: "8px 12px",
-              backgroundColor: "#3498db",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              display: "flex",
-              alignItems: "center",
-              gap: "5px",
-              cursor: "pointer",
-              fontWeight: "500",
-            }}
-          >
-            <span style={{ fontSize: "16px" }}>🔄</span>
-            <span>Réinitialiser</span>
-          </button>
-        </div>
-      </div>
 
+        <ParkingControls>
+          <ControlButton onClick={zoomOut} title="Zoom Out">
+            <span>🔍</span>
+            <span>−</span>
+          </ControlButton>
+          <ZoomLevel>{Math.round(scale * 100)}%</ZoomLevel>
+          <ControlButton onClick={zoomIn} title="Zoom In">
+            <span>🔍</span>
+            <span>+</span>
+          </ControlButton>
+          <ControlButton onClick={resetView} title="Reset View">
+            <span>🔄</span>
+            <span>Reset</span>
+          </ControlButton>
+        </ParkingControls>
+      </ParkingHeader>
+      <SpotFinder>
+        <SpotFinderInput>
+          <SpotLabel htmlFor="spotLocator">Find your parking spot:</SpotLabel>
+          <SpotInput
+            id="spotLocator"
+            type="text"
+            value={selectedSpotId}
+            onChange={(e) => setSelectedSpotId(e.target.value)}
+            placeholder="Enter spot number (e.g. 42)"
+            ref={inputRef}
+            onKeyPress={(e) => e.key === "Enter" && locateParkingSpot()}
+          />
+          <LocateButton
+            onClick={() => {
+              locateParkingSpot();
+            }}
+          >
+            Locate & Reserve
+          </LocateButton>
+        </SpotFinderInput>
+
+        {searchError && <ErrorMessage>{searchError}</ErrorMessage>}
+
+        {searchSuccess && <SuccessMessage>{searchSuccess}</SuccessMessage>}
+      </SpotFinder>
       <DndProvider backend={HTML5Backend}>
-        <div
+        <ParkingArea
           ref={parkingAreaRef}
-          style={{
-            width: "800px",
-            height: "400px",
-            backgroundColor: "#1c1c24",
-            border: "1px solid #16213e",
-            borderRadius: "8px",
-            overflow: "hidden",
-            position: "relative",
-            cursor: isDragging ? "grabbing" : "grab",
-            boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
-            margin: "0 auto", // Centre le plan
-          }}
+          isDragging={isDragging}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
+          style={{
+            transition: "opacity 0.3s ease",
+            opacity: isRefreshing ? 0.5 : 1,
+          }}
         >
           <div
             style={{
-              transform: `scale(${scale}) translate(${offset.x}px, ${offset.y}px)`,
-              transformOrigin: "top left",
-              transition: isDragging ? "none" : "transform 0.1s ease",
-              width: "100%",
-              height: "100%",
               position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 1000,
+              display: isRefreshing ? "block" : "none",
             }}
           >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                border: "4px solid #f3f3f3",
+                borderTop: "4px solid #3498db",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            />
+          </div>
+          <ParkingContent
+            scale={scale}
+            offsetX={offset.x}
+            offsetY={offset.y}
+            isDragging={isDragging}
+          >
             {renderGrid()}
-            {/* Rendu des rues */}
             {streets.map((street) => (
               <StreetRender
                 key={street.id}
@@ -943,7 +1219,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
                 isDashed={street.isDashed}
               />
             ))}
-            {/* Rendu des flèches - Corrigé */}
             {arrows.map((arrow) => (
               <ArrowRender
                 key={arrow.id}
@@ -954,8 +1229,6 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
                 color={arrow.color}
               />
             ))}
-
-            {/* Rendu des places de parking avec support pour places réservées */}
             {parkingSpots.map((spot) => (
               <ParkingSpotRender
                 key={spot.id}
@@ -967,154 +1240,66 @@ const ParkingPlan2D = ({ parkingId: propParkingId, onSpotSelected }) => {
                 isReserved={spot.isReserved}
               />
             ))}
-          </div>
+          </ParkingContent>
+
           {showLogo && <ParkingLogo />}
 
-          {/* Indicateur de coordonnées */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: "10px",
-              right: "10px",
-              backgroundColor: "rgba(0,0,0,0.7)",
-              color: "white",
-              padding: "5px 10px",
-              borderRadius: "4px",
-              fontSize: "12px",
-            }}
-          >
-            Échelle: {scale.toFixed(2)}x | Pos: {Math.round(offset.x)},{" "}
+          <CoordinatesIndicator>
+            Zoom: {scale.toFixed(2)}x | Position: {Math.round(offset.x)},{" "}
             {Math.round(offset.y)}
-          </div>
-        </div>
+          </CoordinatesIndicator>
+        </ParkingArea>
       </DndProvider>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "20px",
-          marginTop: "20px",
-          padding: "15px",
-          backgroundColor: "#f8f9fa",
-          borderRadius: "8px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <div
-            style={{
-              width: "25px",
-              height: "20px",
-              border: "2px dashed rgba(100, 100, 100, 1)",
-              borderRadius: "2px",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "10px",
-                color: "#8cf",
-                textAlign: "center",
-                display: "block",
-              }}
-            >
-              P
-            </span>
-          </div>
-          <span>Place libre</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <div
-            style={{
-              width: "20px",
-              height: "20px",
-              backgroundColor: "#e74c3c",
-              borderRadius: "2px",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "10px",
-                color: "white",
-                textAlign: "center",
-                display: "block",
-              }}
-            >
-              X
-            </span>
-          </div>
-          <span>Place occupée</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <div
-            style={{
-              width: "20px",
-              height: "20px",
-              backgroundColor: "#f39c12",
-              borderRadius: "2px",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "10px",
-                color: "white",
-                textAlign: "center",
-                display: "block",
-              }}
-            >
-              R
-            </span>
-          </div>
-          <span>Place réservée</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <div
-            style={{
-              width: "20px",
-              height: "20px",
-              backgroundColor: "#3a3a3a",
-              borderRadius: "2px",
-            }}
-          ></div>
-          <span>Rue</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <div
-            style={{
-              width: "20px",
-              height: "20px",
-              backgroundColor: "#3498db",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              fontSize: "10px",
-              color: "white",
-              borderRadius: "50%",
-            }}
-          >
-            E
-          </div>
-          <span>Entrée</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <div
-            style={{
-              width: "20px",
-              height: "20px",
-              backgroundColor: "#e74c3c",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              fontSize: "10px",
-              color: "white",
-              borderRadius: "50%",
-            }}
-          >
-            S
-          </div>
-          <span>Sortie</span>
-        </div>
-      </div>
-    </div>
+
+      <Legend>
+        <LegendItem>
+          <LegendIcon className="available" />
+          <span>Available</span>
+        </LegendItem>
+        <LegendItem>
+          <LegendIcon className="occupied" />
+          <span>Occupied</span>
+        </LegendItem>
+        <LegendItem>
+          <LegendIcon className="reserved" />
+          <span>Reserved</span>
+        </LegendItem>
+        <LegendItem>
+          <LegendIcon className="street" />
+          <span>Street</span>
+        </LegendItem>
+        <LegendItem>
+          <LegendIcon className="entrance">E</LegendIcon>
+          <span>Entrance</span>
+        </LegendItem>
+        <LegendItem>
+          <LegendIcon className="exit">S</LegendIcon>
+          <span>Exit</span>
+        </LegendItem>
+      </Legend>
+
+      <Instructions>
+        <h3>How to reserve your spot:</h3>
+        <ol>
+          <li>Enter your preferred parking spot number in the search box</li>
+          <li>Click "Locate & Reserve" to find and reserve it on the map</li>
+        </ol>
+        <Tip>
+          💡 Tip: You can zoom in/out with the buttons or by scrolling, and drag
+          to pan the map
+        </Tip>
+      </Instructions>
+    </ParkingContainer>
   );
 };
+
+const style = document.createElement("style");
+style.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(style);
 
 export default ParkingPlan2D;
