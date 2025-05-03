@@ -211,7 +211,7 @@ const UserReservations = () => {
                         backgroundColor: '#d1fae5',
                         color: '#065f46'
                     },
-                    label: 'Confirmée'
+                    label: 'confirmed'
                 };
             case 'pending':
                 return {
@@ -219,7 +219,7 @@ const UserReservations = () => {
                         backgroundColor: '#fef3c7',
                         color: '#92400e'
                     },
-                    label: 'En attente'
+                    label: 'pending'
                 };
             default:
                 return {
@@ -227,7 +227,7 @@ const UserReservations = () => {
                         backgroundColor: '#fee2e2',
                         color: '#b91c1c'
                     },
-                    label: 'Annulée'
+                    label: 'cancelled'
                 };
         }
     };
@@ -584,4 +584,8 @@ const UserReservations = () => {
     );
 };
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 export default UserReservations;

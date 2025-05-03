@@ -161,26 +161,36 @@ const EmployeeParkingScanner = () => {
         try {
           const reservationData = JSON.parse(result.text);
 
-          // Check if this is reservation data by looking for expected fields
-          if (reservationData.reservationId && reservationData.parkingId) {
-            // Format dates for display
-            if (reservationData.startTime) {
-              reservationData.formattedStartTime = new Date(
-                reservationData.startTime
-              ).toLocaleString();
-            }
-            if (reservationData.endTime) {
-              reservationData.formattedEndTime = new Date(
-                reservationData.endTime
-              ).toLocaleString();
-            }
-            if (reservationData.generatedAt) {
-              reservationData.formattedGeneratedAt = new Date(
-                reservationData.generatedAt
-              ).toLocaleString();
-            }
+          // Check if this is reservation data based on your specific QR code format
+          if (reservationData.id && reservationData.parkingName) {
+            // Standardize field names to match our component's expected structure
+            const standardizedData = {
+              reservationId: reservationData.id,
+              parkingId: reservationData.id, // Using same ID as there's no specific parkingId in QR
+              parkingName: reservationData.parkingName,
+              startTime: reservationData.startTime,
+              endTime: reservationData.endTime,
+              vehicleType: reservationData.vehicleType,
+              totalPrice: reservationData.totalPrice,
+              status: reservationData.status || "pending",
+              generatedAt: new Date().toISOString(),
+            };
 
-            setParsedReservation(reservationData);
+            // Format dates for display
+            if (standardizedData.startTime) {
+              standardizedData.formattedStartTime = new Date(
+                standardizedData.startTime
+              ).toLocaleString();
+            }
+            if (standardizedData.endTime) {
+              standardizedData.formattedEndTime = new Date(
+                standardizedData.endTime
+              ).toLocaleString();
+            }
+            
+            standardizedData.formattedGeneratedAt = new Date().toLocaleString();
+
+            setParsedReservation(standardizedData);
             setShowModal(true); // Show modal with reservation details
           } else {
             setParsedReservation(null);
@@ -450,7 +460,7 @@ const EmployeeParkingScanner = () => {
                 </div>
                 <button
                   onClick={resetScanner}
-                  className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg"
+                  className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-black font-bold py-2 px-4 rounded-lg"
                 >
                   New Scan
                 </button>
@@ -460,13 +470,13 @@ const EmployeeParkingScanner = () => {
               <div className="text-center p-6">
                 <button
                   onClick={() => setShowModal(true)}
-                  className="mb-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg"
+                  className="mb-4 bg-blue-500 hover:bg-blue-600 text-black font-bold py-2 px-4 rounded-lg"
                 >
                   Show Reservation Details
                 </button>
                 <button
                   onClick={resetScanner}
-                  className="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg"
+                  className="w-full bg-gray-500 hover:bg-gray-600 text-black font-bold py-2 px-4 rounded-lg"
                 >
                   New Scan
                 </button>
@@ -708,17 +718,17 @@ const EmployeeParkingScanner = () => {
                     </p>
                   </div>
                   <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-xs text-gray-500">Parking ID</p>
+                    <p className="text-xs text-gray-500">Parking Name</p>
                     <p
                       className="font-semibold text-sm truncate"
-                      title={parsedReservation.parkingId}
+                      title={parsedReservation.parkingName}
                     >
-                      {parsedReservation.parkingId}
+                      {parsedReservation.parkingName}
                     </p>
                   </div>
                 </div>
 
-                {/* Vehicle & Generation Time */}
+                {/* Vehicle & Total Price */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <p className="text-xs text-gray-500">Vehicle Type</p>
@@ -727,9 +737,9 @@ const EmployeeParkingScanner = () => {
                     </p>
                   </div>
                   <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-xs text-gray-500">Generated At</p>
+                    <p className="text-xs text-gray-500">Total Price</p>
                     <p className="font-semibold text-sm">
-                      {parsedReservation.formattedGeneratedAt || "N/A"}
+                      ${parsedReservation.totalPrice}
                     </p>
                   </div>
                 </div>
@@ -774,7 +784,7 @@ const EmployeeParkingScanner = () => {
                           "accepted"
                         )
                       }
-                      className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50 shadow flex items-center justify-center gap-2"
+                      className="bg-green-500 hover:bg-green-600 text-black font-bold py-3 px-4 rounded-lg disabled:opacity-50 shadow flex items-center justify-center gap-2"
                       disabled={isProcessing}
                     >
                       <span>✓</span> Accept
@@ -786,7 +796,7 @@ const EmployeeParkingScanner = () => {
                           "rejected"
                         )
                       }
-                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg disabled:opacity-50 shadow flex items-center justify-center gap-2"
+                      className="bg-red-500 hover:bg-red-600 text-black font-bold py-3 px-4 rounded-lg disabled:opacity-50 shadow flex items-center justify-center gap-2"
                       disabled={isProcessing}
                     >
                       <span>✕</span> Reject
@@ -796,7 +806,7 @@ const EmployeeParkingScanner = () => {
 
                 <button
                   onClick={resetScanner}
-                  className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg"
+                  className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-black font-bold py-3 px-4 rounded-lg"
                 >
                   New Scan
                 </button>

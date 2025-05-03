@@ -66,6 +66,85 @@ const PAYMENT_METHODS = [
   { id: "cash", label: "Espèces", icon: <DollarSign size={18} /> },
 ];
 
+<<<<<<< HEAD
+=======
+const PLATE_FORMATS = [
+  { id: 'ar', label: 'تونس', value: 'تونس' },
+  { id: 'fr', label: 'TUN', value: 'TUN' },
+];
+
+// Ajout des styles personnalisés pour le DatePicker
+const datePickerStyles = `
+  .react-datepicker {
+    font-family: 'Inter', sans-serif;
+    border: none;
+    border-radius: 0.99rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+  }
+  
+  .react-datepicker__header {
+    background-color: #2563eb;
+    border-bottom: none;
+    padding: 1rem;
+    color: white;
+  }
+  
+  .react-datepicker__current-month {
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .react-datepicker__day-name {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+  }
+  
+  .react-datepicker__day {
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+    width: 2.5rem;
+    height: 2.5rem;
+    line-height: 2.5rem;
+    margin: 0.2rem;
+  }
+  
+  .react-datepicker__day:hover {
+    background-color: #e5edff;
+  }
+  
+  .react-datepicker__day--selected {
+    background-color: #2563eb !important;
+    color: white !important;
+    font-weight: 600;
+  }
+  
+  .react-datepicker__time-container {
+    border-left: 1px solid #e5e7eb;
+  }
+  
+  .react-datepicker__time-list-item {
+    transition: all 0.2s;
+    height: 2.5rem !important;
+    line-height: 2.5rem !important;
+    margin: 0 !important;
+    padding: 0 1rem !important;
+  }
+  
+  .react-datepicker__time-list-item:hover {
+    background-color: #e5edff !important;
+  }
+  
+  .react-datepicker__time-list-item--selected {
+    background-color: #2563eb !important;
+    color: white !important;
+    font-weight: 600;
+  }
+`;
+
+>>>>>>> main
 // Modifier le CustomDatePicker pour gérer la date minimum
 const CustomDatePicker = ({
   selected,
@@ -282,6 +361,70 @@ const PaymentMethodSelector = ({ selected, onSelect }) => (
     ))}
   </div>
 );
+
+// Ajouter le composant de sélection de matricule
+const PlateNumberInput = ({ onPlateChange }) => {
+  const [format, setFormat] = useState('ar');
+  const [leftNumber, setLeftNumber] = useState('');
+  const [rightNumber, setRightNumber] = useState('');
+
+  const handleChange = () => {
+    const plateNumber = `${leftNumber} ${format === 'ar' ? 'تونس' : 'TUN'} ${rightNumber}`;
+    onPlateChange(plateNumber);
+  };
+
+  return (
+    <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+      <h4 className="font-semibold text-gray-700 mb-4">Numéro de matricule (optionnel)</h4>
+      
+      <div className="flex items-center space-x-4">
+        {/* Numéro gauche */}
+        <input
+          type="text"
+          value={leftNumber}
+          onChange={(e) => {
+            setLeftNumber(e.target.value);
+            handleChange();
+          }}
+          placeholder="000"
+          className="w-24 p-2 border border-gray-300 rounded-lg text-center"
+          maxLength={3}
+        />
+
+        {/* Sélecteur de format */}
+        <div className="flex-1">
+          <select
+            value={format}
+            onChange={(e) => {
+              setFormat(e.target.value);
+              handleChange();
+            }}
+            className="w-full p-2 border border-gray-300 rounded-lg text-center bg-white"
+          >
+            {PLATE_FORMATS.map(format => (
+              <option key={format.id} value={format.id}>
+                {format.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Numéro droite */}
+        <input
+          type="text"
+          value={rightNumber}
+          onChange={(e) => {
+            setRightNumber(e.target.value);
+            handleChange();
+          }}
+          placeholder="0000"
+          className="w-24 p-2 border border-gray-300 rounded-lg text-center"
+          maxLength={4}
+        />
+      </div>
+    </div>
+  );
+};
 
 // Price details component
 const PriceSummary = ({ priceDetails, totalPrice }) => (
@@ -542,6 +685,7 @@ const Reservation = ({
         vehicleType: reservationData.vehicleType,
         totalPrice: calculatedPrice,
         paymentMethod: paymentMethod,
+        matricule: reservationData.matricule, // Ajouter cette ligne
         userId: localStorage.getItem("userId"),
       };
       console.log("Payload complet:", {
@@ -806,15 +950,101 @@ const Reservation = ({
               label="Date et heure de départ"
               minDate={reservationData.startDate}
             />
+            <PlateNumberInput
+              onPlateChange={(plateNumber) =>
+                setReservationData((prev) => ({ ...prev, matricule: plateNumber }))
+              }
+            />
           </div>
         </div>
       )}
 
+<<<<<<< HEAD
       {currentStep === 2 && (
         <div className={commonClasses + " border-green-100"}>
           <h3 className="text-xl font-bold mb-8 flex items-center text-gray-800">
             <div className="bg-green-50 p-3 rounded-full mr-1">
               <Car className="text-green-600" size={24} />
+=======
+      {/* Main form grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left column - Current step content */}
+        <div>{renderStepContent()}</div>
+
+        {/* Right column - Summary and action button */}
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
+            <h3 className="text-lg font-semibold mb-6 flex items-center text-gray-800">
+              Récapitulatif
+            </h3>
+
+            {/* Reservation details */}
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-gray-600">Parking</span>
+                <span className="font-medium">{parkingData?.name}</span>
+              </div>
+
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-gray-600">Début</span>
+                <span className="font-medium">
+                  {reservationData.startDate.toLocaleString("fr-FR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-gray-600">Fin</span>
+                <span className="font-medium">
+                  {reservationData.endDate.toLocaleString("fr-FR", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+
+              {/* Ajouter le champ matricule après le type de véhicule */}
+              {reservationData.vehicleType && (
+                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                  <span className="text-gray-600">Type de véhicule</span>
+                  <span className="font-medium">
+                    {reservationData.vehicleType}
+                  </span>
+                </div>
+              )}
+
+              {/* Nouveau bloc pour la matricule */}
+              {reservationData.matricule && (
+                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                  <span className="text-gray-600">Matricule</span>
+                  <span className="font-medium text-blue-600">
+                    {reservationData.matricule}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                <span className="text-gray-600">Total A payer</span>
+                <span className="font-medium">{calculatedPrice}Dt</span>
+              </div>
+
+              {currentStep >= 3 && (
+                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                  <span className="text-gray-600">Méthode de paiement</span>
+                  <span className="font-medium">
+                    {paymentMethod === "card" ? "Carte bancaire" : "Espèces"}
+                  </span>
+                </div>
+              )}
+>>>>>>> main
             </div>
             Type de véhicule
           </h3>
