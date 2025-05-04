@@ -62,7 +62,6 @@ const StatusBadge = ({ status }) => {
 
   return (
     <span
-      className="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium"
       className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${styles.bg} ${styles.text}`}
     >
       {styles.icon}
@@ -89,6 +88,36 @@ const FlouciPayment = ({ reservation, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { original: totalPrice } = calculatePrices(reservation);
+
+  const onPaymentSuccess = async (reservationId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/reservations/${reservationId}/statusPayment`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: "accepted",
+            paymentStatus: "completed",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update reservation status");
+      }
+
+      const updatedReservation = await response.json();
+      onSuccess && onSuccess(updatedReservation);
+    } catch (error) {
+      console.error("Error updating reservation:", error);
+      setError("Failed to update reservation status");
+    }
+  };
 
   const handlePayment = async () => {
     setLoading(true);
@@ -171,7 +200,6 @@ const FlouciPayment = ({ reservation, onSuccess }) => {
         <button
           onClick={handlePayment}
           disabled={loading}
-          className="w-full py-3 px-6 rounded-lg font-medium text-black transition-all"
           className={`w-full py-3 px-6 rounded-lg font-medium text-black transition-all ${
             loading
               ? "bg-blue-300 cursor-not-allowed"
@@ -219,6 +247,36 @@ const PaymentForm = ({ reservationId, reservation, onSuccess }) => {
   const [processing, setProcessing] = useState(false);
   const [clientSecret, setClientSecret] = useState("");
   const { converted: convertedPrice } = calculatePrices(reservation);
+
+  const onPaymentSuccess = async (reservationId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/reservations/${reservationId}/statusPayment`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: "accepted",
+            paymentStatus: "completed",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update reservation status");
+      }
+
+      const updatedReservation = await response.json();
+      onSuccess && onSuccess(updatedReservation);
+    } catch (error) {
+      console.error("Error updating reservation:", error);
+      setError("Failed to update reservation status");
+    }
+  };
 
   useEffect(() => {
     if (reservationId) {
@@ -294,7 +352,7 @@ const PaymentForm = ({ reservationId, reservation, onSuccess }) => {
         const confirmData = await confirmResponse.json();
         if (!confirmResponse.ok) throw new Error(confirmData.message);
 
-        onSuccess();
+        await onPaymentSuccess(reservationId);
       }
     } catch (err) {
       setError(err.message);
@@ -370,7 +428,6 @@ const PaymentForm = ({ reservationId, reservation, onSuccess }) => {
         <button
           type="submit"
           disabled={!stripe || !clientSecret || processing}
-          className="w-full py-3 px-6 rounded-lg font-medium text-black transition-all"
           className={`w-full py-3 px-6 rounded-lg font-medium text-black transition-all ${
             !stripe || !clientSecret || processing
               ? "bg-blue-300 cursor-not-allowed"
@@ -436,7 +493,6 @@ const PaymentSelection = ({ reservationId, reservation, onSuccess }) => {
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => setPaymentMethod("stripe")}
-              className="flex flex-col items-center justify-center p-4 rounded-lg border-2"
               className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 ${
                 paymentMethod === "stripe"
                   ? "border-blue-500 bg-blue-50"
@@ -452,7 +508,6 @@ const PaymentSelection = ({ reservationId, reservation, onSuccess }) => {
             </button>
             <button
               onClick={() => setPaymentMethod("flouci")}
-              className="flex flex-col items-center justify-center p-4 rounded-lg border-2"
               className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 ${
                 paymentMethod === "flouci"
                   ? "border-blue-500 bg-blue-50"
@@ -552,17 +607,47 @@ const Confirmation = () => {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [qrCode, setQrCode] = useState(null);
 
+  const onPaymentSuccess = async (reservationId) => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/reservations/${reservationId}/statusPayment`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: "accepted",
+            paymentStatus: "completed",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update reservation status");
+      }
+
+      const updatedReservation = await response.json();
+      setPaymentSuccess(true);
+      setReservation(updatedReservation);
+    } catch (error) {
+      console.error("Error updating reservation:", error);
+    }
+  };
+
   // Check for payment verification from Flouci redirect
   useEffect(() => {
     const checkFlouciPayment = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const paymentId = urlParams.get("payment_id");
+      const reservationId = localStorage.getItem("currentReservationId");
 
-      if (paymentId) {
+      if (paymentId && reservationId) {
         try {
           const token = localStorage.getItem("token");
-
-          // Vérification du paiement avec Flouci
           const response = await fetch(
             `http://localhost:3001/api/payments/verify/${paymentId}`,
             {
@@ -574,44 +659,16 @@ const Confirmation = () => {
 
           const data = await response.json();
           if (data.success && data.result.status === "SUCCESS") {
-            const reservationId = localStorage.getItem("currentReservationId");
-
-            if (!reservationId) {
-              console.error("No reservation ID found in localStorage");
-              return;
-            }
-
-            // Mise à jour de l'état de la réservation
-            const updateReservationResponse = await fetch(
-              `http://localhost:3001/api/reservations/${reservationId}/statusPayment`,
-              {
-                method: "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                  status: "completed",
-                  paymentStatus: "completed",
-                }),
-              }
-            );
-
-            if (updateReservationResponse.ok) {
-              setPaymentSuccess(true);
-            } else {
-              console.error("Failed to update reservation status");
-            }
+            await onPaymentSuccess(reservationId);
           }
 
-          // Nettoyage de l'URL
           window.history.replaceState(
             {},
             document.title,
             window.location.pathname
           );
         } catch (err) {
-          console.error("Failed to verify Flouci payment:", err);
+          console.error("Failed to verify payment:", err);
         }
       }
     };

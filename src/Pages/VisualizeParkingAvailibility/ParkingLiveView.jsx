@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 
 const ReservationDetails = ({ reservation }) => {
   const formatDate = (date) => {
-    return new Date(date).toLocaleString('fr-FR', {
+    return new Date(date).toLocaleString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -20,115 +20,203 @@ const ReservationDetails = ({ reservation }) => {
       <div style={{ marginBottom: "2rem" }}>
         <h3 style={{ 
           color: "#334155", 
-          fontSize: "1.5rem", 
-          fontWeight: "600",
-          marginBottom: "1rem"
+          fontSize: "1.875rem",
+          fontWeight: "700",
+          marginBottom: "1rem",
+          background: "linear-gradient(45deg, #3b82f6, #2563eb)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent"
         }}>
-          Détails de la réservation
+          Reservation Details
         </h3>
       </div>
 
       <div style={{
-        backgroundColor: "#f8fafc",
-        borderRadius: "12px",
+        backgroundColor: "rgba(248, 250, 252, 0.8)",
+        backdropFilter: "blur(10px)",
+        borderRadius: "16px",
         padding: "1.5rem",
-        marginBottom: "1.5rem"
+        marginBottom: "1.5rem",
+        border: "1px solid rgba(226, 232, 240, 0.6)",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)"
       }}>
         <h4 style={{ 
-          color: "#475569", 
-          fontSize: "1.1rem", 
+          color: "#1e293b", 
+          fontSize: "1.25rem", 
           fontWeight: "600",
           marginBottom: "1rem"
         }}>
-          Informations du client
+          Customer Information
         </h4>
         <div style={{ marginBottom: "1rem" }}>
-          <div style={{ marginBottom: "0.5rem" }}>
-            <span style={{ color: "#64748b" }}>Nom:</span>
+          <div style={{ 
+            marginBottom: "0.5rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" strokeWidth="2"/>
+              <circle cx="12" cy="7" r="4" strokeWidth="2"/>
+            </svg>
+            <span style={{ color: "#64748b" }}>Name:</span>
             <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{reservation.client?.name}</span>
           </div>
-          <div>
-            <span style={{ color: "#64748b" }}>Téléphone:</span>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" strokeWidth="2"/>
+            </svg>
+            <span style={{ color: "#64748b" }}>Phone:</span>
             <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{reservation.client?.phone}</span>
           </div>
         </div>
       </div>
 
       <div style={{
-        backgroundColor: "#f8fafc",
-        borderRadius: "12px",
+        backgroundColor: "rgba(248, 250, 252, 0.8)",
+        backdropFilter: "blur(10px)",
+        borderRadius: "16px",
         padding: "1.5rem",
-        marginBottom: "1.5rem"
+        marginBottom: "1.5rem",
+        border: "1px solid rgba(226, 232, 240, 0.6)",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)"
       }}>
         <h4 style={{ 
-          color: "#475569", 
-          fontSize: "1.1rem", 
+          color: "#1e293b", 
+          fontSize: "1.25rem", 
           fontWeight: "600",
           marginBottom: "1rem"
         }}>
-          Détails de la place
+          Spot Details
         </h4>
-        <div style={{ marginBottom: "0.5rem" }}>
-          <span style={{ color: "#64748b" }}>Place N°:</span>
+        <div style={{ 
+          marginBottom: "0.5rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem"
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b">
+            <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2"/>
+            <path d="M7 7h10v10H7z" strokeWidth="2"/>
+          </svg>
+          <span style={{ color: "#64748b" }}>Spot Number:</span>
           <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{reservation.spotId.replace('parking-spot-', '')}</span>
         </div>
-        <div>
-          <span style={{ color: "#64748b" }}>Type de véhicule:</span>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem"
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b">
+            <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M3 12h12" strokeWidth="2"/>
+          </svg>
+          <span style={{ color: "#64748b" }}>Vehicle Type:</span>
           <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{reservation.vehicleType}</span>
         </div>
       </div>
 
       <div style={{
-        backgroundColor: "#f8fafc",
-        borderRadius: "12px",
+        backgroundColor: "rgba(248, 250, 252, 0.8)",
+        backdropFilter: "blur(10px)",
+        borderRadius: "16px",
         padding: "1.5rem",
-        marginBottom: "1.5rem"
+        marginBottom: "1.5rem",
+        border: "1px solid rgba(226, 232, 240, 0.6)",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)"
       }}>
         <h4 style={{ 
-          color: "#475569", 
-          fontSize: "1.1rem", 
+          color: "#1e293b", 
+          fontSize: "1.25rem", 
           fontWeight: "600",
           marginBottom: "1rem"
         }}>
-          Horaires & Paiement
+          Schedule & Payment
         </h4>
         <div style={{ marginBottom: "0.5rem" }}>
-          <div style={{ marginBottom: "0.5rem" }}>
-            <span style={{ color: "#64748b" }}>Début:</span>
+          <div style={{ 
+            marginBottom: "0.5rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b">
+              <circle cx="12" cy="12" r="10" strokeWidth="2"/>
+              <path d="M12 6v6l4 2" strokeWidth="2"/>
+            </svg>
+            <span style={{ color: "#64748b" }}>Start:</span>
             <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{formatDate(reservation.startTime)}</span>
           </div>
-          <div style={{ marginBottom: "0.5rem" }}>
-            <span style={{ color: "#64748b" }}>Fin:</span>
+          <div style={{ 
+            marginBottom: "0.5rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b">
+              <circle cx="12" cy="12" r="10" strokeWidth="2"/>
+              <path d="M12 6v6l-4 2" strokeWidth="2"/>
+            </svg>
+            <span style={{ color: "#64748b" }}>End:</span>
             <span style={{ marginLeft: "0.5rem", fontWeight: "500" }}>{formatDate(reservation.endTime)}</span>
+          </div>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b">
+              <path d="M2 8h20M4 8v10a2 2 0 002 2h12a2 2 0 002-2V8m-4-4v4H8V4" strokeWidth="2"/>
+            </svg>
+            <span style={{ color: "#64748b" }}>Payment Method:</span>
+            <span style={{ 
+              marginLeft: "0.5rem", 
+              fontWeight: "500",
+              textTransform: "capitalize" 
+            }}>
+              {reservation.paymentMethod === 'cash' ? 'Cash' : 'Online'}
+            </span>
           </div>
         </div>
         <div style={{ 
           marginTop: "1rem",
           padding: "1rem",
-          backgroundColor: "#eef2ff",
-          borderRadius: "8px"
+          background: "linear-gradient(145deg, #eef2ff, #e0e7ff)",
+          borderRadius: "12px",
+          border: "1px solid rgba(99, 102, 241, 0.1)"
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ color: "#4f46e5", fontWeight: "600" }}>Total:</span>
-            <span style={{ color: "#4f46e5", fontSize: "1.25rem", fontWeight: "700" }}>
-              {reservation.totalPrice.toFixed(2)} TND
+            <span style={{ 
+              color: "#4f46e5", 
+              fontSize: "1.5rem", 
+              fontWeight: "700",
+              textShadow: "1px 1px 2px rgba(79, 70, 229, 0.1)"
+            }}>
+              DT{reservation.totalPrice.toFixed(2)}
             </span>
           </div>
         </div>
       </div>
 
       <div style={{
-        backgroundColor: "#f8fafc",
-        borderRadius: "12px",
-        padding: "1.5rem"
+        backgroundColor: "rgba(248, 250, 252, 0.8)",
+        backdropFilter: "blur(10px)",
+        borderRadius: "16px",
+        padding: "1.5rem",
+        border: "1px solid rgba(226, 232, 240, 0.6)",
+        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)"
       }}>
         <h4 style={{ 
-          color: "#475569", 
-          fontSize: "1.1rem", 
+          color: "#1e293b", 
+          fontSize: "1.25rem", 
           fontWeight: "600",
           marginBottom: "1rem"
         }}>
-          Statut
+          Status
         </h4>
         <div style={{ 
           display: "flex", 
@@ -141,9 +229,19 @@ const ReservationDetails = ({ reservation }) => {
             backgroundColor: reservation.status === 'accepted' ? '#dcfce7' : '#fee2e2',
             color: reservation.status === 'accepted' ? '#15803d' : '#991b1b',
             fontWeight: "500",
-            fontSize: "0.875rem"
+            fontSize: "0.875rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
           }}>
-            {reservation.status === 'accepted' ? 'Confirmée' : 'En attente'}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              {reservation.status === 'accepted' ? (
+                <path d="M20 6L9 17l-5-5" strokeWidth="2" strokeLinecap="round"/>
+              ) : (
+                <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2"/>
+              )}
+            </svg>
+            {reservation.status === 'accepted' ? 'Confirmed' : 'Pending'}
           </div>
           <div style={{
             padding: "0.5rem 1rem",
@@ -151,9 +249,19 @@ const ReservationDetails = ({ reservation }) => {
             backgroundColor: reservation.paymentStatus === 'completed' ? '#dcfce7' : '#fef9c3',
             color: reservation.paymentStatus === 'completed' ? '#15803d' : '#854d0e',
             fontWeight: "500",
-            fontSize: "0.875rem"
+            fontSize: "0.875rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
           }}>
-            {reservation.paymentStatus === 'completed' ? 'Payée' : 'En attente de paiement'}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              {reservation.paymentStatus === 'completed' ? (
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2"/>
+              ) : (
+                <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2"/>
+              )}
+            </svg>
+            {reservation.paymentStatus === 'completed' ? 'Paid' : 'Payment Pending'}
           </div>
         </div>
       </div>
@@ -348,7 +456,8 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
         setSelectedReservation(null);
       }
     } catch (err) {
-      console.error("Erreur:", err);
+      console.error("Error:", err);
+      setError("Unable to fetch reservation details");
       setSelectedReservation(null);
     } finally {
       setIsLoading(false);
@@ -643,8 +752,8 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
 
       setLoading(false);
     } catch (error) {
-      console.error("Erreur lors du chargement du parking:", error);
-      setError("Impossible de charger les données du parking");
+      console.error("Error loading parking data:", error);
+      setError("Unable to load parking data");
       setLoading(false);
     }
   };
@@ -742,7 +851,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
       setUpdateStatus("success");
       setTimeout(() => setUpdateStatus(null), 2000);
     } catch (error) {
-      console.error("Erreur lors de la mise à jour de la place:", error);
+      console.error("Error updating spot status:", error);
       setUpdateStatus("error");
 
       // Revert changes on error
@@ -817,7 +926,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
             color: '#475569',
             marginBottom: '1.5rem'
           }}>
-            Êtes-vous sûr de vouloir {selectedSpotForToggle?.isOccupied ? 'libérer' : 'occuper'} la place {selectedSpotForToggle?.id.replace('parking-spot-', '')} ?
+            Are you sure you want to {selectedSpotForToggle?.isOccupied ? 'release' : 'occupy'} spot {selectedSpotForToggle?.id.replace('parking-spot-', '')}?
           </p>
           <div style={{
             display: 'flex',
@@ -837,7 +946,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
                 cursor: 'pointer'
               }}
             >
-              Annuler
+              Cancel
             </button>
             <button
               onClick={handleConfirmToggle}
@@ -852,7 +961,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
                 cursor: 'pointer'
               }}
             >
-              Confirmer
+              Confirm
             </button>
           </div>
         </div>
@@ -894,6 +1003,14 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
     // Extraire l'ID numérique du spotId (enlever 'parking-spot-')
     const spotNumber = spot.id.replace('parking-spot-', '');
 
+    const spotTitle = `Spot ${spotNumber} - ${
+      status === "available"
+        ? "Available"
+        : status === "reserved"
+        ? "Reserved"
+        : "Occupied"
+    }`;
+
     return (
       <div
         key={spot.id}
@@ -910,13 +1027,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
           filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))",
         }}
         onClick={() => handleSpotClick(spot)}
-        title={`Place ${spotNumber} - ${
-          status === "available"
-            ? "Disponible"
-            : status === "reserved"
-            ? "Réservée"
-            : "Occupée"
-        }`}
+        title={spotTitle}
       >
         <svg
           width={spotWidth}
@@ -1108,20 +1219,20 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
         {parkingInfo.name}
       </div>
       <div style={{ marginBottom: "12px", color: "#94a3b8", fontSize: "12px" }}>
-        {parkingInfo.availableSpots}/{parkingInfo.totalSpots} places disponibles
+        {parkingInfo.availableSpots}/{parkingInfo.totalSpots} spots available
       </div>
 
       <div style={styles.statusIndicator}>
         <div style={{ ...styles.statusDot, backgroundColor: "#10b981" }}></div>
-        <span>Disponible</span>
+        <span>Available</span>
       </div>
       <div style={styles.statusIndicator}>
         <div style={{ ...styles.statusDot, backgroundColor: "#f59e0b" }}></div>
-        <span>Réservée</span>
+        <span>Reserved</span>
       </div>
       <div style={styles.statusIndicator}>
         <div style={{ ...styles.statusDot, backgroundColor: "#ef4444" }}></div>
-        <span>Occupée</span>
+        <span>Occupied</span>
       </div>
     </div>
   );
@@ -1129,7 +1240,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="text-xl">Chargement du parking...</div>
+        <div className="text-xl">Loading...</div>
       </div>
     );
   }
@@ -1258,14 +1369,16 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
 
     const { backgroundColor, color, icon } = notificationStyles[updateStatus];
 
+    const notificationText = updateStatus === "updating"
+      ? "Updating spot status..."
+      : updateStatus === "success"
+      ? "Spot status updated successfully!"
+      : "Failed to update spot status";
+
     return (
       <div style={{ ...styles.notification, backgroundColor, color }}>
         {icon}
-        {updateStatus === "updating"
-          ? "Mise à jour en cours..."
-          : updateStatus === "success"
-          ? "Mise à jour réussie!"
-          : "Erreur lors de la mise à jour"}
+        {notificationText}
       </div>
     );
   };
@@ -1306,9 +1419,9 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
             </svg>
           </div>
           <h2 style={{ color: "#1e293b", marginBottom: "0.5rem" }}>
-            Erreur de chargement
+            Loading Error
           </h2>
-          <p style={{ color: "#64748b" }}>{error}</p>
+          <p style={{ color: "#64748b" }}>Unable to load parking data. Please try again.</p>
           <button
             onClick={loadParkingData}
             style={{
@@ -1325,7 +1438,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
               },
             }}
           >
-            Réessayer
+            Retry
           </button>
         </div>
       </div>
@@ -1369,15 +1482,13 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
             />
             <path d="M3 10h18M8 15h8M8 18h5M10 6h4v4h-4z" strokeWidth="2" />
           </svg>
-          <h1
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: "600",
-              color: "#1e293b",
-              margin: 0,
-            }}
-          >
-            Parking Management - Dashboard
+          <h1 style={{
+            fontSize: "1.5rem",
+            fontWeight: "600",
+            color: "#1e293b",
+            margin: 0,
+          }}>
+            Parking Management System
           </h1>
         </div>
         <div
@@ -1439,6 +1550,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
               const newDate = new Date(e.target.value);
               setTempDateTime(newDate);
             }}
+            aria-label="Select date and time"
             style={{
               border: "none",
               backgroundColor: "transparent",
@@ -1470,7 +1582,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M20 6L9 17l-5-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          Appliquer
+          Apply
         </button>
 
         <button
@@ -1499,7 +1611,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" strokeWidth="2"/>
             <path d="M3 3v5h5" strokeWidth="2"/>
           </svg>
-          Maintenant
+          Now
         </button>
       </div>
 
@@ -1527,6 +1639,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
             {loading && (
               <div style={styles.loadingScreen}>
                 <div style={styles.loadingSpinner}></div>
+                <div style={{ color: "#fff", marginTop: "1rem" }}>Loading parking data...</div>
               </div>
             )}
 
@@ -1610,20 +1723,17 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
                 </svg>
               </div>
               <div>
-                <h3
-                  style={{
-                    fontSize: "1.25rem",
-                    fontWeight: "600",
-                    color: "#334155",
-                    marginBottom: "8px",
-                  }}
-                >
-                  No place selected
+                <h3 style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: "#334155",
+                  marginBottom: "8px",
+                }}>
+                  No Spot Selected
                 </h3>
                 <p style={{ margin: 0 }}>
-                  Cliquez sur une place réservée pour afficher
-                  <br />
-                  booking details
+                  Click on a reserved spot to view<br />
+                  reservation details
                 </p>
               </div>
               <div
@@ -1668,7 +1778,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
                     </svg>
                   </div>
                   <span style={{ fontWeight: "500" }}>
-                    Statut actuel du parking
+                    Current parking status
                   </span>
                 </div>
                 <div
@@ -1678,7 +1788,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
                     fontSize: "0.875rem",
                   }}
                 >
-                  <span>Places totales:</span>
+                  <span>Total spots:</span>
                   <span style={{ fontWeight: "600" }}>
                     {parkingInfo.totalSpots}
                   </span>
@@ -1690,7 +1800,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
                     fontSize: "0.875rem",
                   }}
                 >
-                  <span>Places disponibles:</span>
+                  <span>Available spots:</span>
                   <span style={{ fontWeight: "600", color: "#10b981" }}>
                     {parkingInfo.availableSpots}
                   </span>
@@ -1702,7 +1812,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
                     fontSize: "0.875rem",
                   }}
                 >
-                  <span>Places réservées:</span>
+                  <span>Reserved spots:</span>
                   <span style={{ fontWeight: "600", color: "#f59e0b" }}>
                     {parkingSpots.filter((spot) => spot.isReserved).length}
                   </span>
