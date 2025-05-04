@@ -60,11 +60,7 @@ const VEHICLE_TYPES = [
   },
 ];
 
-// Payment methods with consistent structure
-const PAYMENT_METHODS = [
-  { id: "online", label: "Carte bancaire", icon: <CreditCard size={18} /> },
-  { id: "cash", label: "Espèces", icon: <DollarSign size={18} /> },
-];
+// Payment methods removed as they'll be on confirmation page
 const PLATE_FORMATS = [
   { id: 'ar', label: 'تونس', value: 'تونس' },
   { id: 'fr', label: 'TUN', value: 'TUN' },
@@ -335,31 +331,6 @@ const VehicleTypeSelector = ({ selectedType, onSelect }) => (
   </div>
 );
 
-// Payment method selector component
-const PaymentMethodSelector = ({ selected, onSelect }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-    {PAYMENT_METHODS.map((method) => (
-      <div
-        key={method.id}
-        onClick={() => onSelect(method.id)}
-        className={`p-4 border rounded-xl cursor-pointer transition-all ${
-          selected === method.id
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-200 hover:border-blue-300"
-        }`}
-      >
-        <div className="flex items-center">
-          {method.icon}
-          <span className="ml-2">{method.label}</span>
-          {selected === method.id && (
-            <CheckCircle2 size={16} className="text-blue-500 ml-auto" />
-          )}
-        </div>
-      </div>
-    ))}
-  </div>
-);
-
 // Ajouter le composant de sélection de matricule
 const PlateNumberInput = ({ onPlateChange }) => {
   const [format, setFormat] = useState('ar');
@@ -498,12 +469,11 @@ const Reservation = ({
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [qrCode, setQrCode] = useState(null);
   const [calculatedPrice, setCalculatedPrice] = useState(0);
   const [currentStep, setCurrentStep] = useState(1); // 1: dates, 2: vehicle type
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [createdReservation, setCreatedReservation] = useState(null);
 
-
+  // Remove paymentMethod state as it's no longer needed here
 
   // Add this constant definition
   const commonClasses =
@@ -631,102 +601,85 @@ const Reservation = ({
     }
   };
 
-  // Handle reservation submission
-  const handleSubmit = async () => {
-    try {
-      if (!parkingData?._id) {
-        setError("Données du parking invalides");
-        return;
-      }
-      const spotId = parkingData.selectedSpotId;
-
-      if (!spotId) {
-        setError("Veuillez sélectionner une place de parking");
-        return;
-      }
-
-      if (!reservationData.vehicleType) {
-        setError("Veuillez sélectionner un type de véhicule");
-        return;
-      }
-
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Veuillez vous connecter pour effectuer une réservation");
-        return;
-      }
-
-      // Validate date range
-      const minDuration = 60 * 60 * 1000; // 1 heure minimum
-      if (
-        new Date(reservationData.endDate) -
-          new Date(reservationData.startDate) <
-        minDuration
-      ) {
-        setError("La durée minimale de réservation est de 1 heure");
-        return;
-      }
-
-      // Validate dates are not in the past
-      if (new Date(reservationData.startDate) < new Date()) {
-        setError("La date de début ne peut pas être dans le passé");
-        return;
-      }
-
-      setLoading(true);
-      setError("");
-
-      // Renommez cette variable pour éviter la collision
-      const reservationPayload = {
-        parkingId: parkingData._id,
-        spotId: spotId,
-        startTime: new Date(reservationData.startDate).toISOString(),
-        endTime: new Date(reservationData.endDate).toISOString(),
-        vehicleType: reservationData.vehicleType,
-        totalPrice: calculatedPrice,
-        paymentMethod: paymentMethod,
-        matricule: reservationData.matricule, // Ajouter cette ligne
-        userId: localStorage.getItem("userId"),
-      };
-      console.log("Payload complet:", {
-        parkingId: parkingData._id,
-        spotId: spotId,
-        startTime: new Date(reservationData.startDate).toISOString(),
-        endTime: new Date(reservationData.endDate).toISOString(),
-        vehicleType: reservationData.vehicleType,
-        totalPrice: calculatedPrice,
-        paymentMethod: paymentMethod,
-      });
-
-      console.log("Sending reservation data:", reservationPayload);
-
-      const response = await axios.post(
-        "http://localhost:3001/api/reservations",
-        reservationPayload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      setQrCode(response.data.qrCode);
-      setCurrentStep(4);
-    } catch (err) {
-      console.error("Erreur de réservation:", err);
-      if (err.response) {
-        console.error("Response error data:", err.response.data);
-        console.error("Response status:", err.response.status);
-      }
-      const errorMessage =
-        err.response?.data?.message ||
-        "Erreur lors de la réservation. Veuillez réessayer.";
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
+  // Handle reservation submission - modified to only collect data, not create reservation
+const handleSubmit = async () => {
+  try {
+    if (!parkingData?._id) {
+      setError("Données du parking invalides");
+      return;
     }
-  };
+    const spotId = parkingData.selectedSpotId;
+
+    if (!spotId) {
+      setError("Veuillez sélectionner une place de parking");
+      return;
+    }
+
+    if (!reservationData.vehicleType) {
+      setError("Veuillez sélectionner un type de véhicule");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Veuillez vous connecter pour effectuer une réservation");
+      return;
+    }
+
+    // Validate date range
+    const minDuration = 60 * 60 * 1000; // 1 heure minimum
+    if (
+      new Date(reservationData.endDate) -
+        new Date(reservationData.startDate) <
+      minDuration
+    ) {
+      setError("La durée minimale de réservation est de 1 heure");
+      return;
+    }
+
+    // Validate dates are not in the past
+    if (new Date(reservationData.startDate) < new Date()) {
+      setError("La date de début ne peut pas être dans le passé");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    // Prepare reservation data without creating it
+    const reservationPayload = {
+      parkingId: parkingData._id,
+      spotId: spotId,
+      startTime: new Date(reservationData.startDate).toISOString(),
+      endTime: new Date(reservationData.endDate).toISOString(),
+      vehicleType: reservationData.vehicleType,
+      totalPrice: calculatedPrice,
+      matricule: reservationData.matricule,
+      userId: localStorage.getItem("userId"),
+      paymentMethod: "cash", // Default payment method - will be changed at confirmation
+      status: "pending"
+    };
+
+    console.log("Collected reservation data:", reservationPayload);
+    
+    // Pass the collected data to parent component
+    if (onContinue) {
+      onContinue({
+        ...reservationPayload,
+        startDate: reservationData.startDate,
+        endDate: reservationData.endDate,
+        pendingCreation: true // Flag to indicate this reservation needs to be created
+      });
+    }
+    
+  } catch (err) {
+    console.error("Erreur lors de la préparation de la réservation:", err);
+    const errorMessage = "Une erreur s'est produite lors de la préparation de votre réservation.";
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     const verifyAvailability = async () => {
@@ -752,129 +705,7 @@ const Reservation = ({
     }
   }, [currentStep]);
 
-  // Handle QR code printing
-  const handlePrint = () => {
-    const printWindow = window.open("", "", "width=600,height=600");
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>QR Code Réservation - ${parkingData.name}</title>
-          <style>
-            body { 
-              font-family: 'Segoe UI', Arial, sans-serif; 
-              text-align: center; 
-              padding: 20px;
-              background-color: #f9fafc;
-              color: #333;
-            }
-            .container {
-              max-width: 500px;
-              margin: 0 auto;
-              background: white;
-              padding: 30px;
-              border-radius: 12px;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            }
-            .logo {
-              margin-bottom: 20px;
-              font-size: 24px;
-              font-weight: bold;
-              color: #3b82f6;
-            }
-            .qr-container { 
-              margin: 20px auto;
-              padding: 15px;
-              background-color: #f1f5f9;
-              border-radius: 8px;
-              display: inline-block;
-            }
-            .details { 
-              margin: 30px auto; 
-              text-align: left; 
-              max-width: 400px; 
-              border-top: 1px solid #e5e7eb;
-              padding-top: 20px;
-            }
-            .footer { 
-              margin-top: 20px; 
-              font-size: 14px; 
-              color: #666; 
-              border-top: 1px solid #e5e7eb;
-              padding-top: 20px;
-            }
-            h2 {
-              color: #1e3a8a;
-            }
-            .detail-row {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 10px;
-              padding-bottom: 10px;
-              border-bottom: 1px dashed #e5e7eb;
-            }
-            .detail-label {
-              font-weight: 600;
-              color: #64748b;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="logo">Parking Réservation</div>
-            <h2>${parkingData.name}</h2>
-            <div class="qr-container">
-              <img src="${qrCode}" alt="QR Code" style="max-width: 250px"/>
-            </div>
-            <div class="details">
-              <div class="detail-row">
-                <span class="detail-label">Date d'arrivée:</span>
-                <span>${new Date(
-                  reservationData.startDate
-                ).toLocaleString()}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Date de départ:</span>
-                <span>${new Date(
-                  reservationData.endDate
-                ).toLocaleString()}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Type de véhicule:</span>
-                <span>${reservationData.vehicleType}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Montant total:</span>
-                <span>${calculatedPrice}Dt</span>
-              </div>
-            </div>
-            <div class="footer">
-              <p>Veuillez présenter ce QR code à l'entrée du parking</p>
-              <p>Réservation effectuée le ${new Date().toLocaleString()}</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-  };
-
-  // Navigate to next step or confirm
-  const handleNextOrConfirm = async () => {
-    if (currentStep === 1 && isStepValid()) {
-      // Vérifier la disponibilité avant de passer à l'étape suivante
-      const isAvailable = await checkAvailability(
-        reservationData.startDate,
-        reservationData.endDate
-      );
-      if (isAvailable) {
-        setCurrentStep(2);
-      }
-    } else if (currentStep === 2 && isStepValid()) {
-      handleSubmit();
-    }
-  };
+ 
 
   // Check if current step is valid to proceed
   const isStepValid = () => {
@@ -901,242 +732,220 @@ const Reservation = ({
   // Render content based on current step
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Main content layout with improved vertical alignment */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
-        {/* Left column - Current step content (takes 2/3 width on desktop) */}
-        <div className="lg:col-span-2 space-y-6">
-          {currentStep === 1 && (
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-blue-100 shadow-md">
-              <h3 className="text-xl font-bold mb-6 flex items-center text-gray-800">
-                <div className="bg-blue-50 p-3 rounded-full mr-3">
-                  <Calendar className="text-blue-600" size={24} />
-                </div>
-                Dates de stationnement
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <CustomDatePicker
-                  selected={reservationData.startDate}
-                  onChange={async (date) => {
-                    const newEndDate =
-                      date > reservationData.endDate
-                        ? new Date(date.getTime() + 60 * 60 * 1000)
-                        : reservationData.endDate;
-
-                    const isAvailable = await checkAvailability(date, newEndDate);
-                    if (isAvailable) {
-                      setReservationData((prev) => ({
-                        ...prev,
-                        startDate: date,
-                        endDate: newEndDate,
-                      }));
-                    }
-                  }}
-                  label="Date et heure d'arrivée"
-                  isStartDate
-                />
-
-                <CustomDatePicker
-                  selected={reservationData.endDate}
-                  onChange={async (date) => {
-                    const isAvailable = await checkAvailability(
-                      reservationData.startDate,
-                      date
-                    );
-                    if (isAvailable) {
-                      setReservationData((prev) => ({
-                        ...prev,
-                        endDate: date,
-                      }));
-                    }
-                  }}
-                  label="Date et heure de départ"
-                  minDate={reservationData.startDate}
-                />
+      {/* Conditional layout structure based on current step */}
+      <div className="flex flex-col space-y-6">
+        {/* STEP 1: Display date selection */}
+        {currentStep === 1 && (
+          <div className="w-full bg-white p-6 rounded-2xl border-2 border-blue-100 shadow-md">
+            <h3 className="text-xl font-bold mb-6 flex items-center text-gray-800">
+              <div className="bg-blue-50 p-3 rounded-full mr-3">
+                <Calendar className="text-blue-600" size={24} />
               </div>
-
-              <div className="mt-6">
-                <PlateNumberInput
-                  onPlateChange={(plateNumber) =>
-                    setReservationData((prev) => ({ ...prev, matricule: plateNumber }))
-                  }
-                />
-              </div>
-            </div>
-          )}
-
-          {currentStep === 2 && (
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-blue-100 shadow-md h-full">
-              <h3 className="text-xl font-bold mb-6 flex items-center text-gray-800">
-                <div className="bg-blue-50 p-3 rounded-full mr-3">
-                  <Car className="text-blue-600" size={24} />
-                </div>
-                Type de véhicule
-              </h3>
-
-              <div className="my-8">
-                <VehicleTypeSelector
-                  selectedType={reservationData.vehicleType}
-                  onSelect={(type) =>
-                    setReservationData((prev) => ({ ...prev, vehicleType: type }))
-                  }
-                />
-              </div>
-              
-              <div className="mt-10 pt-6 border-t border-gray-100">
-                <h4 className="font-semibold text-gray-700 mb-5">Méthode de paiement</h4>
-                <PaymentMethodSelector
-                  selected={paymentMethod}
-                  onSelect={setPaymentMethod}
-                />
-              </div>
-            </div>
-          )}
-          
-          {/* Error message - improved position and spacing */}
-          {error && (
-            <div className="p-4 rounded-lg bg-red-50 text-red-700 flex items-center mt-5">
-              <AlertCircle size={18} className="mr-2 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Right column - Summary with improved vertical alignment */}
-        <div className="self-start"> {/* Added self-start to align at the top */}
-          <div className="bg-white p-5 sm:p-6 rounded-xl border-2 border-gray-200 shadow-md sticky top-6">
-            <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-100 flex items-center">
-              <ListChecks className="mr-2 text-blue-500" size={18} />
-              Récapitulatif
+              Dates de stationnement
             </h3>
 
-            {/* Reservation details with improved spacing */}
-            <div className="space-y-3 mb-5">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Parking</span>
-                <span className="font-medium">{parkingData?.name}</span>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <CustomDatePicker
+                selected={reservationData.startDate}
+                onChange={async (date) => {
+                  const newEndDate =
+                    date > reservationData.endDate
+                      ? new Date(date.getTime() + 60 * 60 * 1000)
+                      : reservationData.endDate;
 
+                  const isAvailable = await checkAvailability(date, newEndDate);
+                  if (isAvailable) {
+                    setReservationData((prev) => ({
+                      ...prev,
+                      startDate: date,
+                      endDate: newEndDate,
+                    }));
+                  }
+                }}
+                label="Date et heure d'arrivée"
+                isStartDate
+              />
+
+              <CustomDatePicker
+                selected={reservationData.endDate}
+                onChange={async (date) => {
+                  const isAvailable = await checkAvailability(
+                    reservationData.startDate,
+                    date
+                  );
+                  if (isAvailable) {
+                    setReservationData((prev) => ({
+                      ...prev,
+                      endDate: date,
+                    }));
+                  }
+                }}
+                label="Date et heure de départ"
+                minDate={reservationData.startDate}
+              />
+            </div>
+
+            <div className="mt-6">
+              <PlateNumberInput
+                onPlateChange={(plateNumber) =>
+                  setReservationData((prev) => ({ ...prev, matricule: plateNumber }))
+                }
+              />
+            </div>
+          </div>
+        )}
+        
+        {/* STEP 2: Display vehicle type selection - only shown in step 2 */}
+        {currentStep === 2 && (
+          <div className="w-full bg-white p-6 rounded-2xl border-2 border-blue-100 shadow-md">
+            <h3 className="text-xl font-bold mb-6 flex items-center text-gray-800">
+              <div className="bg-blue-50 p-3 rounded-full mr-3">
+                <Car className="text-blue-600" size={24} />
+              </div>
+              Type de véhicule
+            </h3>
+
+            <div className="mb-8">
+              <VehicleTypeSelector
+                selectedType={reservationData.vehicleType}
+                onSelect={(type) =>
+                  setReservationData((prev) => ({ ...prev, vehicleType: type }))
+                }
+              />
+            </div>
+            
+            {/* Payment method selector removed */}
+          </div>
+        )}
+
+        {/* Error message - shown in all steps */}
+        {error && (
+          <div className="p-4 rounded-lg bg-red-50 text-red-700 flex items-center">
+            <AlertCircle size={18} className="mr-2 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Summary Box - shown in all steps */}
+        <div className="w-full bg-white p-6 rounded-xl border-2 border-gray-200 shadow-md">
+          <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-100 flex items-center">
+            <ListChecks className="mr-2 text-blue-500" size={18} />
+            Récapitulatif
+          </h3>
+
+          <div className="space-y-3 mb-5">
+            <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+              <span className="text-gray-600">Parking</span>
+              <span className="font-medium">{parkingData?.name}</span>
+            </div>
+
+            <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+              <span className="text-gray-600">Début</span>
+              <span className="font-medium">
+                {reservationData.startDate.toLocaleString("fr-FR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+              <span className="text-gray-600">Fin</span>
+              <span className="font-medium">
+                {reservationData.endDate.toLocaleString("fr-FR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+
+            {reservationData.vehicleType && (
               <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Début</span>
+                <span className="text-gray-600">Type de véhicule</span>
                 <span className="font-medium">
-                  {reservationData.startDate.toLocaleString("fr-FR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {reservationData.vehicleType}
                 </span>
               </div>
+            )}
 
+            {reservationData.matricule && (
               <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Fin</span>
-                <span className="font-medium">
-                  {reservationData.endDate.toLocaleString("fr-FR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                <span className="text-gray-600">Matricule</span>
+                <span className="font-medium text-blue-600">
+                  {reservationData.matricule}
                 </span>
               </div>
-
-              {reservationData.vehicleType && (
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-gray-600">Type de véhicule</span>
-                  <span className="font-medium">
-                    {reservationData.vehicleType}
-                  </span>
-                </div>
-              )}
-
-              {reservationData.matricule && (
-                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-gray-600">Matricule</span>
-                  <span className="font-medium text-blue-600">
-                    {reservationData.matricule}
-                  </span>
-                </div>
-              )}
+            )}
+            
+            <div className="mt-4 pt-2 border-t-2 border-gray-200">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Durée</span>
+                <span className="font-medium">
+                  {Math.ceil(
+                    (new Date(reservationData.endDate) -
+                      new Date(reservationData.startDate)) /
+                      (1000 * 60 * 60)
+                  )} heures
+                </span>
+              </div>
               
-              <div className="mt-4 pt-2 border-t-2 border-gray-200">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Durée</span>
-                  <span className="font-medium">
-                    {Math.ceil(
-                      (new Date(reservationData.endDate) -
-                        new Date(reservationData.startDate)) /
-                        (1000 * 60 * 60)
-                    )} heures
-                  </span>
-                </div>
-                
-                <div className="flex justify-between items-center mt-1">
-                  <span className="text-gray-600">Prix par heure</span>
-                  <span className="font-medium">{parkingData?.pricing?.hourly}Dt</span>
-                </div>
-                
-                <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-200">
-                  <span className="font-semibold text-gray-800">Total</span>
-                  <span className="font-bold text-xl text-blue-600">{calculatedPrice}Dt</span>
-                </div>
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-gray-600">Prix par heure</span>
+                <span className="font-medium">{parkingData?.pricing?.hourly}Dt</span>
+              </div>
+              
+              <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-200">
+                <span className="font-semibold text-gray-800">Total</span>
+                <span className="font-bold text-xl text-blue-600">{calculatedPrice}Dt</span>
               </div>
             </div>
+          </div>
 
-            {/* Action buttons with improved spacing and alignment */}
-            <div className="flex flex-col gap-3 mt-6">
-              {currentStep === 2 && (
-                <button
-                  onClick={() => setCurrentStep(1)}
-                  className="w-full py-3 px-5 rounded-xl bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors flex items-center justify-center"
-                >
-                  <ArrowRight className="mr-2 transform rotate-180" size={16} /> Retour
-                </button>
-              )}
+          {/* Action buttons with improved spacing and alignment */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-6 justify-end">
+            {currentStep === 2 && (
               <button
-                onClick={handleNextOrConfirm}
-                disabled={loading || !isStepValid()}
-                className={`w-full py-3 px-5 rounded-xl flex items-center justify-center transition-colors font-medium ${
-                  loading || !isStepValid()
-                    ? "bg-gray-300 cursor-not-allowed text-gray-500"
-                    : "bg-blue-600 hover:bg-blue-700 text-black"
-                }`}
+                onClick={() => setCurrentStep(1)}
+                className="py-3 px-5 rounded-xl bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors flex items-center justify-center"
               >
-                {loading ? (
-                  <>
-                    <span className="animate-spin mr-2">⌛</span>
-                    Traitement...
-                  </>
-                ) : currentStep === 1 ? (
-                  <>
-                    Suivant <ArrowRight className="ml-1" size={16} />
-                  </>
-                ) : (
-                  <>
-                    Confirmer la réservation
-                    <CheckCircle2 className="ml-1" size={16} />
-                  </>
-                )}
+                <ArrowRight className="mr-2 transform rotate-180" size={16} /> Retour
               </button>
-            </div>
+            )}
+            <button
+              onClick={currentStep === 1 ? () => setCurrentStep(2) : handleSubmit}
+              disabled={loading || !isStepValid()}
+              className={`py-3 px-8 rounded-xl flex items-center justify-center transition-colors font-medium ${
+                loading || !isStepValid()
+                  ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                  : "bg-blue-600 hover:bg-blue-700 text-black"
+              }`}
+            >
+              {loading ? (
+                <>
+                  <span className="animate-spin mr-2">⌛</span>
+                  Traitement...
+                </>
+              ) : currentStep === 1 ? (
+                <>
+                  Suivant <ArrowRight className="ml-1" size={16} />
+                </>
+              ) : (
+                <>
+                  Confirmer et procéder au paiement
+                  <CheckCircle2 className="ml-1" size={16} />
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* QR code modal */}
-      {qrCode && (
-        <QRCodeModal
-          qrCode={qrCode}
-          onPrint={handlePrint}
-          onContinue={() => {
-            setQrCode(null);
-            onContinue();
-          }}
-          onViewReservations={() => navigate("/mes-reservations")}
-        />
-      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { Routes, Route, useLocation, BrowserRouter, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 import DefaultLayout from "./Layouts/DefaultLayout";
 import Homepage from './Pages/Homepage';
@@ -19,7 +19,7 @@ import Login from './Pages/Login';
 import SignUp from './Pages/SignUp';
 import ForgotPassword from './Pages/ForgotPassword';
 import ResetPassword from './Pages/ResetPassword';
-import { AuthProvider } from './AuthContext';
+import { AuthProvider, useAuth } from './AuthContext';
 import GoogleCallback from './Pages/googlecallbackk';
 import { SearchProvider } from './context/SearchContext';
 import { FavoritesProvider } from './context/FavoritesContext';
@@ -28,7 +28,6 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { MapboxProvider } from './context/MapboxContext';
 import { NotificationProvider } from './Pages/Notifications/notificationContext';
-
 
 import Profile from './Pages/profile';
 import ParkingRequestForm from '../src/Pages/ParkingForm';
@@ -50,7 +49,62 @@ import PeakHoursDashboard from "./Pages/PeakHoursDashboard";
 import OwnerReservations from './Components/Pages/OwnerReservations';
 import OwnerClaims from "./Components/Pages/OwnerClaims";
 
+// Payment success/failure redirect components
+const PaymentSuccessRedirect = () => {
+  const { navigate } = useAuth();
+  const [isRedirecting, setIsRedirecting] = useState(true);
+  
+  // Extract reservation ID from URL
+  const reservationId = window.location.pathname.split('/').pop();
+  
+  useEffect(() => {
+    if (isRedirecting) {
+      setIsRedirecting(false);
+      // Navigate to confirmation page with success parameter
+      navigate(`/confirmation?reservationId=${reservationId}&paymentSuccess=true`);
+    }
+  }, [navigate, reservationId, isRedirecting]);
+  
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="text-center p-8 bg-white rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Redirection en cours...</h2>
+        <p className="text-gray-600">Veuillez patienter pendant que nous préparons votre confirmation de réservation.</p>
+        <div className="mt-4">
+          <div className="w-12 h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
+const PaymentFailedRedirect = () => {
+  const { navigate } = useAuth();
+  const [isRedirecting, setIsRedirecting] = useState(true);
+  
+  // Extract reservation ID from URL
+  const reservationId = window.location.pathname.split('/').pop();
+  
+  useEffect(() => {
+    if (isRedirecting) {
+      setIsRedirecting(false);
+      // Navigate to confirmation page with failure parameter
+      navigate(`/confirmation?reservationId=${reservationId}&paymentSuccess=false`);
+    }
+  }, [navigate, reservationId, isRedirecting]);
+  
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="text-center p-8 bg-white rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Redirection en cours...</h2>
+        <p className="text-gray-600">Traitement de votre paiement en cours...</p>
+        <div className="mt-4">
+          <div className="w-12 h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const App = () => {
   let location = useLocation();
@@ -75,54 +129,63 @@ const App = () => {
           <AuthProvider>
           <NotificationProvider>
             <ToastContainer />
-            <Routes>
-              <Route path="/" element={<DefaultLayout />}>
-                <Route index element={<Homepage />} />
-                <Route path="parkingPlan/:id" element={<ParkingPlan />} />
-                <Route path="parkingLiveView/:id" element={<ParkingLiveView3D />} />
-                <Route path="visualize3d/:id" element={<Visualize3d />} />
-                <Route path="step2/:parkingId" element={<Step2UploadImages />} />
-                <Route path="how-it-works" element={<HowItworks />} />
-                <Route path="booking" element={<Booking />} />
-                <Route path="careers" element={<Careers />} />
-                <Route path="about" element={<About />} />
-                <Route path="job/detail" element={<JobDetail />} />
-                <Route path="blog" element={<Blog />} />
-                <Route path="blog/detail" element={<BlogDetail />} />
-                <Route path="contact" element={<Contact />} />
-                <Route path="privacy" element={<Privacy />} />
-                <Route path="terms" element={<Terms />} />
-                <Route path="faq" element={<Faq />} />
-                <Route path="login" element={<Login />} />
-                <Route path="sign-up" element={<SignUp />} />
-                <Route path="forgot-password" element={<ForgotPassword />} />
-                <Route path="reset-password/:token" element={<ResetPassword />} />
-                <Route path="google/callback" element={<GoogleCallback />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="parkings/:id" element={<ParkingDetails />} />
-                <Route path="login/face" element={<FaceAuth/>} />
-                <Route path="*" element={<NotFound />} />
-                <Route path="location" element={<SecLocation />} />
-                <Route path="ScanQr" element={<EmployeeProfile />} />
-                <Route path="my-parkings" element={<ParkingListOwner />} />
-                <Route path="ParkingRequestForm" element={<ParkingRequestForm />} />
+             
+                <Routes>
+                  <Route path="/" element={<DefaultLayout />}>
+                    <Route index element={<Homepage />} />
+                    <Route path="parkingPlan/:id" element={<ParkingPlan />} />
+                    <Route path="parkingLiveView/:id" element={<ParkingLiveView3D />} />
+                    <Route path="visualize3d/:id" element={<Visualize3d />} />
+                    <Route path="step2/:parkingId" element={<Step2UploadImages />} />
+                    <Route path="how-it-works" element={<HowItworks />} />
+                    <Route path="booking" element={<Booking />} />
+                    <Route path="careers" element={<Careers />} />
+                    <Route path="about" element={<About />} />
+                    <Route path="job/detail" element={<JobDetail />} />
+                    <Route path="blog" element={<Blog />} />
+                    <Route path="blog/detail" element={<BlogDetail />} />
+                    <Route path="contact" element={<Contact />} />
+                    <Route path="privacy" element={<Privacy />} />
+                    <Route path="terms" element={<Terms />} />
+                    <Route path="faq" element={<Faq />} />
+                    <Route path="login" element={<Login />} />
+                    <Route path="sign-up" element={<SignUp />} />
+                    <Route path="forgot-password" element={<ForgotPassword />} />
+                    <Route path="reset-password/:token" element={<ResetPassword />} />
+                    <Route path="google/callback" element={<GoogleCallback />} />
+                    <Route path="profile" element={<Profile />} />
+                    <Route path="parkings/:id" element={<ParkingDetails />} />
+                    <Route path="login/face" element={<FaceAuth/>} />
+                    <Route path="*" element={<NotFound />} />
+                    <Route path="location" element={<SecLocation />} />
+                    <Route path="ScanQr" element={<EmployeeProfile />} />
+                    <Route path="my-parkings" element={<ParkingListOwner />} />
+                    <Route path="ParkingRequestForm" element={<ParkingRequestForm />} />
 
-                <Route path="/my-subscriptions" element={<ListSubsDriver />} />
-                <Route path="/TodaysPrediction" element={<PeakHoursDashboard />} />
+                    <Route path="/my-subscriptions" element={<ListSubsDriver />} />
+                    <Route path="/TodaysPrediction" element={<PeakHoursDashboard />} />
 
-                <Route path="OwnerReservations" element={<OwnerReservations/>} />
-                <Route path="OwnerClaims" element={< OwnerClaims/>} />
+                    <Route path="OwnerReservations" element={<OwnerReservations/>} />
+                    <Route path="OwnerClaims" element={< OwnerClaims/>} />
+                         {/* Payment redirection routes */}
+                  <Route path="/payment-success/:reservationId" element={<PaymentSuccessRedirect />} />
+                  <Route path="/payment-failed/:reservationId" element={<PaymentFailedRedirect />} />
+                   {/* Payment redirection routes */}
+                   <Route path="/payment-success/:reservationId" element={<PaymentSuccessRedirect />} />
 
-                <Route 
-                  path="/mes-reservations" 
-                  element={
-                    <PrivateRoute>
-                      <UserReservations />
-                    </PrivateRoute>
-                  } 
-                />
-              </Route>
-            </Routes>
+                    <Route 
+                      path="/mes-reservations" 
+                      element={
+                        <PrivateRoute>
+                          <UserReservations />
+                        </PrivateRoute>
+                      } 
+                    />
+                  </Route>
+
+              
+                </Routes>
+              
             </NotificationProvider>
           </AuthProvider>
         </FavoritesProvider>

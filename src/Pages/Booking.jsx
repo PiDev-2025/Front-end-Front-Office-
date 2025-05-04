@@ -6,7 +6,6 @@ import {
   LocationIcon,
   RightArrowIcon,
   SettingIcon,
-  MapIcon,
 } from "../Components/Icon/Icon";
 import SecLocation from "./../Components/Pages/Step/Location";
 import BookNow from "../Components/Pages/Step/BookNow";
@@ -20,11 +19,14 @@ const Booking = () => {
   const [selectedParking, setSelectedParking] = useState(null);
   const [selectedSpot, setSelectedSpot] = useState(null);
   const location = useLocation();
+  const [pendingReservationData, setPendingReservationData] = useState(null);
+  const [navigateToStep4Data, setNavigateToStep4Data] = useState(null);
   const [reservationData, setReservationData] = useState({
     startDate: new Date(),
-    endDate: new Date(Date.now() + 60 * 60 * 1000), // +1h
+    endDate: new Date(Date.now() + 60 * 60 * 1000), // +1h default
     vehicleType: "",
-    // autres champs nécessaires
+    matricule: "", // Initialize matricule
+    totalPrice: 0, // Initialize price
   });
 
   useEffect(() => {
@@ -39,6 +41,19 @@ const Booking = () => {
       console.log("Parking sélectionné :", location.state.selectedParking);
     }
   }, [location]);
+
+  useEffect(() => {
+    console.log("[Booking] useEffect for navigateToStep4Data triggered. Current value:", navigateToStep4Data);
+    if (navigateToStep4Data) {
+      console.log("[Booking] navigateToStep4Data is truthy. Setting pendingReservationData and navigating to step 4.");
+      setPendingReservationData(navigateToStep4Data); // Set the state
+      setTabActiveId(4); // Navigate AFTER setting state (React batches updates)
+      setNavigateToStep4Data(null); // Reset the trigger state
+      console.log("[Booking] pendingReservationData should be set now (check next render). Tab set to 4.");
+    } else {
+      console.log("[Booking] navigateToStep4Data is null/falsy. No navigation triggered.");
+    }
+  }, [navigateToStep4Data]); // Dependency array includes the trigger state
 
   useEffect(() => {
     console.log("Selected Parking updated:", selectedParking);
@@ -98,10 +113,7 @@ const Booking = () => {
                 }}
                 onSpotSelected={(spotId) => {
                   setSelectedSpot(spotId);
-                  if (selectedParking) {
-                    selectedParking.selectedSpotId = spotId;
-                  }
-                  // Basculer automatiquement vers le formulaire de réservation
+                  setSelectedParking(prev => prev ? {...prev, selectedSpotId: spotId} : null);
                   const element = document.querySelector('.reservation-form');
                   if (element) {
                     element.scrollIntoView({ behavior: 'smooth' });
@@ -118,8 +130,10 @@ const Booking = () => {
                 }}
                 reservationData={reservationData}
                 setReservationData={setReservationData}
-                onContinue={(reservationData) => {
-                  console.log("Reservation completed:", reservationData);
+                onContinue={(collectedData) => {
+                  console.log("[Booking] Received reservation data from step 3:", collectedData);
+                  // Stockage des données de réservation pour création dans l'étape 4
+                  setPendingReservationData(collectedData);
                   setTabActiveId(4);
                 }}
               />
@@ -127,7 +141,28 @@ const Booking = () => {
           </div>
         );
       case 4:
-        return <Confirmation />;
+        console.log("[Booking] Rendering Confirmation. Pending reservation data:", pendingReservationData);
+        if (!pendingReservationData) {
+          console.error("[Booking] Missing reservation data for confirmation step");
+          return (
+            <div className="text-center p-6 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+              <h3 className="font-bold text-lg mb-2">Erreur de chargement</h3>
+              <p>Les données de la réservation n'ont pas pu être chargées correctement.</p>
+              <button
+                onClick={() => setTabActiveId(3)}
+                className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Retour à la réservation
+              </button>
+            </div>
+          );
+        }
+        // Passer les données collectées à confirmer
+        return (
+          <Confirmation
+            initialReservationData={pendingReservationData}
+          />
+        );
       default:
         return <SecLocation />;
     }

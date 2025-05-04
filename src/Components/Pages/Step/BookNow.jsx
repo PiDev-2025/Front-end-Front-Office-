@@ -127,37 +127,11 @@ const LoginPopup = ({ onClose }) => {
   );
 };
 
-// Add this new component near the top with other component definitions
-const TunisianPlate = ({ number, region = 'تونس' }) => {
-  const formatNumber = (num) => {
-    if (!num) return '';
-    // Clean the number and pad with zeros if needed
-    const cleaned = num.toString().replace(/\D/g, '');
-    return cleaned.padStart(3, '0');
-  };
 
-  return (
-    <div className="inline-flex items-center bg-white border-2 border-black rounded-lg px-4 py-2 font-bold">
-      <span className="text-xl">{formatNumber(number)}</span>
-      <span className="mx-2 text-gray-400">|</span>
-      <span className="text-xl font-arabic">{region}</span>
-    </div>
-  );
-};
 
-// Add these utility functions
-const formatPlateNumber = (value) => {
-  if (!value) return '';
-  // Remove any non-digit characters
-  const cleaned = value.replace(/\D/g, '');
-  // Limit to 4 digits
-  return cleaned.slice(0, 4);
-};
 
-const validatePlateNumber = (number) => {
-  const regex = /^\d{1,4}$/;
-  return regex.test(number);
-};
+
+
 
 const BookNow = ({ parkingData, onContinue }) => {
   const { id } = useParams();
@@ -175,22 +149,9 @@ const BookNow = ({ parkingData, onContinue }) => {
   const [region] = useState('تونس'); // Default region
 
   // Add this helper function at the top with other constants
-  const formatTunisianLicensePlate = (number, region) => {
-    if (!number) return '';
-    
-    // Remove any non-digit characters
-    const cleaned = number.toString().replace(/\D/g, '');
-    
-    // Format as Tunisian license plate (TUN XXXX)
-    return `${cleaned} ${region}`;
-  };
+ 
   
-  const validateTunisianLicensePlate = (number) => {
-    // Basic validation for Tunisian license plate format
-    const regex = /^\d{1,4}$/;
-    return regex.test(number.toString().replace(/\D/g, ''));
-  };
-
+ 
   // Ajoutez cette fonction pour vérifier le token manuellement
   const checkAuthentication = () => {
     const token = localStorage.getItem('token');
@@ -349,12 +310,7 @@ const handleReservation = () => {
   }
 };
 
-// Add this to your form handling or wherever you handle the plate number input
-const handlePlateNumberChange = (e) => {
-  const value = e.target.value;
-  const formatted = formatPlateNumber(value);
-  setPlateNumber(formatted);
-};
+
 
 if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div></div>;
 if (error) return <div className="bg-red-50 text-red-600 p-4 rounded-lg text-center">{error}</div>;
