@@ -992,7 +992,6 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
         opacity: 0.9,
       },
     };
-
     const status = spot.isOccupied
       ? "occupied"
       : spot.isReserved
