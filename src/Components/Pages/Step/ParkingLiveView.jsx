@@ -764,7 +764,8 @@ const ParkingPlan2D = ({
     isOccupied,
     isReserved,
   }) => {
-    const spotNumber = id.replace("parking-spot-", "");
+    // Add null check and provide default value if id is undefined
+    const spotNumber = id ? id.replace("parking-spot-", "") || id : "";
     const isHighlighted = highlightedSpot === id;
 
     const handleSpotClick = () => {

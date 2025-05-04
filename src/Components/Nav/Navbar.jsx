@@ -84,14 +84,13 @@ const Navbar = () => {
     return userRole === "Driver";
   };
 
-    // Function to check if Parking should be visible
-    const OwnerResevations = () => {
-      return userRole === "Owner";
-    };
-    const OwnerClaims = () => {
-      return userRole === "Owner";
-    };
-
+  // Function to check if Parking should be visible
+  const OwnerResevations = () => {
+    return userRole === "Owner";
+  };
+  const OwnerClaims = () => {
+    return userRole === "Owner";
+  };
 
   // Function to check if Notifications should be visible
   const shouldShowNotifications = () => {
@@ -216,7 +215,6 @@ const Navbar = () => {
                 </NavLink>
               </li>
             )}
-
             {/* Notifications for mobile - only show if user is Owner or Employee */}
             {user && shouldShowNotifications() && (
               <li className="w-full">
@@ -410,9 +408,20 @@ const Navbar = () => {
                 </NavLink>
               </li>
             )}
-          
-          
-          {OwnerResevations() && (
+            <li>
+              <NavLink
+                to="/subscriptions"
+                className={`flex items-center gap-1 ${
+                  navabarScroll && !ToogleMenuResponsive
+                    ? "text-Mwhite"
+                    : "text-Mblack"
+                }`}
+              >
+                <span className="text-xl">👑</span>
+                <span>Subscribe</span>
+              </NavLink>
+            </li>
+            {OwnerResevations() && (
               <li>
                 <NavLink
                   to="/OwnerReservations"
