@@ -71,6 +71,9 @@ const Navbar = () => {
   const shouldShowScanQR = () => {
     return userRole === "Employe";
   };
+  const DriverSubscription = () => {
+    return (userRole === "Driver" );
+  };
   const DriverReservations = () => {
     return userRole === "Driver";
   };
@@ -303,7 +306,94 @@ const Navbar = () => {
                 Park now
               </NavLink>
             </li>
-            <li>
+           
+
+            {/* Show Parking only for Owner role in desktop menu */}
+            {shouldShowParking() && (
+              <li>
+                <NavLink
+                  to="/my-parkings"
+                  className={
+                    navabarScroll && !ToogleMenuResponsive
+                      ? "text-Mwhite"
+                      : "text-Mblack"
+                  }
+                >
+                  Parking
+                </NavLink>
+              </li>
+            )}
+
+            {/* Show Scan QR only for Employee role in desktop menu */}
+            {shouldShowScanQR() && (
+              <li>
+                <NavLink
+                  to="/ScanQr"
+                  className={
+                    navabarScroll && !ToogleMenuResponsive
+                      ? "text-Mwhite"
+                      : "text-Mblack"
+                  }
+                >
+                  Scan Qr
+                </NavLink>
+              </li>
+            )}
+            
+            {/* Ajouter le lien Mes réservations (visible seulement si l'utilisateur est connecté) */}
+            {DriverReservations() && (
+              <li>
+                <NavLink
+                  to="/mes-reservations"
+                  className={
+                    navabarScroll && !ToogleMenuResponsive
+                      ? "text-Mwhite"
+                      : "text-Mblack"
+                  }
+                >
+                  <span className="flex items-center">
+                    <span className="mr-1"></span>
+                    Réservations
+                  </span>
+                </NavLink>
+              </li>
+            )}
+           
+            {OwnerResevations() && (
+              <li>
+                <NavLink
+                  to="/OwnerReservations"
+                  className={
+                    navabarScroll && !ToogleMenuResponsive
+                      ? "text-Mwhite"
+                      : "text-Mblack"
+                  }
+                >
+                  <span className="flex items-center">
+                    <span className="mr-1"></span>
+                    Réservations
+                  </span>
+                </NavLink>
+              </li>
+            )}
+            {OwnerClaims() && (
+              <li>
+                <NavLink
+                  to="/OwnerClaims"
+                  className={
+                    navabarScroll && !ToogleMenuResponsive
+                      ? "text-Mwhite"
+                      : "text-Mblack"
+                  }
+                >
+                  <span className="flex items-center">
+                    <span className="mr-1"></span>
+                    Claims
+                  </span>
+                </NavLink>
+              </li>
+            )}
+             <li>
               <NavLink
                 to="/about"
                 className={
@@ -344,38 +434,6 @@ const Navbar = () => {
                 </NavLink>
               </li>
             )}
-
-            {/* Show Parking only for Owner role in desktop menu */}
-            {shouldShowParking() && (
-              <li>
-                <NavLink
-                  to="/my-parkings"
-                  className={
-                    navabarScroll && !ToogleMenuResponsive
-                      ? "text-Mwhite"
-                      : "text-Mblack"
-                  }
-                >
-                  Parking
-                </NavLink>
-              </li>
-            )}
-
-            {/* Show Scan QR only for Employee role in desktop menu */}
-            {shouldShowScanQR() && (
-              <li>
-                <NavLink
-                  to="/ScanQr"
-                  className={
-                    navabarScroll && !ToogleMenuResponsive
-                      ? "text-Mwhite"
-                      : "text-Mblack"
-                  }
-                >
-                  Scan Qr
-                </NavLink>
-              </li>
-            )}
             {shouldShowPrediction() && (
               <li>
                 <NavLink
@@ -386,28 +444,11 @@ const Navbar = () => {
                       : "text-Mblack"
                   }
                 >
-                  Parkini Prediction
+                  📈
                 </NavLink>
               </li>
             )}
-            {/* Ajouter le lien Mes réservations (visible seulement si l'utilisateur est connecté) */}
-            {DriverReservations() && (
-              <li>
-                <NavLink
-                  to="/mes-reservations"
-                  className={
-                    navabarScroll && !ToogleMenuResponsive
-                      ? "text-Mwhite"
-                      : "text-Mblack"
-                  }
-                >
-                  <span className="flex items-center">
-                    <span className="mr-1"></span>
-                    Réservations
-                  </span>
-                </NavLink>
-              </li>
-            )}
+             {DriverSubscription() && (
             <li>
               <NavLink
                 to="/subscriptions"
@@ -418,42 +459,9 @@ const Navbar = () => {
                 }`}
               >
                 <span className="text-xl">👑</span>
-                <span>Subscribe</span>
+                <span></span>
               </NavLink>
             </li>
-            {OwnerResevations() && (
-              <li>
-                <NavLink
-                  to="/OwnerReservations"
-                  className={
-                    navabarScroll && !ToogleMenuResponsive
-                      ? "text-Mwhite"
-                      : "text-Mblack"
-                  }
-                >
-                  <span className="flex items-center">
-                    <span className="mr-1"></span>
-                    Réservations
-                  </span>
-                </NavLink>
-              </li>
-            )}
-            {OwnerClaims() && (
-              <li>
-                <NavLink
-                  to="/OwnerClaims"
-                  className={
-                    navabarScroll && !ToogleMenuResponsive
-                      ? "text-Mwhite"
-                      : "text-Mblack"
-                  }
-                >
-                  <span className="flex items-center">
-                    <span className="mr-1"></span>
-                    Claims
-                  </span>
-                </NavLink>
-              </li>
             )}
           </ul>
 

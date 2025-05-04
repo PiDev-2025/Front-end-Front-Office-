@@ -28,7 +28,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { MapboxProvider } from './context/MapboxContext';
 import { NotificationProvider } from './Pages/Notifications/notificationContext';
-
+import UserClaims from './Components/Pages/UserClaims';
 
 import Profile from './Pages/profile';
 import ParkingRequestForm from '../src/Pages/ParkingForm';
@@ -115,6 +115,7 @@ const App = () => {
                 <Route path="OwnerClaims" element={< OwnerClaims/>} />
                 <Route path="subscriptions" element={<SubscriptionPlans />} />
                 <Route path="subscription-details/:planId" element={<SubscriptionDetails />} />
+                <Route path="UserClaims" element={<UserClaims />} />
 
                 <Route 
                   path="/mes-reservations" 
