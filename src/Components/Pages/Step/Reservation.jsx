@@ -66,11 +66,9 @@ const PAYMENT_METHODS = [
   { id: "cash", label: "Espèces", icon: <DollarSign size={18} /> },
 ];
 const PLATE_FORMATS = [
-  { id: 'ar', label: 'تونس', value: 'تونس' },
-  { id: 'fr', label: 'TUN', value: 'TUN' },
+  { id: "ar", label: "تونس", value: "تونس" },
+  { id: "fr", label: "TUN", value: "TUN" },
 ];
-
-
 
 // Ajout des styles personnalisés pour le DatePicker
 const datePickerStyles = `
@@ -224,9 +222,10 @@ const CustomDatePicker = ({
       </div>
       <style jsx global>{`
         .react-datepicker {
-          font-family: 'Inter', sans-serif !important;
+          font-family: "Inter", sans-serif !important;
           border: none !important;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+            0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
           display: flex !important;
           flex-direction: row !important;
         }
@@ -362,19 +361,23 @@ const PaymentMethodSelector = ({ selected, onSelect }) => (
 
 // Ajouter le composant de sélection de matricule
 const PlateNumberInput = ({ onPlateChange }) => {
-  const [format, setFormat] = useState('ar');
-  const [leftNumber, setLeftNumber] = useState('');
-  const [rightNumber, setRightNumber] = useState('');
+  const [format, setFormat] = useState("ar");
+  const [leftNumber, setLeftNumber] = useState("");
+  const [rightNumber, setRightNumber] = useState("");
 
   const handleChange = () => {
-    const plateNumber = `${leftNumber} ${format === 'ar' ? 'تونس' : 'TUN'} ${rightNumber}`;
+    const plateNumber = `${leftNumber} ${
+      format === "ar" ? "تونس" : "TUN"
+    } ${rightNumber}`;
     onPlateChange(plateNumber);
   };
 
   return (
     <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
-      <h4 className="font-semibold text-gray-700 mb-4">Numéro de matricule (optionnel)</h4>
-      
+      <h4 className="font-semibold text-gray-700 mb-4">
+        Numéro de matricule (optionnel)
+      </h4>
+
       <div className="flex items-center space-x-4">
         {/* Numéro gauche */}
         <input
@@ -399,7 +402,7 @@ const PlateNumberInput = ({ onPlateChange }) => {
             }}
             className="w-full p-2 border border-gray-300 rounded-lg text-center bg-white"
           >
-            {PLATE_FORMATS.map(format => (
+            {PLATE_FORMATS.map((format) => (
               <option key={format.id} value={format.id}>
                 {format.label}
               </option>
@@ -445,49 +448,47 @@ const PriceSummary = ({ priceDetails, totalPrice }) => (
 );
 
 // QR Code modal component
-const QRCodeModal = ({ qrCode, onPrint, onContinue, onViewReservations }) => (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl animate-scaleIn">
-      <div className="flex justify-between items-center mb-6">
-        <h4 className="text-2xl font-semibold text-center flex-grow">
-          Votre QR Code
-        </h4>
-        <button
-          onClick={onContinue}
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <X size={20} />
-        </button>
-      </div>
-      <div className="bg-gray-50 p-4 rounded-xl flex justify-center mb-6">
-        <img src={qrCode} alt="QR Code" className="max-w-full" />
-      </div>
-      <p className="text-center text-gray-600 mb-6">
-        Conservez ce QR Code pour accéder au parking
-      </p>
-      <div className="flex flex-col space-y-3">
-        <button
-          onClick={onPrint}
-          className="w-full py-3 px-6 bg-blue-600 text-black font-medium rounded-xl hover:bg-blue-700 flex items-center justify-center transition-colors"
-        >
-          <Printer size={18} className="mr-2" /> Imprimer le QR Code
-        </button>
-        <button
-          onClick={onContinue}
-          className="w-full py-3 px-6 bg-green-600 text-black font-medium rounded-xl hover:bg-green-700 flex items-center justify-center transition-colors"
-        >
-          <CheckCircle2 size={18} className="mr-2" /> Terminer
-        </button>
-        <button
-          onClick={onViewReservations}
-          className="w-full py-3 px-6 bg-gray-100 text-gray-800 font-medium rounded-xl hover:bg-gray-200 flex items-center justify-center transition-colors"
-        >
-          Voir mes réservations
-        </button>
+const QRCodeModal = ({ qrCode, onPrint, onViewReservations }) => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-2xl animate-scaleIn">
+        <div className="flex justify-between items-center mb-6">
+          <h4 className="text-2xl font-semibold text-center flex-grow">
+            Votre QR Code
+          </h4>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-xl flex justify-center mb-6">
+          <img src={qrCode} alt="QR Code" className="max-w-full" />
+        </div>
+        <p className="text-center text-gray-600 mb-6">
+          Conservez ce QR Code pour accéder au parking
+        </p>
+        <div className="flex flex-col space-y-3">
+          <button
+            onClick={onPrint}
+            className="w-full py-3 px-6 bg-blue-600 text-black font-medium rounded-xl hover:bg-blue-700 flex items-center justify-center transition-colors"
+          >
+            <Printer size={18} className="mr-2" /> Imprimer le QR Code
+          </button>
+          <button
+            onClick={() => navigate("/")}
+            className="w-full py-3 px-6 bg-green-600 text-black font-medium rounded-xl hover:bg-green-700 flex items-center justify-center transition-colors"
+          >
+            <CheckCircle2 size={18} className="mr-2" /> Terminer
+          </button>
+          <button
+            onClick={onViewReservations}
+            className="w-full py-3 px-6 bg-gray-100 text-gray-800 font-medium rounded-xl hover:bg-gray-200 flex items-center justify-center transition-colors"
+          >
+            Voir mes réservations
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Reservation = ({
   parkingData,
@@ -502,8 +503,6 @@ const Reservation = ({
   const [calculatedPrice, setCalculatedPrice] = useState(0);
   const [currentStep, setCurrentStep] = useState(1); // 1: dates, 2: vehicle type
   const [paymentMethod, setPaymentMethod] = useState("cash");
-
-
 
   // Add this constant definition
   const commonClasses =
@@ -676,7 +675,6 @@ const Reservation = ({
       setLoading(true);
       setError("");
 
-      // Renommez cette variable pour éviter la collision
       const reservationPayload = {
         parkingId: parkingData._id,
         spotId: spotId,
@@ -684,19 +682,12 @@ const Reservation = ({
         endTime: new Date(reservationData.endDate).toISOString(),
         vehicleType: reservationData.vehicleType,
         totalPrice: calculatedPrice,
-        paymentMethod: paymentMethod,
-        matricule: reservationData.matricule, // Ajouter cette ligne
+        paymentMethod: paymentMethod === "online" ? "online" : "cash",
+        matricule: reservationData.matricule,
         userId: localStorage.getItem("userId"),
+        status: "pending",
+        paymentStatus: "pending",
       };
-      console.log("Payload complet:", {
-        parkingId: parkingData._id,
-        spotId: spotId,
-        startTime: new Date(reservationData.startDate).toISOString(),
-        endTime: new Date(reservationData.endDate).toISOString(),
-        vehicleType: reservationData.vehicleType,
-        totalPrice: calculatedPrice,
-        paymentMethod: paymentMethod,
-      });
 
       console.log("Sending reservation data:", reservationPayload);
 
@@ -711,8 +702,18 @@ const Reservation = ({
         }
       );
 
-      setQrCode(response.data.qrCode);
-      setCurrentStep(4);
+      console.log("Reservation response:", response.data);
+
+      // Handle different payment methods
+      if (paymentMethod === "online") {
+        // Store reservation data and navigate to confirmation
+        localStorage.setItem("currentReservationId", response.data._id);
+        onContinue(); // Use the onContinue prop to navigate to confirmation
+      } else {
+        // For cash payment, show QR code directly
+        setQrCode(response.data.qrCode);
+        setCurrentStep(4);
+      }
     } catch (err) {
       console.error("Erreur de réservation:", err);
       if (err.response) {
@@ -747,7 +748,7 @@ const Reservation = ({
     if (currentStep === 2) {
       window.scrollTo({
         top: 0,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   }, [currentStep]);
@@ -876,23 +877,13 @@ const Reservation = ({
     }
   };
 
-  // Check if current step is valid to proceed
+  // Update the isStepValid function to properly handle payment method validation
   const isStepValid = () => {
     switch (currentStep) {
-      case 1: // Date selection
-        const minDuration = 60 * 60 * 1000; // 1 heure en millisecondes
-        return (
-          reservationData.startDate &&
-          reservationData.endDate &&
-          new Date(reservationData.endDate) >
-            new Date(reservationData.startDate) &&
-          new Date(reservationData.endDate) -
-            new Date(reservationData.startDate) >=
-            minDuration &&
-          !error.includes("disponible")
-        );
-      case 2: // Vehicle type
-        return !!reservationData.vehicleType;
+      case 1:
+        return reservationData.startDate && reservationData.endDate;
+      case 2:
+        return reservationData.vehicleType && paymentMethod;
       default:
         return false;
     }
@@ -923,7 +914,10 @@ const Reservation = ({
                         ? new Date(date.getTime() + 60 * 60 * 1000)
                         : reservationData.endDate;
 
-                    const isAvailable = await checkAvailability(date, newEndDate);
+                    const isAvailable = await checkAvailability(
+                      date,
+                      newEndDate
+                    );
                     if (isAvailable) {
                       setReservationData((prev) => ({
                         ...prev,
@@ -958,7 +952,10 @@ const Reservation = ({
               <div className="mt-6">
                 <PlateNumberInput
                   onPlateChange={(plateNumber) =>
-                    setReservationData((prev) => ({ ...prev, matricule: plateNumber }))
+                    setReservationData((prev) => ({
+                      ...prev,
+                      matricule: plateNumber,
+                    }))
                   }
                 />
               </div>
@@ -978,13 +975,18 @@ const Reservation = ({
                 <VehicleTypeSelector
                   selectedType={reservationData.vehicleType}
                   onSelect={(type) =>
-                    setReservationData((prev) => ({ ...prev, vehicleType: type }))
+                    setReservationData((prev) => ({
+                      ...prev,
+                      vehicleType: type,
+                    }))
                   }
                 />
               </div>
-              
+
               <div className="mt-10 pt-6 border-t border-gray-100">
-                <h4 className="font-semibold text-gray-700 mb-5">Méthode de paiement</h4>
+                <h4 className="font-semibold text-gray-700 mb-5">
+                  Méthode de paiement
+                </h4>
                 <PaymentMethodSelector
                   selected={paymentMethod}
                   onSelect={setPaymentMethod}
@@ -992,7 +994,7 @@ const Reservation = ({
               </div>
             </div>
           )}
-          
+
           {/* Error message - improved position and spacing */}
           {error && (
             <div className="p-4 rounded-lg bg-red-50 text-red-700 flex items-center mt-5">
@@ -1003,7 +1005,9 @@ const Reservation = ({
         </div>
 
         {/* Right column - Summary with improved vertical alignment */}
-        <div className="self-start"> {/* Added self-start to align at the top */}
+        <div className="self-start">
+          {" "}
+          {/* Added self-start to align at the top */}
           <div className="bg-white p-5 sm:p-6 rounded-xl border-2 border-gray-200 shadow-md sticky top-6">
             <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-100 flex items-center">
               <ListChecks className="mr-2 text-blue-500" size={18} />
@@ -1060,7 +1064,7 @@ const Reservation = ({
                   </span>
                 </div>
               )}
-              
+
               <div className="mt-4 pt-2 border-t-2 border-gray-200">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Durée</span>
@@ -1069,18 +1073,23 @@ const Reservation = ({
                       (new Date(reservationData.endDate) -
                         new Date(reservationData.startDate)) /
                         (1000 * 60 * 60)
-                    )} heures
+                    )}{" "}
+                    heures
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between items-center mt-1">
                   <span className="text-gray-600">Prix par heure</span>
-                  <span className="font-medium">{parkingData?.pricing?.hourly}Dt</span>
+                  <span className="font-medium">
+                    {parkingData?.pricing?.hourly}Dt
+                  </span>
                 </div>
-                
+
                 <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-200">
                   <span className="font-semibold text-gray-800">Total</span>
-                  <span className="font-bold text-xl text-blue-600">{calculatedPrice}Dt</span>
+                  <span className="font-bold text-xl text-blue-600">
+                    {calculatedPrice}Dt
+                  </span>
                 </div>
               </div>
             </div>
@@ -1092,7 +1101,8 @@ const Reservation = ({
                   onClick={() => setCurrentStep(1)}
                   className="w-full py-3 px-5 rounded-xl bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors flex items-center justify-center"
                 >
-                  <ArrowRight className="mr-2 transform rotate-180" size={16} /> Retour
+                  <ArrowRight className="mr-2 transform rotate-180" size={16} />{" "}
+                  Retour
                 </button>
               )}
               <button

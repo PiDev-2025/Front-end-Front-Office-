@@ -49,7 +49,8 @@ import PeakHoursDashboard from "./Pages/PeakHoursDashboard";
 
 import OwnerReservations from './Components/Pages/OwnerReservations';
 import OwnerClaims from "./Components/Pages/OwnerClaims";
-
+import SubscriptionPlans from './Pages/Subscriptions';
+import SubscriptionDetails from './Pages/SubscriptionDetails';
 
 
 const App = () => {
@@ -112,6 +113,8 @@ const App = () => {
 
                 <Route path="OwnerReservations" element={<OwnerReservations/>} />
                 <Route path="OwnerClaims" element={< OwnerClaims/>} />
+                <Route path="subscriptions" element={<SubscriptionPlans />} />
+                <Route path="subscription-details/:planId" element={<SubscriptionDetails />} />
 
                 <Route 
                   path="/mes-reservations" 
