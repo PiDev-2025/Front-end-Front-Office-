@@ -585,17 +585,6 @@ const NotificationList = () => {
             </span>
           )}
         </h2>
-
-        <div className="flex space-x-2">
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAllAsRead}
-              className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200"
-            >
-              Mark all as read
-            </button>
-          )}
-        </div>
       </div>
 
       {error && (
