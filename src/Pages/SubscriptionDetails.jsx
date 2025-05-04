@@ -2,10 +2,33 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import HeadTitle from "../Components/Pages/HeadTitle";
 import { motion } from "framer-motion";
+import { jwtDecode } from "jwt-decode";
 
 const SubscriptionDetails = () => {
   const { planId } = useParams();
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+  const userRole = token ? jwtDecode(token).role : null;
+
+  const handleSubscribe = async () => {
+    try {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      if (userRole !== "Driver") {
+        // Show error or redirect if not a driver
+        return;
+      }
+
+      // Navigate to payment with selected plan
+      navigate(`/subscription-payment/${planId}`);
+    } catch (error) {
+      console.error("Error:", error);
+      // You might want to show an error message to the user
+    }
+  };
 
   const plans = {
     free: {
@@ -191,29 +214,31 @@ const SubscriptionDetails = () => {
             </div>
 
             {/* Action buttons */}
-            <div className="px-6 py-8 bg-gray-50 border-t border-gray-200">
-              <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-                <motion.button
-                  onClick={() => navigate("/payment")}
-                  className="flex-1 bg-blue-600 text-black py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 shadow-md !important"
-                  style={{
-                    boxShadow: "0 4px 14px rgba(0, 118, 255, 0.39)",
-                  }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Subscribe Now
-                </motion.button>
-                <motion.button
-                  onClick={() => navigate("/subscriptions")}
-                  className="flex-1 bg-white text-blue-600 border-2 border-blue-600 py-3 px-6 rounded-lg font-medium hover:bg-blue-600 hover:text-white transition-all duration-300 !important"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Compare Plans
-                </motion.button>
+            {planId !== "free" && (
+              <div className="px-6 py-8 bg-gray-50 border-t border-gray-200">
+                <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+                  <motion.button
+                    onClick={handleSubscribe}
+                    className="flex-1 bg-blue-600 text-black py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 shadow-md !important"
+                    style={{
+                      boxShadow: "0 4px 14px rgba(0, 118, 255, 0.39)",
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Subscribe Now
+                  </motion.button>
+                  <motion.button
+                    onClick={() => navigate("/subscriptions")}
+                    className="flex-1 bg-white text-blue-600 border-2 border-blue-600 py-3 px-6 rounded-lg font-medium hover:bg-blue-600 hover:text-white transition-all duration-300 !important"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Compare Plans
+                  </motion.button>
+                </div>
               </div>
-            </div>
+            )}
           </motion.div>
         </motion.div>
       </div>
