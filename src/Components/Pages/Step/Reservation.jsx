@@ -892,11 +892,10 @@ const Reservation = ({
   // Render content based on current step
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Main content layout with improved vertical alignment */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
-        {/* Left column - Current step content (takes 2/3 width on desktop) */}
-        <div className="lg:col-span-2 space-y-6">
-          {currentStep === 1 && (
+      {/* Main content layout */}
+      <div className="space-y-6">
+        {currentStep === 1 && (
+          <>
             <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-blue-100 shadow-md">
               <h3 className="text-xl font-bold mb-6 flex items-center text-gray-800">
                 <div className="bg-blue-50 p-3 rounded-full mr-3">
@@ -960,10 +959,122 @@ const Reservation = ({
                 />
               </div>
             </div>
-          )}
 
-          {currentStep === 2 && (
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-blue-100 shadow-md h-full">
+            {/* Récapitulatif section moved here for step 1 */}
+            <div className="bg-white p-5 sm:p-6 rounded-xl border-2 border-gray-200 shadow-md">
+              <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-100 flex items-center">
+                <ListChecks className="mr-2 text-blue-500" size={18} />
+                Récapitulatif
+              </h3>
+
+              <div className="space-y-3 mb-5">
+                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                  <span className="text-gray-600">Parking</span>
+                  <span className="font-medium">{parkingData?.name}</span>
+                </div>
+
+                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                  <span className="text-gray-600">Début</span>
+                  <span className="font-medium">
+                    {reservationData.startDate.toLocaleString("fr-FR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                  <span className="text-gray-600">Fin</span>
+                  <span className="font-medium">
+                    {reservationData.endDate.toLocaleString("fr-FR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+
+                {reservationData.vehicleType && (
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                    <span className="text-gray-600">Type de véhicule</span>
+                    <span className="font-medium">
+                      {reservationData.vehicleType}
+                    </span>
+                  </div>
+                )}
+
+                {reservationData.matricule && (
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                    <span className="text-gray-600">Matricule</span>
+                    <span className="font-medium text-blue-600">
+                      {reservationData.matricule}
+                    </span>
+                  </div>
+                )}
+
+                <div className="mt-4 pt-2 border-t-2 border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Durée</span>
+                    <span className="font-medium">
+                      {Math.ceil(
+                        (new Date(reservationData.endDate) -
+                          new Date(reservationData.startDate)) /
+                          (1000 * 60 * 60)
+                      )}{" "}
+                      heures
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-gray-600">Prix par heure</span>
+                    <span className="font-medium">
+                      {parkingData?.pricing?.hourly}Dt
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-200">
+                    <span className="font-semibold text-gray-800">Total</span>
+                    <span className="font-bold text-xl text-blue-600">
+                      {calculatedPrice}Dt
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 mt-6">
+                <button
+                  onClick={handleNextOrConfirm}
+                  disabled={loading || !isStepValid()}
+                  className={`w-full py-3 px-5 rounded-xl flex items-center justify-center transition-colors font-medium ${
+                    loading || !isStepValid()
+                      ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                      : "bg-blue-600 hover:bg-blue-700 text-black"
+                  }`}
+                >
+                  {loading ? (
+                    <>
+                      <span className="animate-spin mr-2">⌛</span>
+                      Traitement...
+                    </>
+                  ) : (
+                    <>
+                      Suivant <ArrowRight className="ml-1" size={16} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {currentStep === 2 && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border-2 border-blue-100 shadow-md">
               <h3 className="text-xl font-bold mb-6 flex items-center text-gray-800">
                 <div className="bg-blue-50 p-3 rounded-full mr-3">
                   <Car className="text-blue-600" size={24} />
@@ -971,168 +1082,147 @@ const Reservation = ({
                 Type de véhicule
               </h3>
 
-              <div className="my-8">
-                <VehicleTypeSelector
-                  selectedType={reservationData.vehicleType}
-                  onSelect={(type) =>
-                    setReservationData((prev) => ({
-                      ...prev,
-                      vehicleType: type,
-                    }))
-                  }
-                />
-              </div>
+              <VehicleTypeSelector
+                selectedType={reservationData.vehicleType}
+                onSelect={(type) =>
+                  setReservationData((prev) => ({
+                    ...prev,
+                    vehicleType: type,
+                  }))
+                }
+              />
 
-              <div className="mt-10 pt-6 border-t border-gray-100">
-                <h4 className="font-semibold text-gray-700 mb-5">
-                  Méthode de paiement
-                </h4>
+              <div className="mt-8">
+                <h3 className="text-xl font-bold mb-6 flex items-center text-gray-800">
+                  <div className="bg-blue-50 p-3 rounded-full mr-3">
+                    <CreditCard className="text-blue-600" size={24} />
+                  </div>
+                  Mode de paiement
+                </h3>
+
                 <PaymentMethodSelector
                   selected={paymentMethod}
                   onSelect={setPaymentMethod}
                 />
               </div>
             </div>
-          )}
 
-          {/* Error message - improved position and spacing */}
-          {error && (
-            <div className="p-4 rounded-lg bg-red-50 text-red-700 flex items-center mt-5">
-              <AlertCircle size={18} className="mr-2 flex-shrink-0" />
-              <span>{error}</span>
-            </div>
-          )}
-        </div>
+            <div className="bg-white p-5 sm:p-6 rounded-xl border-2 border-gray-200 shadow-md">
+              <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-100 flex items-center">
+                <ListChecks className="mr-2 text-blue-500" size={18} />
+                Récapitulatif
+              </h3>
 
-        {/* Right column - Summary with improved vertical alignment */}
-        <div className="self-start">
-          {" "}
-          {/* Added self-start to align at the top */}
-          <div className="bg-white p-5 sm:p-6 rounded-xl border-2 border-gray-200 shadow-md sticky top-6">
-            <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-100 flex items-center">
-              <ListChecks className="mr-2 text-blue-500" size={18} />
-              Récapitulatif
-            </h3>
-
-            {/* Reservation details with improved spacing */}
-            <div className="space-y-3 mb-5">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Parking</span>
-                <span className="font-medium">{parkingData?.name}</span>
-              </div>
-
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Début</span>
-                <span className="font-medium">
-                  {reservationData.startDate.toLocaleString("fr-FR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span className="text-gray-600">Fin</span>
-                <span className="font-medium">
-                  {reservationData.endDate.toLocaleString("fr-FR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-
-              {reservationData.vehicleType && (
+              <div className="space-y-3 mb-5">
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-gray-600">Type de véhicule</span>
-                  <span className="font-medium">
-                    {reservationData.vehicleType}
-                  </span>
+                  <span className="text-gray-600">Parking</span>
+                  <span className="font-medium">{parkingData?.name}</span>
                 </div>
-              )}
 
-              {reservationData.matricule && (
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-gray-600">Matricule</span>
-                  <span className="font-medium text-blue-600">
-                    {reservationData.matricule}
-                  </span>
-                </div>
-              )}
-
-              <div className="mt-4 pt-2 border-t-2 border-gray-200">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Durée</span>
+                  <span className="text-gray-600">Début</span>
                   <span className="font-medium">
-                    {Math.ceil(
-                      (new Date(reservationData.endDate) -
-                        new Date(reservationData.startDate)) /
-                        (1000 * 60 * 60)
-                    )}{" "}
-                    heures
+                    {reservationData.startDate.toLocaleString("fr-FR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
 
-                <div className="flex justify-between items-center mt-1">
-                  <span className="text-gray-600">Prix par heure</span>
+                <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                  <span className="text-gray-600">Fin</span>
                   <span className="font-medium">
-                    {parkingData?.pricing?.hourly}Dt
+                    {reservationData.endDate.toLocaleString("fr-FR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
 
-                <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-200">
-                  <span className="font-semibold text-gray-800">Total</span>
-                  <span className="font-bold text-xl text-blue-600">
-                    {calculatedPrice}Dt
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Action buttons with improved spacing and alignment */}
-            <div className="flex flex-col gap-3 mt-6">
-              {currentStep === 2 && (
-                <button
-                  onClick={() => setCurrentStep(1)}
-                  className="w-full py-3 px-5 rounded-xl bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors flex items-center justify-center"
-                >
-                  <ArrowRight className="mr-2 transform rotate-180" size={16} />{" "}
-                  Retour
-                </button>
-              )}
-              <button
-                onClick={handleNextOrConfirm}
-                disabled={loading || !isStepValid()}
-                className={`w-full py-3 px-5 rounded-xl flex items-center justify-center transition-colors font-medium ${
-                  loading || !isStepValid()
-                    ? "bg-gray-300 cursor-not-allowed text-gray-500"
-                    : "bg-blue-600 hover:bg-blue-700 text-black"
-                }`}
-              >
-                {loading ? (
-                  <>
-                    <span className="animate-spin mr-2">⌛</span>
-                    Traitement...
-                  </>
-                ) : currentStep === 1 ? (
-                  <>
-                    Suivant <ArrowRight className="ml-1" size={16} />
-                  </>
-                ) : (
-                  <>
-                    Confirmer la réservation
-                    <CheckCircle2 className="ml-1" size={16} />
-                  </>
+                {reservationData.vehicleType && (
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                    <span className="text-gray-600">Type de véhicule</span>
+                    <span className="font-medium">
+                      {reservationData.vehicleType}
+                    </span>
+                  </div>
                 )}
-              </button>
+
+                {reservationData.matricule && (
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                    <span className="text-gray-600">Matricule</span>
+                    <span className="font-medium text-blue-600">
+                      {reservationData.matricule}
+                    </span>
+                  </div>
+                )}
+
+                <div className="mt-4 pt-2 border-t-2 border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Durée</span>
+                    <span className="font-medium">
+                      {Math.ceil(
+                        (new Date(reservationData.endDate) -
+                          new Date(reservationData.startDate)) /
+                          (1000 * 60 * 60)
+                      )}{" "}
+                      heures
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-gray-600">Prix par heure</span>
+                    <span className="font-medium">
+                      {parkingData?.pricing?.hourly}Dt
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-200">
+                    <span className="font-semibold text-gray-800">Total</span>
+                    <span className="font-bold text-xl text-blue-600">
+                      {calculatedPrice}Dt
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <button
+                  onClick={handleNextOrConfirm}
+                  disabled={loading || !isStepValid()}
+                  className={`w-full py-3 px-5 rounded-xl flex items-center justify-center transition-colors font-medium ${
+                    loading || !isStepValid()
+                      ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                      : "bg-blue-600 hover:bg-blue-700 text-black"
+                  }`}
+                >
+                  {loading ? (
+                    <>
+                      <span className="animate-spin mr-2">⌛</span>
+                      Traitement...
+                    </>
+                  ) : (
+                    "Confirmer la réservation"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div className="p-4 rounded-lg bg-red-50 text-red-700 flex items-center mt-5">
+            <AlertCircle size={18} className="mr-2 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
       </div>
 
       {/* QR code modal */}
