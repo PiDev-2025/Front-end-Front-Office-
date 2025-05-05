@@ -5,6 +5,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useMapbox } from "../../../context/MapboxContext";
 import { AuthContext } from '../../../AuthContext';
+import { motion } from "framer-motion"; // Import framer-motion
 
 const mapContainerStyle = { 
   width: "100%", 
@@ -158,6 +159,28 @@ const validatePlateNumber = (number) => {
   const regex = /^\d{1,4}$/;
   return regex.test(number);
 };
+
+// Animated Card Component
+const AnimatedCard = ({ children, className = "", delay = 0 }) => (
+  <motion.div 
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5, delay }}
+    className={`bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 ${className}`}
+  >
+    {children}
+  </motion.div>
+);
+
+// Section Header Component
+const SectionHeader = ({ icon, title }) => (
+  <div className="p-6 border-b border-gray-100">
+    <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+      <span className="text-3xl mr-3">{icon}</span>
+      {title}
+    </h2>
+  </div>
+);
 
 const BookNow = ({ parkingData, onContinue }) => {
   const { id } = useParams();
@@ -376,201 +399,250 @@ const parkingLocation = parking.location || "";
 
 
 return (
-  <div className="max-w-7xl mx-auto px-4 py-8 bg-gray-50 min-h-screen">
+  <div className="w-full max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
  {/* Header Section */}
- <div className="bg-white rounded-2xl shadow-2xl overflow-hidden mb-8 transform hover:shadow-3xl transition-all duration-300">
-      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 p-12 relative">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-black mb-4 tracking-tight">{parkingName}</h1>
-          {parkingLocation && (
-            <p className="text-black/90 flex items-center justify-center text-xl font-medium">
-              <span className="mr-2">📍</span>
-              {parkingLocation}
-            </p>
+ <motion.div 
+    initial={{ opacity: 0, y: -20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.6 }}
+    className="bg-white rounded-2xl shadow-2xl overflow-hidden mb-8 transform hover:shadow-3xl transition-all duration-300"
+  >
+    <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 p-6 sm:p-12 relative">
+      <div className="max-w-4xl mx-auto text-center">
+        <h1 className="text-3xl sm:text-5xl font-bold text-black mb-4 tracking-tight">{parkingName}</h1>
+        {parkingLocation && (
+          <p className="text-black/90 flex items-center justify-center text-lg sm:text-xl font-medium">
+            <span className="mr-2">📍</span>
+            {parkingLocation}
+          </p>
+        )}
+      </div>
+      
+      {/* Status indicator positioned top-right */}
+      <div className="absolute top-6 left-6 ">
+        <StatusIndicator availability={parking.availableSpots / parking.totalSpots} />
+      </div>
+      
+      {/* Reserve button positioned bottom-right */}
+      <button 
+        onClick={handleReservation}
+        className="absolute bottom-6 right-6 bg-black text-white px-6 py-3 rounded-full font-semibold 
+                  shadow-lg flex items-center space-x-2 hover:bg-blue-50 hover:text-black transition-all duration-300 
+                  transform hover:scale-105"
+      >
+        <span>Reserve Now</span>
+        <span className="text-xl">→</span>
+      </button>
+    </div>
+  </motion.div>
+
+  <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8">
+    {/* Main Content - 8/12 columns on desktop */}
+    <div className="xl:col-span-8 space-y-6 sm:space-y-8">
+      {/* Map Section - Takes priority */}
+      <AnimatedCard delay={0.1}>
+        <SectionHeader icon="🗺️" title="Location" />
+        <div className="p-4 sm:p-6">
+          <div ref={mapContainer} className="w-full h-[300px] sm:h-[400px] lg:h-[500px] rounded-lg overflow-hidden shadow-inner" />
+        </div>
+      </AnimatedCard>
+
+ 
+
+      {/* Photos Section with enhanced grid */}
+      <AnimatedCard delay={0.5}>
+        <SectionHeader icon="📸" title="Parking Views" />
+        <div className="p-4 sm:p-6">
+          {parking?.images && parking.images.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {parking.images.map((image, index) => (
+                <motion.div 
+                  key={index}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group aspect-video overflow-hidden rounded-xl shadow-md cursor-pointer"
+                  onClick={() => setSelectedImage(image)}
+                >
+                  <img
+                    src={image}
+                    alt={`Parking view ${index + 1}`}
+                    className="w-full h-full object-cover transform transition-transform group-hover:scale-110"
+                  />
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 text-gray-500">
+              <span className="text-4xl mb-4 block">📷</span>
+              <p className="text-lg">No images available</p>
+            </div>
           )}
         </div>
-        {/* Status indicator positioned top-right */}
- 
-        {/* Reserve button positioned bottom-right */}
-        <button 
-          onClick={handleReservation}
-          className="absolute bottom-6 right-6 bg-white text-blue-700 px-6 py-3 rounded-full font-semibold 
-                     shadow-lg flex items-center space-x-2 hover:bg-blue-50 transition-all duration-300 
-                     transform hover:scale-105"
-        >
-          <span>Reserve Now</span>
-          <span className="text-xl">→</span>
-        </button>
-      </div>
+      </AnimatedCard>
+
+      {/* Description Section */}
+      {parkingDescription && (
+        <AnimatedCard delay={0.6}>
+          <SectionHeader icon="📝" title="Description" />
+          <div className="p-6 sm:p-8">
+            <p className="text-gray-700 leading-relaxed text-lg">{parkingDescription}</p>
+          </div>
+        </AnimatedCard>
+      )}
     </div>
 
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Left Column */}
-      <div className="lg:col-span-2 space-y-8">
-        {/* Map Section */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-              <span className="text-3xl mr-3">📍</span>
-              Location
-            </h2>
+    {/* Sidebar - 4/12 columns on desktop */}
+    <div className="xl:col-span-4 space-y-6 sm:space-y-8">
+      {/* Availability Card */}
+      <AnimatedCard delay={0.2}>
+        <SectionHeader icon="🅿️" title="Availability" />
+        <div className="p-6">
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-gray-700 text-lg">Current Capacity</span>
+              <span className="text-2xl font-bold text-blue-600">{parking.availableSpots}/{parking.totalSpots}</span>
+            </div>
+            <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden shadow-inner">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(parking.availableSpots / parking.totalSpots) * 100}%` }}
+                transition={{ duration: 1, delay: 0.3 }}
+                className="h-full"
+                style={{ 
+                  background: availabilityPercentage >= 50 ? 'linear-gradient(to right, #22c55e, #16a34a)' : 
+                            availabilityPercentage >= 20 ? 'linear-gradient(to right, #eab308, #ca8a04)' : 
+                            'linear-gradient(to right, #dc2626, #b91c1c)'
+                }}
+              />
+            </div>
           </div>
-          <div className="p-6">
-            <div ref={mapContainer} style={mapContainerStyle} />
-          </div>
-        </div>
-
-        {/* Photos Section with enhanced grid */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-              <span className="text-3xl mr-3">📸</span>
-              Parking Views
-            </h2>
-          </div>
-          <div className="p-6">
-            {parking?.images && parking.images.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                {parking.images.map((image, index) => (
-                  <div key={index} 
-                    className="group aspect-video overflow-hidden rounded-xl shadow-md cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl"
-                    onClick={() => setSelectedImage(image)}
-                  >
-                    <img
-                      src={image}
-                      alt={`Parking view ${index + 1}`}
-                      className="w-full h-full object-cover transform transition-transform group-hover:scale-110"
-                    />
+          
+          {/* Vehicle types accepted */}
+          <div className="mt-6">
+            <h3 className="text-lg font-medium text-gray-800 mb-3">Accepted Vehicle Types</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {vehiculeOptions
+                .filter(option => parking.vehicleTypes?.includes(option.value))
+                .map((vehicle) => (
+                  <div key={vehicle.value} className="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <img src={vehicle.image} alt={vehicle.label} className="w-8 h-8 mr-2" />
+                    <span className="text-sm">{vehicle.label}</span>
                   </div>
                 ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 text-gray-500">
-                <span className="text-4xl mb-4 block">📷</span>
-                <p className="text-lg">No images available</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Description Section with enhanced styling */}
-        {parkingDescription && (
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-                <span className="text-3xl mr-3">📝</span>
-                Description
-              </h2>
-            </div>
-            <div className="p-8">
-              <p className="text-gray-700 leading-relaxed text-lg">{parkingDescription}</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Right Column */}
-      <div className="space-y-8">
-        {/* Availability Card with enhanced styling */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-              <span className="text-3xl mr-3">🅿️</span>
-              Availability
-            </h2>
-          </div>
-          <div className="p-8">
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-gray-700 text-lg">Current Capacity</span>
-                <span className="text-2xl font-bold text-blue-600">{parking.availableSpots}/{parking.totalSpots}</span>
-              </div>
-              <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden shadow-inner">
-                <div
-                  className={`h-full transition-all duration-500 ${availabilityColor}`}
-                  style={{ 
-                    width: `${(parking.availableSpots / parking.totalSpots) * 100}%`,
-                    background: availabilityPercentage >= 50 ? 'linear-gradient(to right, #22c55e, #16a34a)' : 
-                               availabilityPercentage >= 20 ? 'linear-gradient(to right, #eab308, #ca8a04)' : 
-                               'linear-gradient(to right, #dc2626, #b91c1c)'
-                  }}
-                />
-              </div>
             </div>
           </div>
         </div>
+      </AnimatedCard>
 
-        {/* Pricing Card */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <TitleBox icon="💰">Pricing</TitleBox>
-          <div className="p-6 space-y-4">
-            {/* Hourly Rate */}
-            <PricingCard 
-              icon="⏱️"
-              label="Per Hour"
-              price={parking.pricing?.hourly || parking.pricing?.perHour || 0}
-            />
-            
-            {/* Daily Rate */}
-            {(parking.pricing?.daily > 0 || parking.pricing?.perDay > 0) && (
-              <PricingCard 
-                icon="📅"
-                label="Per Day"
-                price={parking.pricing?.daily || parking.pricing?.perDay}
-              />
-            )}
-            
-            {/* Weekly Rate */}
-            {(parking.pricing?.weekly > 0 || parking.pricing?.perWeek > 0) && (
-              <PricingCard
-                icon="📆"
-                label="Per Week"
-                price={parking.pricing?.weekly || parking.pricing?.perWeek}
-              />
-            )}
-            
-            {/* Monthly Rate */}
-            {parking.pricing?.monthly > 0 && (
-              <PricingCard
-                icon="📋"
-                label="Per Month"
-                price={parking.pricing.monthly}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Add the plate number input here */}
-
-        {/* Features Card */}
-        {parking.features && parking.features.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <TitleBox icon="✨">Features</TitleBox>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-3">
-                {parking.features.map((feature) => (
-                  <div key={feature} 
-                    className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100 transition-colors hover:bg-gray-100"
-                  >
-                    <span className="mr-2 text-lg">{featureIcons[feature] || "✓"}</span>
-                    <span className="text-sm text-gray-700">{feature}</span>
-                  </div>
-                ))}
+      {/* Pricing Card */}
+      <AnimatedCard delay={0.4}>
+        <SectionHeader icon="💰" title="Pricing" />
+        <div className="p-4 sm:p-6 space-y-4">
+          {/* Hourly Rate */}
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <span className="text-2xl mr-3">⏱️</span>
+                <span className="text-gray-700 font-medium">Per Hour</span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-2xl font-bold text-blue-600">{parking.pricing?.hourly || parking.pricing?.perHour || 0} Dt</span>
               </div>
             </div>
+          </motion.div>
+          
+          {/* Daily Rate */}
+          {(parking.pricing?.daily > 0 || parking.pricing?.perDay > 0) && (
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="text-2xl mr-3">📅</span>
+                  <span className="text-gray-700 font-medium">Per Day</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-2xl font-bold text-blue-600">{parking.pricing?.daily || parking.pricing?.perDay} Dt</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
+          {/* Weekly Rate */}
+          {(parking.pricing?.weekly > 0 || parking.pricing?.perWeek > 0) && (
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="text-2xl mr-3">📆</span>
+                  <span className="text-gray-700 font-medium">Per Week</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-2xl font-bold text-blue-600">{parking.pricing?.weekly || parking.pricing?.perWeek} Dt</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
+          {/* Monthly Rate */}
+          {parking.pricing?.monthly > 0 && (
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="text-2xl mr-3">📋</span>
+                  <span className="text-gray-700 font-medium">Per Month</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-2xl font-bold text-blue-600">{parking.pricing?.monthly} Dt</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </AnimatedCard>
+
+      {/* Features Card */}
+      {parking.features && parking.features.length > 0 && (
+        <AnimatedCard delay={0.5}>
+          <SectionHeader icon="✨" title="Features" />
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {parking.features.map((feature) => (
+                <motion.div
+                  key={feature}
+                  whileHover={{ scale: 1.03 }}
+                  className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100 transition-colors hover:bg-gray-100"
+                >
+                  <span className="mr-2 text-lg">{featureIcons[feature] || "✓"}</span>
+                  <span className="text-sm text-gray-700">{feature}</span>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        )}
-      </div>
+        </AnimatedCard>
+      )}
+      
+    
     </div>
-
-    {/* Image Modal */}
-    {selectedImage && <ImageModal />}
-
-    {/* Login Popup */}
-    {showLoginPopup && (
-      <LoginPopup onClose={() => setShowLoginPopup(false)} />
-    )}
   </div>
+
+  {/* Image Modal */}
+  {selectedImage && <ImageModal />}
+
+  {/* Login Popup */}
+  {showLoginPopup && (
+    <LoginPopup onClose={() => setShowLoginPopup(false)} />
+  )}
+</div>
 );
 };
 export default BookNow;

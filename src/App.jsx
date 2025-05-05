@@ -127,7 +127,6 @@ const App = () => {
                     path="/TodaysPrediction"
                     element={<PeakHoursDashboard />}
                   />
-
                   <Route
                     path="OwnerReservations"
                     element={<OwnerReservations />}
@@ -142,6 +141,7 @@ const App = () => {
                     path="subscription-payment/:planId"
                     element={<SubscriptionPayment />}
                   />
+                  <Route path="UserClaims" element={<UserClaims />} />
                   <Route
                     path="/mes-reservations"
                     element={

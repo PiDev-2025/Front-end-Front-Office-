@@ -359,7 +359,7 @@ const Contact = () => {
                 <div className="absolute top-2 left-2">
                     <div className="animate-pulse flex">
                         <div className="h-3 w-3 bg-red-500 rounded-full"></div>
-                        <span className="ml-2 text-xs text-black bg-black bg-opacity-50 px-2 py-1 rounded">
+                        <span className="ml-2 text-xs text-white bg-black bg-opacity-50 px-2 py-1 rounded">
                             Recording
                         </span>
                     </div>
@@ -396,6 +396,7 @@ const Contact = () => {
                                 <p className="text-gray-300 text-lg text-center">
                                     Help us maintain a safe parking environment. Submit your claim with photo evidence.
                                 </p>
+                                
                             </div>
                         </div>
 
@@ -513,6 +514,12 @@ const Contact = () => {
                                                         >
                                                             Upload Image
                                                         </label>
+                                                        <a 
+                                                            href="/UserClaims"
+                                                            className="bg-black text-white px-4 py-2 rounded-lg cursor-pointer inline-block"
+                                                        >
+                                                            My Claims
+                                                        </a>
                                                     </div>
                                                 </div>
                                             )}

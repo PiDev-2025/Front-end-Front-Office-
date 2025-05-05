@@ -17,6 +17,7 @@ import {
   MapPin,
   ArrowRight,
   ListChecks,
+  ArrowLeft,
 } from "lucide-react";
 
 // Ajouter l'import pour la locale française de date-fns
@@ -62,12 +63,13 @@ const VEHICLE_TYPES = [
 
 // Payment methods with consistent structure
 const PAYMENT_METHODS = [
-  { id: "online", label: "Carte bancaire", icon: <CreditCard size={18} /> },
-  { id: "cash", label: "Espèces", icon: <DollarSign size={18} /> },
+  { id: "online", label: "online", icon: <CreditCard size={18} /> },
+  { id: "cash", label: "cash", icon: <DollarSign size={18} /> },
 ];
 const PLATE_FORMATS = [
   { id: "ar", label: "تونس", value: "تونس" },
   { id: "fr", label: "TUN", value: "TUN" },
+  {id: "ar", label: "ن ت", value: "ن ت" },
 ];
 
 // Ajout des styles personnalisés pour le DatePicker
@@ -365,17 +367,20 @@ const PlateNumberInput = ({ onPlateChange }) => {
   const [leftNumber, setLeftNumber] = useState("");
   const [rightNumber, setRightNumber] = useState("");
 
-  const handleChange = () => {
-    const plateNumber = `${leftNumber} ${
-      format === "ar" ? "تونس" : "TUN"
-    } ${rightNumber}`;
+  // Update to create and send plate number immediately after any change
+  const updatePlateNumber = (newFormat, newLeftNumber, newRightNumber) => {
+    // Format correctly based on selected format/region
+    const plateFormat = newFormat === "ar" ? "تونس" : (newFormat === "fr" ? "TUN" : "ن ت");
+    
+    // Fix order - left number should be on left and right number should be on right
+    const plateNumber = `${newLeftNumber} ${plateFormat} ${newRightNumber}`.trim();
     onPlateChange(plateNumber);
   };
 
   return (
     <div className="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
       <h4 className="font-semibold text-gray-700 mb-4">
-        Numéro de matricule (optionnel)
+        License plate number
       </h4>
 
       <div className="flex items-center space-x-4">
@@ -384,8 +389,9 @@ const PlateNumberInput = ({ onPlateChange }) => {
           type="text"
           value={leftNumber}
           onChange={(e) => {
-            setLeftNumber(e.target.value);
-            handleChange();
+            const newLeftNumber = e.target.value;
+            setLeftNumber(newLeftNumber);
+            updatePlateNumber(format, newLeftNumber, rightNumber);
           }}
           placeholder="000"
           className="w-24 p-2 border border-gray-300 rounded-lg text-center"
@@ -397,8 +403,9 @@ const PlateNumberInput = ({ onPlateChange }) => {
           <select
             value={format}
             onChange={(e) => {
-              setFormat(e.target.value);
-              handleChange();
+              const newFormat = e.target.value;
+              setFormat(newFormat);
+              updatePlateNumber(newFormat, leftNumber, rightNumber);
             }}
             className="w-full p-2 border border-gray-300 rounded-lg text-center bg-white"
           >
@@ -415,8 +422,9 @@ const PlateNumberInput = ({ onPlateChange }) => {
           type="text"
           value={rightNumber}
           onChange={(e) => {
-            setRightNumber(e.target.value);
-            handleChange();
+            const newRightNumber = e.target.value;
+            setRightNumber(newRightNumber);
+            updatePlateNumber(format, leftNumber, newRightNumber);
           }}
           placeholder="0000"
           className="w-24 p-2 border border-gray-300 rounded-lg text-center"
@@ -640,18 +648,18 @@ const Reservation = ({
       const spotId = parkingData.selectedSpotId;
 
       if (!spotId) {
-        setError("Veuillez sélectionner une place de parking");
+        setError("Please Select a parking spot");
         return;
       }
 
       if (!reservationData.vehicleType) {
-        setError("Veuillez sélectionner un type de véhicule");
+        setError("Select a vehicle type");
         return;
       }
 
       const token = localStorage.getItem("token");
       if (!token) {
-        setError("Veuillez vous connecter pour effectuer une réservation");
+        setError("Login required to make a reservation");
         return;
       }
 
@@ -662,13 +670,13 @@ const Reservation = ({
           new Date(reservationData.startDate) <
         minDuration
       ) {
-        setError("La durée minimale de réservation est de 1 heure");
+        setError("Minimum duration is 1 hour");
         return;
       }
 
       // Validate dates are not in the past
       if (new Date(reservationData.startDate) < new Date()) {
-        setError("La date de début ne peut pas être dans le passé");
+        setError("Start date cannot be in the past");
         return;
       }
 
@@ -901,7 +909,7 @@ const Reservation = ({
                 <div className="bg-blue-50 p-3 rounded-full mr-3">
                   <Calendar className="text-blue-600" size={24} />
                 </div>
-                Dates de stationnement
+                Parking dates
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -925,7 +933,7 @@ const Reservation = ({
                       }));
                     }
                   }}
-                  label="Date et heure d'arrivée"
+                  label=" Arrival date and time"
                   isStartDate
                 />
 
@@ -943,7 +951,7 @@ const Reservation = ({
                       }));
                     }
                   }}
-                  label="Date et heure de départ"
+                  label=" Departure date and time"
                   minDate={reservationData.startDate}
                 />
               </div>
@@ -964,7 +972,7 @@ const Reservation = ({
             <div className="bg-white p-5 sm:p-6 rounded-xl border-2 border-gray-200 shadow-md">
               <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-100 flex items-center">
                 <ListChecks className="mr-2 text-blue-500" size={18} />
-                Récapitulatif
+                Summary
               </h3>
 
               <div className="space-y-3 mb-5">
@@ -974,7 +982,7 @@ const Reservation = ({
                 </div>
 
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-gray-600">Début</span>
+                  <span className="text-gray-600">Start</span>
                   <span className="font-medium">
                     {reservationData.startDate.toLocaleString("fr-FR", {
                       day: "2-digit",
@@ -987,7 +995,7 @@ const Reservation = ({
                 </div>
 
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-gray-600">Fin</span>
+                  <span className="text-gray-600">End</span>
                   <span className="font-medium">
                     {reservationData.endDate.toLocaleString("fr-FR", {
                       day: "2-digit",
@@ -1001,7 +1009,7 @@ const Reservation = ({
 
                 {reservationData.vehicleType && (
                   <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="text-gray-600">Type de véhicule</span>
+                    <span className="text-gray-600">Vehicle Type</span>
                     <span className="font-medium">
                       {reservationData.vehicleType}
                     </span>
@@ -1019,7 +1027,7 @@ const Reservation = ({
 
                 <div className="mt-4 pt-2 border-t-2 border-gray-200">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Durée</span>
+                    <span className="text-gray-600">Duration</span>
                     <span className="font-medium">
                       {Math.ceil(
                         (new Date(reservationData.endDate) -
@@ -1031,7 +1039,7 @@ const Reservation = ({
                   </div>
 
                   <div className="flex justify-between items-center mt-1">
-                    <span className="text-gray-600">Prix par heure</span>
+                    <span className="text-gray-600">Price Per hour</span>
                     <span className="font-medium">
                       {parkingData?.pricing?.hourly}Dt
                     </span>
@@ -1047,26 +1055,26 @@ const Reservation = ({
               </div>
 
               <div className="flex flex-col gap-3 mt-6">
-                <button
-                  onClick={handleNextOrConfirm}
-                  disabled={loading || !isStepValid()}
-                  className={`w-full py-3 px-5 rounded-xl flex items-center justify-center transition-colors font-medium ${
-                    loading || !isStepValid()
-                      ? "bg-gray-300 cursor-not-allowed text-gray-500"
-                      : "bg-blue-600 hover:bg-blue-700 text-black"
-                  }`}
-                >
-                  {loading ? (
-                    <>
-                      <span className="animate-spin mr-2">⌛</span>
-                      Traitement...
-                    </>
-                  ) : (
-                    <>
-                      Suivant <ArrowRight className="ml-1" size={16} />
-                    </>
-                  )}
-                </button>
+              <button
+  onClick={handleNextOrConfirm}
+  disabled={loading || !isStepValid()}
+  className={`bg-black text-white px-4 py-2 rounded-lg cursor-pointer transition-colors duration-300 ease-in-out flex-1 flex items-center justify-center font-medium ${
+    loading || !isStepValid()
+      ? "bg-gray-300 cursor-not-allowed text-gray-500"
+      : "bg-blue-600 hover:bg-blue-700 text-black"
+  }`}
+>
+  {loading ? (
+    <>
+      <span className="animate-spin mr-2">⌛</span>
+      Traitement...
+    </>
+  ) : (
+    <>
+      Next <ArrowRight className="ml-1" size={16} />
+    </>
+  )}
+</button>
               </div>
             </div>
           </>
@@ -1079,7 +1087,7 @@ const Reservation = ({
                 <div className="bg-blue-50 p-3 rounded-full mr-3">
                   <Car className="text-blue-600" size={24} />
                 </div>
-                Type de véhicule
+                Vehicule Type
               </h3>
 
               <VehicleTypeSelector
@@ -1097,7 +1105,7 @@ const Reservation = ({
                   <div className="bg-blue-50 p-3 rounded-full mr-3">
                     <CreditCard className="text-blue-600" size={24} />
                   </div>
-                  Mode de paiement
+                  Payment Method
                 </h3>
 
                 <PaymentMethodSelector
@@ -1110,7 +1118,7 @@ const Reservation = ({
             <div className="bg-white p-5 sm:p-6 rounded-xl border-2 border-gray-200 shadow-md">
               <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-100 flex items-center">
                 <ListChecks className="mr-2 text-blue-500" size={18} />
-                Récapitulatif
+                Summary
               </h3>
 
               <div className="space-y-3 mb-5">
@@ -1120,7 +1128,7 @@ const Reservation = ({
                 </div>
 
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-gray-600">Début</span>
+                  <span className="text-gray-600">Start</span>
                   <span className="font-medium">
                     {reservationData.startDate.toLocaleString("fr-FR", {
                       day: "2-digit",
@@ -1133,7 +1141,7 @@ const Reservation = ({
                 </div>
 
                 <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                  <span className="text-gray-600">Fin</span>
+                  <span className="text-gray-600">End</span>
                   <span className="font-medium">
                     {reservationData.endDate.toLocaleString("fr-FR", {
                       day: "2-digit",
@@ -1147,7 +1155,7 @@ const Reservation = ({
 
                 {reservationData.vehicleType && (
                   <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="text-gray-600">Type de véhicule</span>
+                    <span className="text-gray-600">Vehicle Type</span>
                     <span className="font-medium">
                       {reservationData.vehicleType}
                     </span>
@@ -1156,7 +1164,7 @@ const Reservation = ({
 
                 {reservationData.matricule && (
                   <div className="flex justify-between items-center pb-2 border-b border-gray-100">
-                    <span className="text-gray-600">Matricule</span>
+                    <span className="text-gray-600">License Plate</span>
                     <span className="font-medium text-blue-600">
                       {reservationData.matricule}
                     </span>
@@ -1165,7 +1173,7 @@ const Reservation = ({
 
                 <div className="mt-4 pt-2 border-t-2 border-gray-200">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Durée</span>
+                    <span className="text-gray-600">Duration</span>
                     <span className="font-medium">
                       {Math.ceil(
                         (new Date(reservationData.endDate) -
@@ -1177,7 +1185,7 @@ const Reservation = ({
                   </div>
 
                   <div className="flex justify-between items-center mt-1">
-                    <span className="text-gray-600">Prix par heure</span>
+                    <span className="text-gray-600">PrPrice Per Hour</span>
                     <span className="font-medium">
                       {parkingData?.pricing?.hourly}Dt
                     </span>
@@ -1193,24 +1201,45 @@ const Reservation = ({
               </div>
 
               <div className="mt-6">
-                <button
-                  onClick={handleNextOrConfirm}
-                  disabled={loading || !isStepValid()}
-                  className={`w-full py-3 px-5 rounded-xl flex items-center justify-center transition-colors font-medium ${
-                    loading || !isStepValid()
-                      ? "bg-gray-300 cursor-not-allowed text-gray-500"
-                      : "bg-blue-600 hover:bg-blue-700 text-black"
-                  }`}
-                >
-                  {loading ? (
-                    <>
-                      <span className="animate-spin mr-2">⌛</span>
-                      Traitement...
-                    </>
-                  ) : (
-                    "Confirmer la réservation"
-                  )}
-                </button>
+                {/* Create a flex container for buttons */}
+                <div className="flex gap-4">
+                 
+                  
+                  {/* Back button */}
+                  <button
+  onClick={() => setCurrentStep(1)}
+  disabled={loading}
+  className="bg-black text-white px-4 py-2 rounded-lg cursor-pointer transition-colors duration-300 ease-in-out flex-1 flex items-center justify-center font-medium"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+  </svg>
+  Back to Dates
+</button>
+<button
+  onClick={handleNextOrConfirm}
+  disabled={loading || !isStepValid()}
+  className={`bg-black text-white px-4 py-2 rounded-lg cursor-pointer transition-colors duration-300 ease-in-out flex-1 flex items-center justify-center font-medium${
+    loading || !isStepValid()
+      ? "bg-gray-300 cursor-not-allowed text-gray-500"
+      : "bg-blue-600 hover:bg-blue-700 text-black"
+  }`}
+>
+  {loading ? (
+    <>
+      <span className="animate-spin mr-2">⌛</span>
+      Traitement...
+    </>
+  ) : (
+    <>
+      Confirm
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+      </svg>
+    </>
+  )}
+</button>
+                </div>
               </div>
             </div>
           </div>

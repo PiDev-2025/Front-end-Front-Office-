@@ -2921,7 +2921,7 @@ const SecLocation = () => {
                           e.stopPropagation();
                           handleShowDetails(parking, e);
                         }}
-                        className="flex-1 bg-white border border-blue-500 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium cursor-pointer"
+                        className="flex-1 bg-white border border-blue-500 text-blue-500 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium cursor-pointer"
                       >
                         View Details
                       </button>
@@ -2931,7 +2931,7 @@ const SecLocation = () => {
                           e.stopPropagation();
                           handleBooking(parking, e);
                         }}
-                        className="flex-1 bg-white border border-blue-500 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium cursor-pointer"
+                        className="flex-1 bg-white border border-blue-500 text-blue-500 py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium cursor-pointer"
                       >
                         Book Now
                       </button>
