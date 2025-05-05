@@ -17,6 +17,7 @@ const Navbar = () => {
   const [ToogleMenuResponsive, setToogleMenuResponsive] = useState(false);
   const [navabarScroll, setnavabarScroll] = useState(false);
   const [userRole, setUserRole] = useState(null);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
   const { user, login, logout } = useContext(AuthContext);
 
@@ -37,6 +38,35 @@ const Navbar = () => {
       }
     }
   }, [login]);
+
+  useEffect(() => {
+    const checkSubscriptionStatus = async () => {
+      if (!user) return;
+
+      try {
+        const token = localStorage.getItem("token");
+        const decoded = jwtDecode(token);
+
+        const response = await fetch(
+          `http://localhost:3001/api/subscriptions/user/${decoded.id}/status`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setHasActiveSubscription(data.hasActiveSubscription);
+        }
+      } catch (error) {
+        console.error("Error checking subscription status:", error);
+      }
+    };
+
+    checkSubscriptionStatus();
+  }, [user]);
 
   // Logout function
   const handleLogout = () => {
@@ -98,6 +128,10 @@ const Navbar = () => {
   // Function to check if Notifications should be visible
   const shouldShowNotifications = () => {
     return userRole === "Owner" || userRole === "Employe";
+  };
+
+  const shouldShowSubscription = () => {
+    return userRole === "Driver" && !hasActiveSubscription;
   };
 
   return (
@@ -253,6 +287,18 @@ const Navbar = () => {
                 </NavLink>
               )}
             </li>
+            {shouldShowSubscription() && (
+              <li className="w-full">
+                <NavLink
+                  to="/subscriptions"
+                  onClick={() => setToogleMenuResponsive(false)}
+                  className="font-medium text-black flex items-center gap-1"
+                >
+                  <span className="text-xl">👑</span>
+                  <span>Subscribe</span>
+                </NavLink>
+              </li>
+            )}
           </ul>
         </Container>
       </div>
@@ -393,6 +439,7 @@ const Navbar = () => {
                 </NavLink>
               </li>
             )}
+            {OwnerResevations() && (
              <li>
               <NavLink
                 to="/about"
@@ -448,20 +495,20 @@ const Navbar = () => {
                 </NavLink>
               </li>
             )}
-             {DriverSubscription() && (
-            <li>
-              <NavLink
-                to="/subscriptions"
-                className={`flex items-center gap-1 ${
-                  navabarScroll && !ToogleMenuResponsive
-                    ? "text-Mwhite"
-                    : "text-Mblack"
-                }`}
-              >
-                <span className="text-xl">👑</span>
-                <span></span>
-              </NavLink>
-            </li>
+            {shouldShowSubscription() && (
+              <li>
+                <NavLink
+                  to="/subscriptions"
+                  className={`flex items-center gap-1 ${
+                    navabarScroll && !ToogleMenuResponsive
+                      ? "text-Mwhite"
+                      : "text-Mblack"
+                  }`}
+                >
+                  <span className="text-xl">👑</span>
+                  <span>Subscribe</span>
+                </NavLink>
+              </li>
             )}
           </ul>
 
