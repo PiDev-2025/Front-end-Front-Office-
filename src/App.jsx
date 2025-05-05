@@ -51,7 +51,7 @@ import OwnerClaims from "./Components/Pages/OwnerClaims";
 import SubscriptionPlans from "./Pages/Subscriptions";
 import SubscriptionDetails from "./Pages/SubscriptionDetails";
 import SubscriptionPayment from "./Pages/SubscriptionPayment";
-
+import UserClaims from "./Components/Pages/UserClaims";
 const App = () => {
   let location = useLocation();
   useEffect(() => {

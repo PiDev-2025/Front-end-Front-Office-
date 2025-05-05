@@ -102,7 +102,7 @@ const Navbar = () => {
     return userRole === "Employe";
   };
   const DriverSubscription = () => {
-    return (userRole === "Driver" );
+    return userRole === "Driver";
   };
   const DriverReservations = () => {
     return userRole === "Driver";
@@ -352,7 +352,6 @@ const Navbar = () => {
                 Park now
               </NavLink>
             </li>
-           
 
             {/* Show Parking only for Owner role in desktop menu */}
             {shouldShowParking() && (
@@ -385,7 +384,7 @@ const Navbar = () => {
                 </NavLink>
               </li>
             )}
-            
+
             {/* Ajouter le lien Mes réservations (visible seulement si l'utilisateur est connecté) */}
             {DriverReservations() && (
               <li>
@@ -404,23 +403,49 @@ const Navbar = () => {
                 </NavLink>
               </li>
             )}
-           
+
             {OwnerResevations() && (
-              <li>
-                <NavLink
-                  to="/OwnerReservations"
-                  className={
-                    navabarScroll && !ToogleMenuResponsive
-                      ? "text-Mwhite"
-                      : "text-Mblack"
-                  }
-                >
-                  <span className="flex items-center">
-                    <span className="mr-1"></span>
-                    Réservations
-                  </span>
-                </NavLink>
-              </li>
+              <>
+                <li>
+                  <NavLink
+                    to="/OwnerReservations"
+                    className={
+                      navabarScroll && !ToogleMenuResponsive
+                        ? "text-Mwhite"
+                        : "text-Mblack"
+                    }
+                  >
+                    <span className="flex items-center">
+                      <span className="mr-1"></span>
+                      Réservations
+                    </span>
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    to="/about"
+                    className={
+                      navabarScroll && !ToogleMenuResponsive
+                        ? "text-Mwhite"
+                        : "text-Mblack"
+                    }
+                  >
+                    About
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    to="/faq"
+                    className={
+                      navabarScroll && !ToogleMenuResponsive
+                        ? "text-Mwhite"
+                        : "text-Mblack"
+                    }
+                  >
+                    FAQ
+                  </NavLink>
+                </li>
+              </>
             )}
             {OwnerClaims() && (
               <li>
@@ -439,31 +464,6 @@ const Navbar = () => {
                 </NavLink>
               </li>
             )}
-            {OwnerResevations() && (
-             <li>
-              <NavLink
-                to="/about"
-                className={
-                  navabarScroll && !ToogleMenuResponsive
-                    ? "text-Mwhite"
-                    : "text-Mblack"
-                }
-              >
-                About
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/faq"
-                className={
-                  navabarScroll && !ToogleMenuResponsive
-                    ? "text-Mwhite"
-                    : "text-Mblack"
-                }
-              >
-                FAQ
-              </NavLink>
-            </li>
             {DriverReservations() && (
               <li>
                 <NavLink
