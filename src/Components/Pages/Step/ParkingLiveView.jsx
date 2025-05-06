@@ -408,7 +408,7 @@ const ParkingPlan2D = ({
   const checkSpotAvailability = async (spot, startDate, endDate) => {
     try {
       const response = await axios.get(
-        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
+        `https://parkini-backend.onrender.com/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
       );
 
       const reservations = response.data;
@@ -472,7 +472,7 @@ const ParkingPlan2D = ({
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:3001/parkings/parkings/${parkingId}`
+        `https://parkini-backend.onrender.com/parkings/parkings/${parkingId}`
       );
       const parkingData = response.data;
 

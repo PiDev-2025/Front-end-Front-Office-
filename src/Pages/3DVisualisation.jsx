@@ -22,7 +22,7 @@ const ImageUpload = ({ onUploadSuccess }) => {
     }
 
     try {
-      const response = await axios.post("http://localhost:3001/api/upload-images", formData, {
+      const response = await axios.post("https://parkini-backend.onrender.com/api/upload-images", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

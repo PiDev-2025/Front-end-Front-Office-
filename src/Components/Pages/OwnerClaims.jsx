@@ -694,7 +694,7 @@ const OwnerClaims = () => {
             }
 
             const response = await axios.get(
-                'http://localhost:3001/api/owner-claims',
+                'https://parkini-backend.onrender.com/api/owner-claims',
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -752,7 +752,7 @@ const OwnerClaims = () => {
 
             const response = await axios({
                 method: 'put',
-                url: `http://localhost:3001/api/owner-claims/${claim._id}/status`,
+                url: `https://parkini-backend.onrender.com/api/owner-claims/${claim._id}/status`,
                 data: {
                     status: newStatus,
                     message: statusMessage || `Claim has been marked as ${newStatus}`

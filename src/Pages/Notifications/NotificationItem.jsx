@@ -31,7 +31,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:3001/api/reservations/by-spot?parkingId=${parking._id}&spotId=${reservation.spotId}`,
+        `https://parkini-backend.onrender.com/api/reservations/by-spot?parkingId=${parking._id}&spotId=${reservation.spotId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -77,7 +77,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
       const token = localStorage.getItem("token");
 
       await axios.put(
-        `http://localhost:3001/api/reservations/${reservation._id}/status`,
+        `https://parkini-backend.onrender.com/api/reservations/${reservation._id}/status`,
         { status: response },
         {
           headers: {
@@ -90,7 +90,7 @@ const ParkingReservationNotification = ({ notification, onMarkAsRead }) => {
 
       if (response === "accepted") {
         await axios.patch(
-          `http://localhost:3001/parkings/${reservation.parkingId}/spots/${reservation.spotId}`,
+          `https://parkini-backend.onrender.com/parkings/${reservation.parkingId}/spots/${reservation.spotId}`,
           { status: "reserved" },
           {
             headers: {
@@ -375,7 +375,7 @@ const NotificationList = () => {
       });
 
       const response = await axios.get(
-        `http://localhost:3001/api/notifications/all?${params}`,
+        `https://parkini-backend.onrender.com/api/notifications/all?${params}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -406,7 +406,7 @@ const NotificationList = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.patch(
-        `http://localhost:3001/api/notifications/${notificationId}/read`,
+        `https://parkini-backend.onrender.com/api/notifications/${notificationId}/read`,
         {},
         {
           headers: {
@@ -467,7 +467,7 @@ const NotificationList = () => {
   }, [page]);
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:3001");
+    socketRef.current = io("https://parkini-backend.onrender.com");
     const token = localStorage.getItem("token");
 
     if (token) {
@@ -554,7 +554,7 @@ const NotificationList = () => {
       }
 
       await axios.patch(
-        "http://localhost:3001/api/notifications/read-all",
+        "https://parkini-backend.onrender.com/api/notifications/read-all",
         {},
         {
           headers: {
@@ -640,7 +640,7 @@ const NotificationBadge = ({ onClick }) => {
       if (!token) return;
 
       const response = await axios.get(
-        `http://localhost:3001/api/notifications/unread-count`,
+        `https://parkini-backend.onrender.com/api/notifications/unread-count`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -658,7 +658,7 @@ const NotificationBadge = ({ onClick }) => {
   };
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:3001");
+    socketRef.current = io("https://parkini-backend.onrender.com");
     const token = localStorage.getItem("token");
 
     if (token) {

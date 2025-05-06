@@ -29,7 +29,7 @@ const UserReservations = () => {
                 }
 
                 const response = await axios.get(
-                    'http://localhost:3001/api/reservations/my-reservations',
+                    'https://parkini-backend.onrender.com/api/reservations/my-reservations',
                     {
                         headers: { 
                             'Authorization': `Bearer ${token}`,
@@ -206,7 +206,7 @@ const UserReservations = () => {
 
          
             const response = await axios.delete(
-                `http://localhost:3001/api/${reservationId}`,
+                `https://parkini-backend.onrender.com/api/${reservationId}`,
                 {
                     headers: { 
                         'Authorization': `Bearer ${token}`,

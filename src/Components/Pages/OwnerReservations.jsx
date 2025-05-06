@@ -54,7 +54,7 @@ const OwnerReservations = () => {
             }
 
             const response = await axios.get(
-                'http://localhost:3001/api/owner-reservations',
+                'https://parkini-backend.onrender.com/api/owner-reservations',
                 {
                     headers: { 
                         'Authorization': `Bearer ${token}`,
@@ -108,7 +108,7 @@ const OwnerReservations = () => {
             }
 
             await axios.put(
-                `http://localhost:3001/api/owner-reservations/${reservationId}/status`,
+                `https://parkini-backend.onrender.com/api/owner-reservations/${reservationId}/status`,
                 { status: newStatus },
                 {
                     headers: { 

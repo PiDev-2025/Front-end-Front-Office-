@@ -109,7 +109,7 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
   const loadParkingData = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:3001/parkings/parkings/${parkingId}`
+        `https://parkini-backend.onrender.com/parkings/parkings/${parkingId}`
       );
       const parkingData = response.data;
       console.log("parkiiing data ", parkingData);
@@ -261,7 +261,7 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
       });
 
       const response = await axios.patch(
-        `http://localhost:3001/parkings/${parkingId}`,
+        `https://parkini-backend.onrender.com/parkings/${parkingId}`,
         parkingData
       );
       console.log("Parking sauvegardé:", response.data);
@@ -544,7 +544,7 @@ const ParkingPlan = ({ parkingId: propParkingId }) => {
   const checkSpotAvailability = async (spot) => {
     try {
       const response = await axios.get(
-        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
+        `https://parkini-backend.onrender.com/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
       );
 
       const reservations = response.data;

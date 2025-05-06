@@ -48,7 +48,7 @@ const Navbar = () => {
         const decoded = jwtDecode(token);
 
         const response = await fetch(
-          `http://localhost:3001/api/subscriptions/user/${decoded.id}/status`,
+          `https://parkini-backend.onrender.com/api/subscriptions/user/${decoded.id}/status`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

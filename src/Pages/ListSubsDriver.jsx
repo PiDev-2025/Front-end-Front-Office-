@@ -36,7 +36,7 @@ const UserSubscriptions = () => {
 
         // Make API request to get user subscriptions
         const response = await axios.get(
-          `http://localhost:3001/api/subscriptions/user/${extractedUserId}`,
+          `https://parkini-backend.onrender.com/api/subscriptions/user/${extractedUserId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

@@ -162,7 +162,7 @@ const Parking =({ formData, setFormData }) =>{
   // Fetch parking list from the API
   useEffect(() => {
     setLoading(true); // Set loading state to true
-    axios.get('http://localhost:3001/parkings/parkings', {
+    axios.get('https://parkini-backend.onrender.com/parkings/parkings', {
       headers: {
 
         'Authorization': `Bearer ${getToken()}`
@@ -278,7 +278,7 @@ const Parking =({ formData, setFormData }) =>{
     });
   
     setLoading(true);
-    axios.post('http://localhost:3001/parkings/submit', formData, {
+    axios.post('https://parkini-backend.onrender.com/parkings/submit', formData, {
       headers: { 'Authorization': `Bearer ${getToken()}` }
     })
     .then(() => {

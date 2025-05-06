@@ -30,7 +30,7 @@ export const NotificationProvider = ({ children }) => {
       if (!token) return;
 
       const response = await axios.get(
-        `http://localhost:3001/api/notifications/unread-count`,
+        `https://parkini-backend.onrender.com/api/notifications/unread-count`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -63,7 +63,7 @@ export const NotificationProvider = ({ children }) => {
       });
 
       const response = await axios.get(
-        `http://localhost:3001/api/notifications/all?${params}`,
+        `https://parkini-backend.onrender.com/api/notifications/all?${params}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -95,7 +95,7 @@ export const NotificationProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       await axios.patch(
-        `http://localhost:3001/api/notifications/${notificationId}/read`,
+        `https://parkini-backend.onrender.com/api/notifications/${notificationId}/read`,
         {},
         {
           headers: {
@@ -124,7 +124,7 @@ export const NotificationProvider = ({ children }) => {
       }
 
       await axios.patch(
-        'http://localhost:3001/api/notifications/read-all',
+        'https://parkini-backend.onrender.com/api/notifications/read-all',
         {},
         {
           headers: {
@@ -156,7 +156,7 @@ export const NotificationProvider = ({ children }) => {
 
       // Update reservation status
       await axios.put(
-        `http://localhost:3001/api/reservations/${notification.reservationId._id}/status`,
+        `https://parkini-backend.onrender.com/api/reservations/${notification.reservationId._id}/status`,
         { status: response },
         {
           headers: {
@@ -189,7 +189,7 @@ export const NotificationProvider = ({ children }) => {
       // Update parking spot if accepted
       if (response === 'accepted' && notification.reservationId.spotId) {
         await axios.patch(
-          `http://localhost:3001/parkings/${notification.reservationId.parkingId}/spots/${notification.reservationId.spotId}`,
+          `https://parkini-backend.onrender.com/parkings/${notification.reservationId.parkingId}/spots/${notification.reservationId.spotId}`,
           { status: 'reserved' },
           {
             headers: {
@@ -212,7 +212,7 @@ export const NotificationProvider = ({ children }) => {
     loadUnreadCount();
     
     // Initialize socket
-    socketRef.current = io('http://localhost:3001');
+    socketRef.current = io('https://parkini-backend.onrender.com');
     socketRef.current.emit('authenticate', token);
 
     // Listen for new notifications

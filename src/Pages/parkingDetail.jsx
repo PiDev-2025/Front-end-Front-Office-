@@ -29,7 +29,7 @@ const ParkingDetails = () => {
     
 
     useEffect(() => {
-        axios.get(`http://localhost:3001/parkings/parkings/${id}`)
+        axios.get(`https://parkini-backend.onrender.com/parkings/parkings/${id}`)
             .then(response => {
                 setParking(response.data);
                 setLoading(false);

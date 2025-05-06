@@ -127,7 +127,7 @@ const FaceAuth = () => {
     try {
       setStatus("Fetching registered user faces...");
       // Fetch users from your backend API
-      const response = await fetch("http://localhost:3001/User/users/");
+      const response = await fetch("https://parkini-backend.onrender.com/User/users/");
       if (!response.ok) {
         throw new Error(
           `Failed to fetch users: ${response.status} ${response.statusText}`
@@ -239,7 +239,7 @@ const FaceAuth = () => {
           // Only redirect after toast is closed and webcam is stopped
           console.log("Toast closed, proceeding with redirect");
           if (decodedToken.role === "Admin") {
-            window.location.href = "http://localhost:5173/";
+            window.location.href = "https://dashboard-admin-parkiini.vercel.app/";
           } else {
             // Navigate to home/profile page for regular users
             navigate("/");
@@ -420,7 +420,7 @@ const FaceAuth = () => {
               setLoading(true);
 
               const response = await fetch(
-                "http://localhost:3001/auth/getToken",
+                "https://parkini-backend.onrender.com/auth/getToken",
                 {
                   method: "POST",
                   headers: {
@@ -448,7 +448,7 @@ const FaceAuth = () => {
                 let userData = null;
                 try {
                   const userResponse = await fetch(
-                    `http://localhost:3001/User/users/${recognizedUser.userId}`,
+                    `https://parkini-backend.onrender.com/User/users/${recognizedUser.userId}`,
                     {
                       headers: {
                         Authorization: `Bearer ${data.token}`,

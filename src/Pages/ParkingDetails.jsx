@@ -64,7 +64,7 @@ const ParkingDetails = ({ parkingData, isPopup }) => {
     
     // Otherwise fetch from API using ID from URL params
     if (id) {
-      axios.get(`http://localhost:3001/parkings/parkings/${id}`)
+      axios.get(`https://parkini-backend.onrender.com/parkings/parkings/${id}`)
         .then(response => {
           // Handle potential difference in API response format
           const data = response.data;

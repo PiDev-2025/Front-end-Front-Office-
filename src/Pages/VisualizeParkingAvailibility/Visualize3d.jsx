@@ -19,7 +19,7 @@ const Visualize3d = ({ parkingId: propParkingId }) => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:3001/parkings/parkings/${parkingId}`
+          `https://parkini-backend.onrender.com/parkings/parkings/${parkingId}`
         );
         setParkingData(response.data);
         setLoading(false);

@@ -93,7 +93,7 @@ const getUserProfile = async () => {
     const token = localStorage.getItem("token"); // Assure-toi que le token est stocké ici
     if (!token) throw new Error("No token found");
 
-    const response = await fetch("http://localhost:3001/User/userProfile", {
+    const response = await fetch("https://parkini-backend.onrender.com/User/userProfile", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -130,7 +130,7 @@ const updateUserProfile = async (userData, token, image, password) => {
 
     if (password) formData.append("password", password);
 
-    const response = await fetch("http://localhost:3001/User/profile", {
+    const response = await fetch("https://parkini-backend.onrender.com/User/profile", {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,

@@ -599,7 +599,7 @@ const Reservation = ({
       }
 
       const response = await axios.get(
-        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingData._id}&spotId=${parkingData.selectedSpotId}`
+        `https://parkini-backend.onrender.com/api/reservations/by-spot?parkingId=${parkingData._id}&spotId=${parkingData.selectedSpotId}`
       );
 
       // Vérifier les réservations existantes
@@ -700,7 +700,7 @@ const Reservation = ({
       console.log("Sending reservation data:", reservationPayload);
 
       const response = await axios.post(
-        "http://localhost:3001/api/reservations",
+        "https://parkini-backend.onrender.com/api/reservations",
         reservationPayload,
         {
           headers: {

@@ -93,7 +93,7 @@ const FlouciPayment = ({ reservation, onSuccess }) => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `http://localhost:3001/api/reservations/${reservationId}/statusPayment`,
+        `https://parkini-backend.onrender.com/api/reservations/${reservationId}/statusPayment`,
         {
           method: "PUT",
           headers: {
@@ -132,7 +132,7 @@ const FlouciPayment = ({ reservation, onSuccess }) => {
       localStorage.setItem("currentReservationId", reservation._id);
 
       const response = await fetch(
-        "http://localhost:3001/api/payments/flouci/paiement",
+        "https://parkini-backend.onrender.com/api/payments/flouci/paiement",
         {
           method: "POST",
           headers: {
@@ -256,7 +256,7 @@ const PaymentForm = ({ reservationId, reservation, onSuccess }) => {
     const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `http://localhost:3001/api/reservations/${reservationId}/statusPayment`,
+        `https://parkini-backend.onrender.com/api/reservations/${reservationId}/statusPayment`,
         {
           method: "PUT",
           headers: {
@@ -289,7 +289,7 @@ const PaymentForm = ({ reservationId, reservation, onSuccess }) => {
           const token = localStorage.getItem("token");
           // Send the converted price (divided by 3) to the backend
           const response = await fetch(
-            "http://localhost:3001/api/payments/create-payment-intent",
+            "https://parkini-backend.onrender.com/api/payments/create-payment-intent",
             {
               method: "POST",
               headers: {
@@ -339,7 +339,7 @@ const PaymentForm = ({ reservationId, reservation, onSuccess }) => {
       } else if (paymentIntent.status === "succeeded") {
         const token = localStorage.getItem("token");
         const confirmResponse = await fetch(
-          "http://localhost:3001/api/payments/confirm-payment",
+          "https://parkini-backend.onrender.com/api/payments/confirm-payment",
           {
             method: "POST",
             headers: {
@@ -619,7 +619,7 @@ const Confirmation = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3001/api/reservations/${reservationId}/statusPayment`,
+        `https://parkini-backend.onrender.com/api/reservations/${reservationId}/statusPayment`,
         {
           method: "PUT",
           headers: {
@@ -656,7 +656,7 @@ const Confirmation = () => {
         try {
           const token = localStorage.getItem("token");
           const response = await fetch(
-            `http://localhost:3001/api/payments/verify/${paymentId}`,
+            `https://parkini-backend.onrender.com/api/payments/verify/${paymentId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -697,7 +697,7 @@ const Confirmation = () => {
 
         // Fetch reservation
         const response = await fetch(
-          `http://localhost:3001/api/reservation/user/${userId}`,
+          `https://parkini-backend.onrender.com/api/reservation/user/${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

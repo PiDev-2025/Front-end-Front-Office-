@@ -93,7 +93,7 @@ const createPendingSubscription = async (selectedPlan, token) => {
     };
 
     const subscriptionResponse = await fetch(
-      "http://localhost:3001/api/subscriptions",
+      "https://parkini-backend.onrender.com/api/subscriptions",
       {
         method: "POST",
         headers: {
@@ -153,7 +153,7 @@ const SubscriptionPayment = () => {
         const userId = decoded.id;
 
         const subscriptionsResponse = await fetch(
-          `http://localhost:3001/api/subscriptions/user/${userId}`,
+          `https://parkini-backend.onrender.com/api/subscriptions/user/${userId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -197,7 +197,7 @@ const SubscriptionPayment = () => {
         const pendingSubId = localStorage.getItem("pendingSubscriptionId");
         if (pendingSubId) {
           const response = await fetch(
-            `http://localhost:3001/api/subscriptions/${pendingSubId}`,
+            `https://parkini-backend.onrender.com/api/subscriptions/${pendingSubId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -272,7 +272,7 @@ const SubscriptionPayment = () => {
 
       // Update the existing subscription to Active status
       const response = await fetch(
-        `http://localhost:3001/api/subscriptions/${subscriptionId}`,
+        `https://parkini-backend.onrender.com/api/subscriptions/${subscriptionId}`,
         {
           method: "PUT",
           headers: {
@@ -317,7 +317,7 @@ const SubscriptionPayment = () => {
 
           // Create subscription payment intent
           const paymentResponse = await fetch(
-            "http://localhost:3001/api/payments/create-subscription-payment",
+            "https://parkini-backend.onrender.com/api/payments/create-subscription-payment",
             {
               method: "POST",
               headers: {
@@ -368,7 +368,7 @@ const SubscriptionPayment = () => {
 
           // Update existing subscription status
           const updateResponse = await fetch(
-            `http://localhost:3001/api/subscriptions/${pendingSubscription._id}`,
+            `https://parkini-backend.onrender.com/api/subscriptions/${pendingSubscription._id}`,
             {
               method: "PUT",
               headers: {
@@ -388,7 +388,7 @@ const SubscriptionPayment = () => {
 
           // Delete all canceled subscriptions for this user
           const deleteCanceledResponse = await fetch(
-            `http://localhost:3001/api/subscriptions/user/${decoded.id}/canceled`,
+            `https://parkini-backend.onrender.com/api/subscriptions/user/${decoded.id}/canceled`,
             {
               method: "DELETE",
               headers: {

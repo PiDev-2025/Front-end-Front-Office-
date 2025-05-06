@@ -462,7 +462,7 @@ const SecLocation = () => {
     try {
       // Récupération des données complètes du parking
       const response = await axios.get(
-        `http://localhost:3001/parkings/parkings/${parking.id}`
+        `https://parkini-backend.onrender.com/parkings/parkings/${parking.id}`
       );
       const fullParkingData = response.data;
 
@@ -490,7 +490,7 @@ const SecLocation = () => {
         setLoading(true);
         console.log("Fetching parkings from API...");
         const response = await axios.get(
-          "http://localhost:3001/parkings/parkings"
+          "https://parkini-backend.onrender.com/parkings/parkings"
         );
         console.log("API response:", response.data);
 
@@ -566,7 +566,7 @@ const SecLocation = () => {
             try {
                 setLoading(true);
                 console.log("Fetching parkings from API...");
-                const response = await axios.get('http://localhost:3001/api/parkings');
+                const response = await axios.get('https://parkini-backend.onrender.com/api/parkings');
                 console.log("API response:", response.data);
                 
                 // Transform the API data format to match our needs
@@ -980,7 +980,7 @@ const SecLocation = () => {
       setError(null);
 
       const response = await axios.get(
-        "http://localhost:3001/parkings/parkings"
+        "https://parkini-backend.onrender.com/parkings/parkings"
       );
       const allParkings = response.data;
 
@@ -1111,7 +1111,7 @@ const SecLocation = () => {
     try {
       // Fetch complete parking data from API
       const response = await axios.get(
-        `http://localhost:3001/parkings/parkings/${parking.id}`
+        `https://parkini-backend.onrender.com/parkings/parkings/${parking.id}`
       );
       setSelectedParking(response.data);
       setShowPopup(true);

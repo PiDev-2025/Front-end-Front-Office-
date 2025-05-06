@@ -19,7 +19,7 @@ const OTPModal = ({ show, handleClose, email, password }) => {
   const loginAfterOTP = async (password) => {
     try {
       console.log("Password:", password);
-      const response = await axios.post("http://localhost:3001/User/loginAfterSignUp", {
+      const response = await axios.post("https://parkini-backend.onrender.com/User/loginAfterSignUp", {
 
         email,
         password,
@@ -50,7 +50,7 @@ const OTPModal = ({ show, handleClose, email, password }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3001/User/verify-otp",
+        "https://parkini-backend.onrender.com/User/verify-otp",
         { email, otp: String(otp) },
         { headers: { "Content-Type": "application/json" } }
       );

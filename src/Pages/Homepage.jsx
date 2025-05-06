@@ -97,7 +97,7 @@ import React, {
         // Make the API request with proper parameters
         const response = await axios.get(
           // Try the correct endpoint - remove /parkings if it's already in the base URL
-          `http://localhost:3001/parkings/api/parkings/nearby`,
+          `https://parkini-backend.onrender.com/parkings/api/parkings/nearby`,
           {
             params: {
               lat: latitude,

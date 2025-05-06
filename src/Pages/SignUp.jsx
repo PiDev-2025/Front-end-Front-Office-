@@ -171,7 +171,7 @@ const SignUp = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3001/User/check-email",
+        "https://parkini-backend.onrender.com/User/check-email",
         { email }
       );
       if (response.data.exists) {
@@ -301,7 +301,7 @@ const SignUp = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3001/User/signup",
+        "https://parkini-backend.onrender.com/User/signup",
         dataToSend
       );
       if (response && response.status === 200) {
@@ -320,7 +320,7 @@ const SignUp = () => {
 
   const loginAfterOTP = async (password) => {
     try {
-      const response = await axios.post("http://localhost:3001/User/loginAfterSignUp", {
+      const response = await axios.post("https://parkini-backend.onrender.com/User/loginAfterSignUp", {
         email: user.email,
         password: password
       });
@@ -342,7 +342,7 @@ const SignUp = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:3001/User/verify-otp",
+        "https://parkini-backend.onrender.com/User/verify-otp",
         { 
           email: user.email, 
           otp: String(otpCode) 

@@ -26,7 +26,7 @@ const UserClaims = () => {
             }
 
             const response = await axios.get(
-                'http://localhost:3001/api/driver-claims',
+                'https://parkini-backend.onrender.com/api/driver-claims',
                 {
                     headers: { 
                         'Authorization': `Bearer ${token}`,
@@ -60,7 +60,7 @@ const UserClaims = () => {
             }
 
             await axios.delete(
-                `http://localhost:3001/api/claims/${claimToDelete}`,
+                `https://parkini-backend.onrender.com/api/claims/${claimToDelete}`,
                 {
                     headers: { 
                         'Authorization': `Bearer ${token}`,

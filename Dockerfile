@@ -10,7 +10,7 @@ RUN npm install --legacy-peer-deps --no-audit
 # Copy source files and build
 COPY . .
 # Set API URL and other environment variables during build
-ARG REACT_APP_API_URL=http://localhost:3001
+ARG REACT_APP_API_URL=https://parkini-backend.onrender.com
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 RUN npm run build
 
@@ -27,4 +27,4 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --spider -q http://localhost:3000/ || exit 1
+  CMD wget --spider -q https://front-end-front-office.vercel.app/ || exit 1

@@ -141,7 +141,7 @@ const Step2UploadImages = () => {
 
     try {
       const res = await axios.put(
-        `http://localhost:3001/api/update/${parkingId}`,
+        `https://parkini-backend.onrender.com/api/update/${parkingId}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
