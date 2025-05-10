@@ -9,6 +9,7 @@ import {
 } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { Check, Clock, AlertCircle, Globe, ArrowLeft } from "lucide-react";
+import { jsPDF } from "jspdf";
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
@@ -114,6 +115,132 @@ const createPendingSubscription = async (selectedPlan, token) => {
   }
 };
 
+// Generate PDF receipt
+const generatePaymentReceipt = async (
+  paymentDetails,
+  userDetails,
+  subscription
+) => {
+  try {
+    // Create new jsPDF instance
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Set background color
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, pageHeight, "F");
+
+    // Add header with styling
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.text("Payment Receipt", pageWidth / 2, 30, { align: "center" });
+
+    // Try to add logo
+    try {
+      const logoUrl = "/images/Parkini.png";
+      doc.addImage(logoUrl, "PNG", 20, 15, 30, 30);
+    } catch (error) {
+      console.warn("Could not add logo to PDF:", error);
+    }
+
+    // Add divider line
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(20, 45, pageWidth - 20, 45);
+
+    // Add current date
+    const currentDate = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Date: ${currentDate}`, 20, 55);
+
+    // Add receipt number
+    const receiptNo = `RCP-${Date.now()}`;
+    doc.text(`Receipt No: ${receiptNo}`, 20, 62);
+
+    // Customer details section
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Customer Details", 20, 75);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Name: ${userDetails.name || "N/A"}`, 25, 82);
+    doc.text(`Email: ${userDetails.email || "N/A"}`, 25, 89);
+
+    // Subscription details section
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Subscription Details", 20, 105);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Plan: ${subscription.plan}`, 25, 112);
+    doc.text(
+      `Start Date: ${new Date(subscription.startDate).toLocaleDateString()}`,
+      25,
+      119
+    );
+    doc.text(
+      `End Date: ${new Date(subscription.endDate).toLocaleDateString()}`,
+      25,
+      126
+    );
+    // Add subscription type based on price
+    const subscriptionType =
+      subscription.price === 29.99
+        ? "Standard"
+        : subscription.price === 49.99
+        ? "Premium"
+        : "Unknown";
+    doc.text(`Subscription Type: ${subscriptionType}`, 25, 133);
+
+    // Payment details section with box
+    doc.setFillColor(247, 250, 252);
+    doc.rect(20, 140, pageWidth - 40, 35, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Payment Information", 25, 150);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Payment ID: ${paymentDetails.id}`, 25, 157);
+    doc.text(`Amount Paid: €${subscription.price.toFixed(2)}`, 25, 164);
+    doc.text(`Payment Status: Completed`, 25, 171);
+
+    // Add footer
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(128, 128, 128);
+    doc.text(
+      "Thank you for choosing Parkini!",
+      pageWidth / 2,
+      pageHeight - 20,
+      { align: "center" }
+    );
+
+    // Add current timestamp to filename to ensure uniqueness
+    const timestamp = new Date().getTime();
+    const filename = `parkini-receipt-${timestamp}.pdf`;
+
+    // Save the PDF
+    doc.save(filename);
+    console.log("PDF generated successfully:", filename);
+    return true;
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    return false;
+  }
+};
+
 // Main SubscriptionPayment Component
 const SubscriptionPayment = () => {
   const [loading, setLoading] = useState(true);
@@ -123,9 +250,8 @@ const SubscriptionPayment = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const { planId } = useParams();
   const navigate = useNavigate();
-
   const selectedPlan = plans[planId];
-  const convertedPrice = selectedPlan ? selectedPlan.price / 3 : 0; // Convert to EUR
+  const convertedPrice = selectedPlan ? selectedPlan.price : 0; // Price in EUR
 
   useEffect(() => {
     let isMounted = true;
@@ -386,6 +512,26 @@ const SubscriptionPayment = () => {
             throw new Error("Failed to activate subscription");
           }
 
+          // Update user's subscription type based on payment amount
+          const userUpdateResponse = await fetch(
+            `http://localhost:3001/User/users/${decoded.id}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                typeSubscription:
+                  convertedPrice === 29.99 ? "Standard" : "Premium",
+              }),
+            }
+          );
+
+          if (!userUpdateResponse.ok) {
+            console.warn("Failed to update user subscription type");
+          }
+
           // Delete all canceled subscriptions for this user
           const deleteCanceledResponse = await fetch(
             `http://localhost:3001/api/subscriptions/user/${decoded.id}/canceled`,
@@ -399,10 +545,36 @@ const SubscriptionPayment = () => {
 
           if (!deleteCanceledResponse.ok) {
             console.warn("Failed to cleanup canceled subscriptions");
-          }
-
-          // Clean up
+          } // Clean up
           localStorage.removeItem("pendingSubscriptionId");
+
+          // Get user details
+          try {
+            const userResponse = await fetch(
+              `http://localhost:3001/User/users/${decoded.id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (userResponse.ok) {
+              const userDetails = await userResponse.json(); // Generate PDF receipt
+              try {
+                await generatePaymentReceipt(
+                  paymentIntent,
+                  userDetails,
+                  pendingSubscription
+                );
+                console.log("Receipt generated successfully");
+              } catch (error) {
+                console.error("Error generating receipt:", error);
+              }
+            }
+          } catch (error) {
+            console.error("Failed to generate receipt:", error);
+          }
 
           // Set success and navigate
           setPaymentSuccess(true);

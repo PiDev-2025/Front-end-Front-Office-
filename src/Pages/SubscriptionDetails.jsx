@@ -1,14 +1,56 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import HeadTitle from "../Components/Pages/HeadTitle";
 import { motion } from "framer-motion";
 import { jwtDecode } from "jwt-decode";
+
+// Create pending subscription function
+const createPendingSubscription = async (selectedPlan, token) => {
+  try {
+    const decoded = jwtDecode(token);
+    const userId = decoded.id;
+
+    const subscriptionData = {
+      subscriptionId: `SUB-${Date.now()}`,
+      userId: userId,
+      parkingId: "default",
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      status: "Active",
+      price: selectedPlan.price,
+      plan: selectedPlan.name,
+    };
+
+    const subscriptionResponse = await fetch(
+      "http://localhost:3001/api/subscriptions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(subscriptionData),
+      }
+    );
+
+    if (!subscriptionResponse.ok) {
+      throw new Error("Failed to create subscription");
+    }
+
+    return await subscriptionResponse.json();
+  } catch (err) {
+    throw err;
+  }
+};
 
 const SubscriptionDetails = () => {
   const { planId } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const userRole = token ? jwtDecode(token).role : null;
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
 
   const handleSubscribe = async () => {
     try {
@@ -18,15 +60,49 @@ const SubscriptionDetails = () => {
       }
 
       if (userRole !== "Driver") {
-        // Show error or redirect if not a driver
+        setError("Only drivers can subscribe to plans");
         return;
       }
 
-      // Navigate to payment with selected plan
-      navigate(`/subscription-payment/${planId}`);
+      setIsProcessing(true);
+      setError(null);
+      if (planId === "free") {
+        // Handle free subscription
+        const subscription = await createPendingSubscription(plan, token);
+
+        if (subscription) {
+          // Update user type
+          const userId = jwtDecode(token).id;
+          const updateResponse = await fetch(
+            `http://localhost:3001/User/users/${userId}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ typeSubscription: "Free" }), // Match the schema field name
+            }
+          );
+
+          if (!updateResponse.ok) {
+            throw new Error("Failed to update user subscription type");
+          }
+
+          setSuccess(true);
+          setTimeout(() => {
+            navigate("/"); // Navigate to home instead of dashboard
+          }, 2000);
+        }
+      } else {
+        // Navigate to payment for paid plans
+        navigate(`/subscription-payment/${planId}`);
+      }
     } catch (error) {
       console.error("Error:", error);
-      // You might want to show an error message to the user
+      setError(error.message || "Failed to process subscription");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -125,7 +201,7 @@ const SubscriptionDetails = () => {
           animate="visible"
           variants={fadeIn}
         >
-          {/* Header with price */}
+          {/* Header with price */}{" "}
           <motion.div className="text-center mb-12" variants={slideUp}>
             <h1 className="text-4xl font-extrabold text-gray-900 mb-4">
               {plan.name}
@@ -141,8 +217,20 @@ const SubscriptionDetails = () => {
                 /month
               </span>
             </div>
-          </motion.div>
 
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="mt-4 p-4 bg-green-50 border-l-4 border-green-500 text-green-700">
+                Successfully subscribed to {plan.name}! Redirecting to
+                dashboard...
+              </div>
+            )}
+          </motion.div>
           {/* Detailed description */}
           <motion.div
             className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200"
@@ -211,34 +299,67 @@ const SubscriptionDetails = () => {
                   </ul>
                 </>
               )}
-            </div>
-
+            </div>{" "}
             {/* Action buttons */}
-            {planId !== "free" && (
-              <div className="px-6 py-8 bg-gray-50 border-t border-gray-200">
-                <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-                  <motion.button
-                    onClick={handleSubscribe}
-                    className="flex-1 bg-blue-600 text-black py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 shadow-md !important"
-                    style={{
-                      boxShadow: "0 4px 14px rgba(0, 118, 255, 0.39)",
-                    }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Subscribe Now
-                  </motion.button>
-                  <motion.button
-                    onClick={() => navigate("/subscriptions")}
-                    className="flex-1 bg-white text-blue-600 border-2 border-blue-600 py-3 px-6 rounded-lg font-medium hover:bg-blue-600 hover:text-white transition-all duration-300 !important"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Compare Plans
-                  </motion.button>
-                </div>
+            <div className="px-6 py-8 bg-gray-50 border-t border-gray-200">
+              <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
+                <motion.button
+                  onClick={handleSubscribe}
+                  disabled={isProcessing}
+                  className={`flex-1 bg-blue-600 text-black py-3 px-6 rounded-lg font-medium transition-all duration-300 shadow-md !important ${
+                    isProcessing
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-blue-700"
+                  }`}
+                  style={{
+                    boxShadow: "0 4px 14px rgba(0, 118, 255, 0.39)",
+                  }}
+                  whileHover={!isProcessing ? { scale: 1.02 } : {}}
+                  whileTap={!isProcessing ? { scale: 0.98 } : {}}
+                >
+                  {isProcessing ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-black"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Processing...
+                    </span>
+                  ) : (
+                    `Subscribe ${planId === "free" ? "Now" : "& Pay"}`
+                  )}
+                </motion.button>
+                <motion.button
+                  onClick={() => navigate("/subscriptions")}
+                  disabled={isProcessing}
+                  className={`flex-1 bg-white text-blue-600 border-2 border-blue-600 py-3 px-6 rounded-lg font-medium transition-all duration-300 !important ${
+                    isProcessing
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-blue-600 hover:text-white"
+                  }`}
+                  whileHover={!isProcessing ? { scale: 1.02 } : {}}
+                  whileTap={!isProcessing ? { scale: 0.98 } : {}}
+                >
+                  Compare Plans
+                </motion.button>
               </div>
-            )}
+            </div>
           </motion.div>
         </motion.div>
       </div>
