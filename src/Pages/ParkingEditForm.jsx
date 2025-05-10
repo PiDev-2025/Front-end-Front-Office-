@@ -443,7 +443,7 @@ const validateForm = () => {
       console.log("📌 Données envoyées :", data);
 
       const response = await axios.put(
-        `https://parkini-backend.onrender.com/parkings/parkings/${editingParking._id}`,
+        `http://localhost:3001/parkings/parkings/${editingParking._id}`,
         data,
         {
           headers: {

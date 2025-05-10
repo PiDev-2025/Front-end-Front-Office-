@@ -24,7 +24,7 @@ const Login = () => {
     setLoading(true);
     try {
       // Send POST request to backend for login
-      const response = await axios.post("https://parkini-backend.onrender.com/User/login", {
+      const response = await axios.post("http://localhost:3001/User/login", {
         email,
         password,
       });
@@ -61,7 +61,7 @@ const Login = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://parkini-backend.onrender.com/User/login-verify-otp",
+        "http://localhost:3001/User/login-verify-otp",
         {
           email,
           otp,
@@ -151,7 +151,7 @@ const Login = () => {
   {/* Authentication Buttons */}
   <div className="flex flex-col space-y-4 mb-8">
     <a
-      href="https://parkini-backend.onrender.com/auth/google"
+      href="http://localhost:3001/auth/google"
       className="flex items-center justify-center gap-3 bg-white text-black-700 py-3 px-6 rounded-xl hover:shadow-md transition-all duration-300"
     >
       <img src="./../images/google.png" alt="Google" className="w-6 h-6" />

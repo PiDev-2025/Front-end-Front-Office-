@@ -170,7 +170,7 @@ const ParkingSpot = ({
 
       // Requête avec le token dans les headers et URL corrigée
       const response = await axios.get(
-        `https://parkini-backend.onrender.com/api/reservations/by-spot?parkingId=${parkingId}&spotId=${id}`,
+        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

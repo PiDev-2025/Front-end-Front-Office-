@@ -105,9 +105,9 @@ const EmployeeParkingScanner = () => {
   const fetchEmployeeParkings = async (employeeId, token) => {
     try {
       // Update this URL to match your backend API endpoint structure
-      const url = `https://parkini-backend.onrender.com/parkings/parkings-by-employee/${employeeId}`;
+      const url = `http://localhost:3001/parkings/parkings-by-employee/${employeeId}`;
       // Or, if your API uses query parameters instead:
-      // const url = `https://parkini-backend.onrender.com/parkings?id_employee=${employeeId}`;
+      // const url = `http://localhost:3001/parkings?id_employee=${employeeId}`;
 
       const headers = {
         Authorization: `Bearer ${token}`,
@@ -288,7 +288,7 @@ const EmployeeParkingScanner = () => {
       if (!token) throw new Error("Authentication token not found");
 
       // Using the endpoint you provided
-      const url = `https://parkini-backend.onrender.com/parkings/update-total-spots/${parkingId}`;
+      const url = `http://localhost:3001/parkings/update-total-spots/${parkingId}`;
       const response = await fetch(url, {
         method: "PATCH",
         headers: {
@@ -327,7 +327,7 @@ const EmployeeParkingScanner = () => {
       if (!token) throw new Error("Authentication token not found");
 
       // Update both status and paymentStatus based on accept/reject decision
-      const url = `https://parkini-backend.onrender.com/api/reservations/${reservationId}/statusPayment`;
+      const url = `http://localhost:3001/api/reservations/${reservationId}/statusPayment`;
       const response = await fetch(url, {
         method: "PUT",
         headers: {

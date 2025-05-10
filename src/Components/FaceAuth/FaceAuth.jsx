@@ -127,7 +127,7 @@ const FaceAuth = () => {
     try {
       setStatus("Fetching registered user faces...");
       // Fetch users from your backend API
-      const response = await fetch("https://parkini-backend.onrender.com/User/users/");
+      const response = await fetch("http://localhost:3001/User/users/");
       if (!response.ok) {
         throw new Error(
           `Failed to fetch users: ${response.status} ${response.statusText}`
@@ -420,7 +420,7 @@ const FaceAuth = () => {
               setLoading(true);
 
               const response = await fetch(
-                "https://parkini-backend.onrender.com/auth/getToken",
+                "http://localhost:3001/auth/getToken",
                 {
                   method: "POST",
                   headers: {
@@ -448,7 +448,7 @@ const FaceAuth = () => {
                 let userData = null;
                 try {
                   const userResponse = await fetch(
-                    `https://parkini-backend.onrender.com/User/users/${recognizedUser.userId}`,
+                    `http://localhost:3001/User/users/${recognizedUser.userId}`,
                     {
                       headers: {
                         Authorization: `Bearer ${data.token}`,

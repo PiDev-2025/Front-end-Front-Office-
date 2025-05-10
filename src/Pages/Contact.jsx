@@ -256,7 +256,7 @@ const Contact = () => {
 
         try {
             const response = await axios.post(
-                'https://parkini-backend.onrender.com/api/claims',
+                'http://localhost:3001/api/claims',
                 formData,
                 {
                     headers: {

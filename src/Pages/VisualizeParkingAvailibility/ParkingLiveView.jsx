@@ -433,7 +433,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
     setIsLoading(true);
     try {
       const response = await axios.get(
-        `https://parkini-backend.onrender.com/api/reservations/by-spot?parkingId=${parkingId}&spotId=${id}`
+        `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${id}`
       );
 
       if (response.data?.length > 0) {
@@ -684,14 +684,14 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `https://parkini-backend.onrender.com/parkings/parkings/${parkingId}`
+        `http://localhost:3001/parkings/parkings/${parkingId}`
       );
       const parkingData = response.data;
 
       const formattedSpots = await Promise.all(parkingData.spots.map(async (spot) => {
         // Pour chaque spot, vérifier les réservations actives à la date sélectionnée
         const reservationResponse = await axios.get(
-          `https://parkini-backend.onrender.com/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
+          `http://localhost:3001/api/reservations/by-spot?parkingId=${parkingId}&spotId=${spot.id}`
         );
         
         // Convertir la date sélectionnée en timestamp pour comparaison
@@ -843,7 +843,7 @@ const ParkingLiveView = ({ parkingId: propParkingId }) => {
 
       // Send the PATCH request to update the spot status in the database
       await axios.patch(
-        `https://parkini-backend.onrender.com/parkings/${parkingId}/spots/${id}`,
+        `http://localhost:3001/parkings/${parkingId}/spots/${id}`,
         spotData,
         config
       );

@@ -27,7 +27,7 @@ export const verifyResetToken = async (token) => {
         }
         
         // When backend is ready, uncomment this:
-        // const response = await axios.get(`https://parkini-backend.onrender.com/api/verify-reset-token/${token}`);
+        // const response = await axios.get(`http://localhost:3001/api/verify-reset-token/${token}`);
         // return response.data;
     } catch (error) {
         console.error('Error verifying token:', error);

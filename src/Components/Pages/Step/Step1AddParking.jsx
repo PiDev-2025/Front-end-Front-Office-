@@ -169,7 +169,7 @@ const OwnerAddPaking = () => {
 
     try {
       const response = await axios.post(
-        "https://parkini-backend.onrender.com/api/addParkingRequest",
+        "http://localhost:3001/api/addParkingRequest",
         formData,
         {
           headers: {

@@ -35,7 +35,7 @@ const ParkingListOwner = () => {
 
       console.log("Envoi de la requête pour récupérer les parkings..."); // 🔍 Debug
       const response = await axios.get(
-        "https://parkini-backend.onrender.com/parkings/my-parkings",
+        "http://localhost:3001/parkings/my-parkings",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -64,7 +64,7 @@ const ParkingListOwner = () => {
     const promises = parkings.map(async (parking) => {
       try {
         await axios.get(
-          `https://parkini-backend.onrender.com/parkings/check-pending/${parking._id}`
+          `http://localhost:3001/parkings/check-pending/${parking._id}`
         );
         // Si la requête réussit, il n'y a pas de requête en attente
         pendingStatus[parking._id] = false;
@@ -94,7 +94,7 @@ const ParkingListOwner = () => {
         return;
       }
 
-      const response = await axios.get("https://parkini-backend.onrender.com/User/employees", {
+      const response = await axios.get("http://localhost:3001/User/employees", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -117,7 +117,7 @@ const ParkingListOwner = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.put(
-        `https://parkini-backend.onrender.com/parkings/assign-employee/${parkingId}/${selectedEmployee}`,
+        `http://localhost:3001/parkings/assign-employee/${parkingId}/${selectedEmployee}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -133,7 +133,7 @@ const ParkingListOwner = () => {
     try {
       // Vérifier s'il y a déjà une requête en attente
       const response = await axios.get(
-        `https://parkini-backend.onrender.com/parkings/check-pending/${parking._id}`
+        `http://localhost:3001/parkings/check-pending/${parking._id}`
       );
 
       if (response.status === 200) {
@@ -159,7 +159,7 @@ const ParkingListOwner = () => {
     if (window.confirm("Voulez-vous vraiment supprimer ce parking ?")) {
       try {
         const token = localStorage.getItem("token");
-        await axios.delete(`https://parkini-backend.onrender.com/parkings/parkings/${id}`, {
+        await axios.delete(`http://localhost:3001/parkings/parkings/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

@@ -34,8 +34,7 @@ const SubscriptionDetails = () => {
     free: {
       name: "Parkini Free",
       price: "0",
-      description:
-        "Ideal for occasional users looking for a simple parking solution.",
+      description: "Pour les utilisateurs occasionnels qui cherchent une solution simple.",
       features: [
         "Basic parking spot search",
         "Visualization of available parking on map",
@@ -46,16 +45,20 @@ const SubscriptionDetails = () => {
         "Standard customer support",
       ],
       limitations: [
-        "No access to preferred pricing",
-        "No access to premium parking",
-        "No multiple reservations",
-        "No free cancellation",
+        "Maximum 2 heures de stationnement par réservation",
+        "Une seule réservation active à la fois",
+        "Pas d'annulation gratuite",
+        "Support client standard uniquement par email",
+        "Pas de réduction sur les tarifs",
+        "Affichage des publicités",
+        "Pas de service de lavage auto",
+        "Pas de points de fidélité"
       ],
     },
     standard: {
       name: "Parkini Standard",
       price: "29.99",
-      description: "For regular users who need more flexibility and benefits.",
+      description: "Pour les utilisateurs réguliers qui souhaitent plus de flexibilité.",
       features: [
         "All Parkini Free features",
         "Hourly, daily and weekly reservations",
@@ -63,22 +66,25 @@ const SubscriptionDetails = () => {
         "Preferred pricing (-5% on all reservations)",
         "Free cancellation up to 2 hours before",
         "Access to Indoor and Underground parking",
-        "Real-time availability notifications",
         "Priority daytime customer support",
         "Detailed reservation history",
         "Automatic invoices",
       ],
       limitations: [
-        "No access to monthly reservations",
-        "Limit of 3 simultaneous reservations",
-        "No access to premium spots",
+        "Maximum 12 heures de stationnement par réservation",
+        "Maximum 3 réservations actives simultanées",
+        "Annulation gratuite jusqu'à 2 heures avant",
+        "Support client prioritaire uniquement en journée",
+        "Réduction limitée à 5% sur les tarifs",
+        "Sans publicité",
+        "1 lavage auto gratuit par mois",
+        "Programme de fidélité basique"
       ],
     },
     premium: {
       name: "Parkini Premium",
       price: "49.99",
-      description:
-        "The ultimate solution for professionals and power users who want the best service.",
+      description: "La solution ultime pour les professionnels qui veulent le meilleur service.",
       features: [
         "All Parkini Standard features",
         "Hourly, daily, weekly and monthly reservations",
@@ -94,7 +100,15 @@ const SubscriptionDetails = () => {
         "Personalized monthly reports",
         "Access to exclusive events",
       ],
-      limitations: [],
+      limitations: [
+        "Réservations illimitées",
+        "Annulation gratuite jusqu'à 30 minutes avant",
+        "Support client prioritaire 24/7",
+        "Réduction de 15% sur tous les tarifs",
+        "Sans publicité",
+        "2 lavages auto gratuits par mois",
+        "Programme de fidélité premium avec points doublés"
+      ],
     },
   };
 

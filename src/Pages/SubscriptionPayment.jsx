@@ -1,583 +1,376 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+import React, { useState, useEffect, useContext } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../AuthContext';
 import {
   Elements,
   CardElement,
   useStripe,
   useElements,
-} from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
-import { Check, Clock, AlertCircle, Globe, ArrowLeft } from "lucide-react";
+} from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { AlertCircle, CreditCard, Flag } from 'lucide-react';
 
-// Initialize Stripe
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLIC_KEY);
 
-// Plan data - keeping it consistent with Subscriptions.jsx
-const plans = {
-  free: {
-    name: "Parkini Free",
-    price: 0,
-  },
-  standard: {
-    name: "Parkini Standard",
-    price: 29.99,
-  },
-  premium: {
-    name: "Parkini Premium",
-    price: 49.99,
-  },
-};
+// Plan Details Component
+const PlanDetails = ({ plan }) => (
+  <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+    <h3 className="text-xl font-bold mb-4">{plan.name}</h3>
+    <div className="flex justify-between items-baseline mb-4">
+      <span className="text-2xl font-bold">TND {plan.price}</span>
+      <span className="text-gray-500">/{plan.period}</span>
+    </div>
+    <div className="space-y-2">
+      {plan.features.map((feature, index) => (
+        <div key={index} className="flex items-center text-gray-600">
+          <svg
+            className="h-5 w-5 text-green-500 mr-2"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path d="M5 13l4 4L19 7"></path>
+          </svg>
+          {feature}
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
-// Status Badge Component
-const StatusBadge = ({ status }) => {
-  const getStatusStyles = () => {
-    switch (status?.toLowerCase()) {
-      case "completed":
-        return {
-          bg: "bg-green-100",
-          text: "text-green-800",
-          icon: <Check className="w-4 h-4" />,
-        };
-      case "pending":
-        return {
-          bg: "bg-amber-100",
-          text: "text-amber-800",
-          icon: <Clock className="w-4 h-4" />,
-        };
-      case "rejected":
-      case "failed":
-        return {
-          bg: "bg-red-100",
-          text: "text-red-800",
-          icon: <AlertCircle className="w-4 h-4" />,
-        };
-      default:
-        return {
-          bg: "bg-gray-100",
-          text: "text-gray-800",
-          icon: <Clock className="w-4 h-4" />,
-        };
-    }
-  };
-
-  const styles = getStatusStyles();
-  const displayStatus =
-    status?.charAt(0).toUpperCase() + status?.slice(1) || "Unknown";
-
-  return (
-    <span
-      className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${styles.bg} ${styles.text}`}
-    >
-      {styles.icon}
-      {displayStatus}
-    </span>
-  );
-};
-
-// Move createPendingSubscription before the component
-const createPendingSubscription = async (selectedPlan, token) => {
-  try {
-    const decoded = jwtDecode(token);
-    const userId = decoded.id;
-
-    const subscriptionData = {
-      subscriptionId: `SUB-${Date.now()}`,
-      userId: userId,
-      parkingId: "default",
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      status: "Cancelled", // Initial status is Cancelled until payment is confirmed
-      price: selectedPlan.price,
-      plan: selectedPlan.name,
-    };
-
-    const subscriptionResponse = await fetch(
-      "https://parkini-backend.onrender.com/api/subscriptions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(subscriptionData),
-      }
-    );
-
-    if (!subscriptionResponse.ok) {
-      throw new Error("Failed to create subscription");
-    }
-
-    return await subscriptionResponse.json();
-  } catch (err) {
-    throw err;
-  }
-};
-
-// Main SubscriptionPayment Component
-const SubscriptionPayment = () => {
-  const [loading, setLoading] = useState(true);
+// Payment Form Component
+const PaymentForm = ({ plan, onSuccess }) => {
+  const stripe = useStripe();
+  const elements = useElements();
   const [error, setError] = useState(null);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [pendingSubscription, setPendingSubscription] = useState(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const { planId } = useParams();
-  const navigate = useNavigate();
+  const [processing, setProcessing] = useState(false);
+  const { user } = useContext(AuthContext);
 
-  const selectedPlan = plans[planId];
-  const convertedPrice = selectedPlan ? selectedPlan.price / 3 : 0; // Convert to EUR
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setProcessing(true);
 
-  useEffect(() => {
-    let isMounted = true;
+    if (!stripe || !elements) {
+      setProcessing(false);
+      return;
+    }
 
-    const initialize = async () => {
-      // Prevent multiple initializations
-      if (isInitialized || !isMounted) return;
-
-      try {
-        setLoading(true);
-        // Validate plan
-        if (!planId || !selectedPlan) {
-          setError("Invalid subscription plan selected");
-          return;
-        }
-
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("Please log in first");
-          return;
-        }
-
-        // Check for active subscription first
-        const decoded = jwtDecode(token);
-        const userId = decoded.id;
-
-        const subscriptionsResponse = await fetch(
-          `https://parkini-backend.onrender.com/api/subscriptions/user/${userId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (subscriptionsResponse.ok) {
-          const subscriptions = await subscriptionsResponse.json();
-          const activeSubscription = subscriptions.find(
-            (sub) => sub.status === "Active" && sub.plan === selectedPlan.name
-          );
-
-          if (activeSubscription) {
-            setError(
-              `You already have an active ${selectedPlan.name} subscription`
-            );
-            return;
-          }
-
-          // Also check for any pending subscriptions for this plan
-          const pendingSubscription = subscriptions.find(
-            (sub) =>
-              sub.status === "Cancelled" &&
-              sub.plan === selectedPlan.name &&
-              new Date(sub.startDate) >
-                new Date(Date.now() - 24 * 60 * 60 * 1000) // Within last 24 hours
-          );
-
-          if (pendingSubscription) {
-            setPendingSubscription(pendingSubscription);
-            localStorage.setItem(
-              "pendingSubscriptionId",
-              pendingSubscription._id
-            );
-            return;
-          }
-        }
-
-        // Only create new subscription if we don't have a pending one
-        const pendingSubId = localStorage.getItem("pendingSubscriptionId");
-        if (pendingSubId) {
-          const response = await fetch(
-            `https://parkini-backend.onrender.com/api/subscriptions/${pendingSubId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (response.ok) {
-            const subscription = await response.json();
-            if (subscription && subscription.plan === selectedPlan.name) {
-              setPendingSubscription(subscription);
-              return;
-            }
-            // If subscription exists but doesn't match current plan, remove it
-            localStorage.removeItem("pendingSubscriptionId");
-          } else {
-            localStorage.removeItem("pendingSubscriptionId");
-          }
-        }
-
-        // Create new subscription only if we haven't found any existing ones
-        await createNewSubscription(token);
-      } catch (err) {
-        console.error("Initialization error:", err);
-        if (isMounted) {
-          setError(err.message);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-          setIsInitialized(true);
-        }
-      }
-    };
-
-    initialize();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [planId, selectedPlan, isInitialized]); // Add isInitialized to dependencies
-
-  // Move createNewSubscription outside useEffect but keep it in component scope
-  const createNewSubscription = async (token) => {
     try {
-      // For free plan, we can skip creation and just activate
-      if (selectedPlan.price === 0) {
-        const subscription = await createPendingSubscription(
-          selectedPlan,
-          token
-        );
-        setPendingSubscription(subscription);
-        localStorage.setItem("pendingSubscriptionId", subscription._id);
-        await handleFreeSubscription(subscription._id);
+      // Create payment method
+      const { error: stripeError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: elements.getElement(CardElement),
+      });
+
+      if (stripeError) {
+        setError(stripeError.message);
+        setProcessing(false);
         return;
       }
 
-      // For paid plans, create pending subscription
-      const subscription = await createPendingSubscription(selectedPlan, token);
-      setPendingSubscription(subscription);
-      localStorage.setItem("pendingSubscriptionId", subscription._id);
-    } catch (err) {
-      console.error("Failed to create subscription:", err);
-      setError(err.message);
-    }
-  };
+      // Create subscription on backend
+      const response = await fetch('http://localhost:3001/api/subscriptions/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          paymentMethodId: paymentMethod.id,
+          planType: plan.name,
+          priceId: plan.priceId,
+        }),
+      });
 
-  // Handle free subscription activation
-  const handleFreeSubscription = async (subscriptionId) => {
-    try {
-      const token = localStorage.getItem("token");
-
-      // Update the existing subscription to Active status
-      const response = await fetch(
-        `https://parkini-backend.onrender.com/api/subscriptions/${subscriptionId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            status: "Active",
-          }),
-        }
-      );
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error("Failed to activate free subscription");
+        throw new Error(data.message || 'Failed to create subscription');
       }
 
-      // Clean up
-      localStorage.removeItem("pendingSubscriptionId");
-      setPaymentSuccess(true);
-      setTimeout(() => navigate("/subscriptions"), 2000);
+      // Handle subscription activation
+      if (data.status === 'active') {
+        onSuccess(data);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      setProcessing(false);
     }
   };
 
-  // Payment Form Component with Stripe
-  const PaymentForm = () => {
-    const stripe = useStripe();
-    const elements = useElements();
-    const [paymentError, setPaymentError] = useState(null);
-    const [processing, setProcessing] = useState(false);
-    const [clientSecret, setClientSecret] = useState("");
-
-    useEffect(() => {
-      const initializePayment = async () => {
-        try {
-          if (!pendingSubscription) return;
-
-          const token = localStorage.getItem("token");
-
-          // Create subscription payment intent
-          const paymentResponse = await fetch(
-            "https://parkini-backend.onrender.com/api/payments/create-subscription-payment",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <CreditCard className="w-5 h-5" />
+          Card Details
+        </h3>
+        
+        <div className="mb-4">
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#424770',
+                  '::placeholder': {
+                    color: '#aab7c4',
+                  },
+                },
+                invalid: {
+                  color: '#9e2146',
+                },
               },
-              body: JSON.stringify({
-                subscriptionId: pendingSubscription._id,
-                amount: convertedPrice,
-              }),
-            }
-          );
-
-          const paymentData = await paymentResponse.json();
-          if (!paymentResponse.ok) throw new Error(paymentData.message);
-
-          setClientSecret(paymentData.clientSecret);
-        } catch (err) {
-          setPaymentError(err.message);
-        }
-      };
-
-      initializePayment();
-    }, [pendingSubscription]);
-
-    const handleSubmit = async (event) => {
-      event.preventDefault();
-      setProcessing(true);
-
-      if (!stripe || !elements || !clientSecret || !pendingSubscription) {
-        setProcessing(false);
-        return;
-      }
-
-      try {
-        const { error: stripeError, paymentIntent } =
-          await stripe.confirmCardPayment(clientSecret, {
-            payment_method: {
-              card: elements.getElement(CardElement),
-            },
-          });
-
-        if (stripeError) {
-          setPaymentError(stripeError.message);
-        } else if (paymentIntent.status === "succeeded") {
-          const token = localStorage.getItem("token");
-          const decoded = jwtDecode(token);
-
-          // Update existing subscription status
-          const updateResponse = await fetch(
-            `https://parkini-backend.onrender.com/api/subscriptions/${pendingSubscription._id}`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                status: "Active",
-                paymentId: paymentIntent.id,
-              }),
-            }
-          );
-
-          if (!updateResponse.ok) {
-            throw new Error("Failed to activate subscription");
-          }
-
-          // Delete all canceled subscriptions for this user
-          const deleteCanceledResponse = await fetch(
-            `https://parkini-backend.onrender.com/api/subscriptions/user/${decoded.id}/canceled`,
-            {
-              method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (!deleteCanceledResponse.ok) {
-            console.warn("Failed to cleanup canceled subscriptions");
-          }
-
-          // Clean up
-          localStorage.removeItem("pendingSubscriptionId");
-
-          // Set success and navigate
-          setPaymentSuccess(true);
-          setTimeout(() => navigate("/subscriptions"), 2000);
-        }
-      } catch (err) {
-        setPaymentError(err.message);
-      } finally {
-        setProcessing(false);
-      }
-    };
-
-    return (
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="bg-blue-600 p-4">
-          <h3 className="text-xl font-bold text-black flex items-center gap-2">
-            <Globe className="w-5 h-5" /> Card Payment
-          </h3>
+            }}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-medium mb-2">
-              Card Information
-            </label>
-            <div className="p-4 border border-gray-300 rounded-lg bg-gray-50">
-              <CardElement
-                options={{
-                  style: {
-                    base: {
-                      fontSize: "16px",
-                      color: "#424770",
-                      "::placeholder": {
-                        color: "#aab7c4",
-                      },
-                      iconColor: "#3b82f6",
-                    },
-                    invalid: {
-                      color: "#e53e3e",
-                      iconColor: "#e53e3e",
-                    },
-                  },
-                }}
-              />
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+            <div className="flex">
+              <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+              <span className="text-red-700">{error}</span>
             </div>
           </div>
+        )}
 
-          {paymentError && (
-            <div className="p-3 mb-4 bg-red-50 border-l-4 border-red-500 text-red-700">
-              <div className="flex">
-                <AlertCircle className="w-5 h-5 mr-2" />
-                <span>{paymentError}</span>
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg mb-6">
-            <span className="text-gray-700 font-medium">Total Amount:</span>
-            <span className="text-xl font-bold text-blue-600">
-              €{convertedPrice.toFixed(2)}
+        <button
+          type="submit"
+          disabled={!stripe || processing}
+          className={`w-full py-3 px-4 rounded-lg text-white font-medium ${
+            processing
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          {processing ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg
+                className="animate-spin h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Processing...
             </span>
-          </div>
-
-          <button
-            type="submit"
-            disabled={!stripe || !clientSecret || processing}
-            className={`w-full py-3 px-6 rounded-lg font-medium text-black transition-all ${
-              !stripe || !clientSecret || processing
-                ? "bg-blue-300 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {processing ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg
-                  className="animate-spin h-5 w-5 text-black"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Processing...
-              </span>
-            ) : (
-              `Pay €${convertedPrice.toFixed(2)}`
-            )}
-          </button>
-        </form>
+          ) : (
+            `Subscribe to ${plan.name} - TND ${plan.price}/${plan.period}`
+          )}
+        </button>
       </div>
-    );
+    </form>
+  );
+};
+
+// Flouci Payment Component
+const FlouciPayment = ({ plan, onSuccess }) => {
+  const [error, setError] = useState(null);
+  const [processing, setProcessing] = useState(false);
+
+  const handlePayment = async () => {
+    setProcessing(true);
+    try {
+      const token = localStorage.getItem('token');
+      const amountInMillimes = Math.round(parseFloat(plan.price) * 1000);
+
+      const response = await fetch('http://localhost:3001/api/payments/flouci/subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          amount: amountInMillimes,
+          planType: plan.name,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to generate Flouci payment');
+
+      // Redirect to Flouci payment page
+      window.location.href = data.result.link;
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading subscription details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-          <div className="flex">
-            <AlertCircle className="h-6 w-6 text-red-500" />
-            <div className="ml-3">
-              <h3 className="text-red-800 font-medium">Error</h3>
-              <p className="text-red-700 mt-1">{error}</p>
-              <button
-                onClick={() => navigate("/subscriptions")}
-                className="mt-3 flex items-center text-red-700 hover:text-red-800"
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Return to Plans
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Subscribe to {selectedPlan.name}
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Complete your payment to activate your subscription
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <Flag className="w-5 h-5" />
+        Pay with Flouci
+      </h3>
+
+      <div className="bg-blue-50 p-4 rounded-lg mb-4">
+        <img
+          src="/images/flouci-horizontal.jpg"
+          alt="Flouci"
+          className="h-12 mx-auto mb-2"
+        />
+        <p className="text-center text-gray-600">
+          Secure payment using Flouci for Tunisian users
         </p>
       </div>
 
-      {paymentSuccess && (
-        <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg flex items-center">
-          <Check className="w-6 h-6 text-green-600 mr-3" />
-          <div>
-            <h3 className="font-bold text-green-800">
-              Subscription Activated!
-            </h3>
-            <p className="text-green-700">
-              Your subscription has been activated successfully.
-              {selectedPlan.price === 0
-                ? " Enjoy your free plan!"
-                : " You'll receive a confirmation email shortly."}
-            </p>
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+          <div className="flex">
+            <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+            <span className="text-red-700">{error}</span>
           </div>
         </div>
       )}
 
-      {!loading &&
-        !paymentSuccess &&
-        selectedPlan.price > 0 &&
-        pendingSubscription && (
-          <Elements stripe={stripePromise}>
-            <PaymentForm />
-          </Elements>
+      <button
+        onClick={handlePayment}
+        disabled={processing}
+        className={`w-full py-3 px-4 rounded-lg text-white font-medium ${
+          processing
+            ? 'bg-gray-400 cursor-not-allowed'
+            : 'bg-blue-600 hover:bg-blue-700'
+        }`}
+      >
+        {processing ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg
+              className="animate-spin h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Processing...
+          </span>
+        ) : (
+          `Pay TND ${plan.price} with Flouci`
         )}
+      </button>
+    </div>
+  );
+};
+
+// Main SubscriptionPayment Component
+const SubscriptionPayment = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const [paymentMethod, setPaymentMethod] = useState('stripe');
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
+  useEffect(() => {
+    if (!location.state?.selectedPlan) {
+      navigate('/subscription-plans');
+      return;
+    }
+    setSelectedPlan(location.state.selectedPlan);
+  }, [location.state, navigate]);
+
+  const handlePaymentSuccess = (data) => {
+    // Update user context with new subscription
+    navigate('/subscription-success', { state: { subscription: data } });
+  };
+
+  if (!selectedPlan) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Complete Your Subscription</h1>
+          <p className="mt-2 text-gray-600">Choose your preferred payment method</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <PlanDetails plan={selectedPlan} />
+            
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-bold mb-4">Payment Method</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={() => setPaymentMethod('stripe')}
+                  className={`w-full p-3 rounded-lg border-2 text-left ${
+                    paymentMethod === 'stripe'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <CreditCard className="w-5 h-5 mr-2" />
+                    <span>Credit Card (International)</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setPaymentMethod('flouci')}
+                  className={`w-full p-3 rounded-lg border-2 text-left ${
+                    paymentMethod === 'flouci'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center">
+                    <Flag className="w-5 h-5 mr-2" />
+                    <span>Flouci (Tunisia)</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            {paymentMethod === 'stripe' ? (
+              <Elements stripe={stripePromise}>
+                <PaymentForm plan={selectedPlan} onSuccess={handlePaymentSuccess} />
+              </Elements>
+            ) : (
+              <FlouciPayment plan={selectedPlan} onSuccess={handlePaymentSuccess} />
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

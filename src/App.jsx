@@ -52,6 +52,10 @@ import SubscriptionPlans from "./Pages/Subscriptions";
 import SubscriptionDetails from "./Pages/SubscriptionDetails";
 import SubscriptionPayment from "./Pages/SubscriptionPayment";
 import UserClaims from "./Components/Pages/UserClaims";
+import Subscriptions from "./Pages/Subscriptions";
+import PaymentSubscription from "./Pages/PaymentSubscription";
+import PaymentSuccess from "./Pages/PaymentSuccess";
+
 const App = () => {
   let location = useLocation();
   useEffect(() => {
@@ -150,6 +154,9 @@ const App = () => {
                       </PrivateRoute>
                     }
                   />
+                  <Route path="/subscriptions" element={<Subscriptions />} />
+                  <Route path="/payment" element={<PaymentSubscription />} />
+                  <Route path="/payment-success" element={<PaymentSuccess />} />
                 </Route>
               </Routes>
             </NotificationProvider>

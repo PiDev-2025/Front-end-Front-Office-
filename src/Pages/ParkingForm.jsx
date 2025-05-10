@@ -459,7 +459,7 @@ const validateForm = () => {
   
       // Submit to API
       const response = await axios.post(
-        "https://parkini-backend.onrender.com/parkings/submit",
+        "http://localhost:3001/parkings/submit",
         formData,
         {
           headers: {

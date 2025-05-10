@@ -30,7 +30,7 @@ const ForgotPassword = () => {
         }
 
         try {
-            await axios.post('https://parkini-backend.onrender.com/api/forget-password', { email });
+            await axios.post('http://localhost:3001/api/forget-password', { email });
             setMessage('Check your email for the reset link.');
             setError('');
             // Redirect to home page after 2 seconds

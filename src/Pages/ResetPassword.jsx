@@ -77,7 +77,7 @@ const ResetPassword = () => {
 
         try {
             setIsLoading(true);
-            const response = await axios.post(`https://parkini-backend.onrender.com/api/reset-password/${token}`, { password });
+            const response = await axios.post(`http://localhost:3001/api/reset-password/${token}`, { password });
             
             setIsLoading(false);
             setMessage('Password has been reset successfully');

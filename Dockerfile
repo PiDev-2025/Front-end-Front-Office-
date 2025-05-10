@@ -10,7 +10,7 @@ RUN npm install --legacy-peer-deps --no-audit
 # Copy source files and build
 COPY . .
 # Set API URL and other environment variables during build
-ARG REACT_APP_API_URL=https://parkini-backend.onrender.com
+ARG REACT_APP_API_URL=http://localhost:3001
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 RUN npm run build
 
