@@ -6,9 +6,9 @@ import joblib
 import os
 from datetime import datetime, timedelta
 from prophet import Prophet
-
+from flask_cors import CORS
 app = Flask(__name__)
-
+CORS(app)
 MODEL_DIR = 'model'
 MODEL_PATH = os.path.join(MODEL_DIR, 'prophet_parking_model.pkl')
 CONFIG_PATH = os.path.join(MODEL_DIR, 'pattern_config.joblib')
