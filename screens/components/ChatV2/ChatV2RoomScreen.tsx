@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
-import { FlatList, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { Button } from '@/components/ui/button';
+import { FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import MessageBubbleV2 from './components/MessageBubbleV2'; // Import component
 import ChatInputV2 from './components/ChatInputV2'; // Import component
@@ -27,15 +28,42 @@ const ChatV2RoomScreen: React.FC = () => {
   // TODO: Replace with actual user ID from state
   // const currentUserId = useAtomValue(userIdAtom);
   const currentUserId = 'user1'; // Placeholder 
+  const [showPreviousMessages, setShowPreviousMessages] = useState(false);
 
-  // Use the hook to get messages, loading state, error state, and send function
-  const { messages, isLoading, error, sendMessage } = useChatMessages(roomId);
+  // Always pass roomId for WebSocket connection, but control message loading separately
+  const { messages, isLoading, error, sendMessage, loadMessages } = useChatMessages(roomId, showPreviousMessages);
 
   const renderItem = ({ item }: { item: ChatMessage }) => (
     <MessageBubbleV2 
       message={item} 
       isCurrentUser={item.userId === currentUserId} 
     />
+  );
+
+  const handleLoadPreviousMessages = () => {
+    setShowPreviousMessages(true);
+    loadMessages(roomId); // Explicitly load messages when requested
+  };
+
+  const WelcomeMessage = () => (
+    <Box className="flex-1 justify-center items-center p-6 bg-gray-50">
+      <Box className="bg-white rounded-2xl shadow-md p-6 w-full max-w-sm">
+        <Text className="text-2xl font-bold text-center mb-4 text-purple-600">
+          Welcome to {route.params.roomName}
+        </Text>
+        <Text className="text-gray-600 text-center mb-6">
+          Ready to start a new conversation? Type your message below or load previous messages.
+        </Text>
+        {!showPreviousMessages && (
+          <Button
+            onPress={handleLoadPreviousMessages}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            <Text className="text-white font-medium">Load Previous Messages</Text>
+          </Button>
+        )}
+      </Box>
+    </Box>
   );
 
   return (
@@ -45,15 +73,16 @@ const ChatV2RoomScreen: React.FC = () => {
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0} // Adjust offset if needed
     >
       <Box className="flex-1 bg-gray-100">
-        {isLoading && messages.length === 0 ? (
-          // Show loading indicator only when initially loading messages
+        {isLoading && showPreviousMessages ? (
           <Box className="flex-1 justify-center items-center">
-            <ActivityIndicator size="large" />
+            <ActivityIndicator size="large" color="#9333ea" />
           </Box>
         ) : error ? (
           <Box className="flex-1 justify-center items-center p-4">
             <Text className="text-red-500 text-center">Error loading messages: {error.message}</Text>
           </Box>
+        ) : !showPreviousMessages || messages.length === 0 ? (
+          <WelcomeMessage />
         ) : (
           <FlatList
             data={messages}
@@ -62,7 +91,7 @@ const ChatV2RoomScreen: React.FC = () => {
             className="p-4"
             inverted // Show newest messages at the bottom
             contentContainerStyle={{ paddingTop: 10 }} // Add some padding at the top when inverted
-            ListEmptyComponent={<Text className="text-center text-gray-500 mt-10">No messages yet.</Text>}
+            ListEmptyComponent={<WelcomeMessage />}
           />
         )}
         <ChatInputV2 onSend={sendMessage} />

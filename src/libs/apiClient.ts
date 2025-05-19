@@ -4,7 +4,7 @@ import { tokenAtom } from '../../api-client/api-client/src/storage';
 import { useEffect } from 'react';
 
 // Create a single instance with your API base URL
-export const apiClient = new ApiClient('https://your-api-base-url.com');
+export const apiClient = new ApiClient('https://noelis.qazar.cloud');
 
 // Hook to initialize the apiClient with the Jotai atom setter
 export function useInitializeApiClient() {

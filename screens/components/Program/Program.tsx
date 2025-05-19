@@ -1,148 +1,127 @@
 import React, { memo } from "react";
-import { StyleSheet } from "react-native";
-import { useAtom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
+import { StyleSheet, Dimensions } from "react-native";
 import LinearGradient from 'react-native-linear-gradient';
 
 // Individual GlueStack UI imports from components/ui
 import { Box } from "@/components/ui/box";
-import { Card } from "@/components/ui/card";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { Image } from "@/components/ui/image";
+import { Button, ButtonText } from "@/components/ui/button";
 
 // Types
-interface Program {
+interface CurrentlyReadingItem {
     id: string;
-    name: string;
-    image: string;
-    description: string;
-    duration: string;
-    level: string;
-    price: string;
-    [key: string]: unknown;
+    title: string;
+    author: string;
+    imageUrl: string;
+    lastRead: string;
+    progressText: string; // e.g., "62%"
+    avgSession: string;   // e.g., "25 min"
+    pagesRead: string;    // e.g., "213"
 }
 
-// Jotai atoms
-const programsAtom = atomWithStorage<Program[]>("programs", []);
-
-// Program Card Component
-interface ProgramCardProps {
-    program: Program;
+// CurrentlyReadingCard Component
+interface CurrentlyReadingCardProps {
+    item: CurrentlyReadingItem;
 }
 
-const ProgramCard = memo(({ program }: ProgramCardProps) => {
+const CurrentlyReadingCard = memo(({ item }: CurrentlyReadingCardProps) => {
     return (
-        <Card className="py-5 pr-5 rounded-lg my-3 relative">
-            <Box
-                style={{
-                    position: 'absolute',
-                    left: 0,
-                    bottom: 0,
-                    width: 3,
-                    top: 0,
-                    overflow: 'hidden',
+        <Box className="rounded-xl overflow-hidden my-3 shadow-lg" sx={{ w: '$full', h: 380 }}>
+            <Image
+                source={{ uri: item.imageUrl }}
+                alt={`${item.title} background`}
+                style={StyleSheet.absoluteFillObject}
+                className="w-full h-full"
+            />
+            <LinearGradient
+                colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.8)']}
+                style={StyleSheet.absoluteFillObject}
+            />
+            <VStack
+                style={StyleSheet.absoluteFillObject}
+                sx={{
+                    p: '$5',
+                    justifyContent: 'space-between'
                 }}
             >
-                <LinearGradient
-                    start={{x: 0, y: 0}}
-                    end={{x: 0, y: 1}}
-                    colors={['#0892a5', '#06908f', '#0ca4a5']}
-                    style={StyleSheet.absoluteFill}
-                />
-            </Box>
+                <VStack space="xs">
+                    <HStack sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <VStack>
+                            <Heading size="xl" sx={{color: '$white'}}>{item.title}</Heading>
+                            <Text size="sm" sx={{color: '$coolGray300'}}>by {item.author}</Text>
+                        </VStack>
+                        <VStack sx={{alignItems: 'flex-end'}}>
+                            <Text size="xs" sx={{color: '$coolGray400'}}>Last Read</Text>
+                            <Text size="sm" sx={{color: '$coolGray200'}}>{item.lastRead}</Text>
+                        </VStack>
+                    </HStack>
+                </VStack>
 
-            <VStack space="md">
-                <HStack space="md" style={{ alignItems: 'flex-start' }}>
-                    <VStack space="xs" style={{ width: 110 }}>
-                        <Box className="rounded-lg overflow-hidden">
-                            <Image
-                                source={{
-                                    uri: program.image || "https://via.placeholder.com/150",
-                                }}
-                                alt={`${program.name}'s image`}
-                                style={{
-                                    width: 110,
-                                    height: 110,
-                                }}
-                            />
-                        </Box>
-                    </VStack>
-                    <VStack space="xs" style={{ flex: 1 }}>
-                        <Heading size="md">
-                            {program.name}
-                        </Heading>
-                        <Text size="sm" italic>
-                            {program.description}
-                        </Text>
-                        <HStack space="md">
-                            <Text size="xs" bold>Duration:</Text>
-                            <Text size="xs">{program.duration}</Text>
-                        </HStack>
-                        <HStack space="md">
-                            <Text size="xs" bold>Level:</Text>
-                            <Text size="xs">{program.level}</Text>
-                        </HStack>
-                        <HStack space="md">
-                            <Text size="xs" bold>Price:</Text>
-                            <Text size="xs">{program.price}</Text>
-                        </HStack>
-                    </VStack>
-                </HStack>
+                <VStack space="lg">
+                    <HStack sx={{ justifyContent: 'space-around' }}>
+                        <VStack sx={{alignItems: 'center'}} space="xs">
+                            <Heading size="lg" sx={{color: '$white'}}>{item.progressText}</Heading>
+                            <Text size="xs" sx={{color: '$coolGray300'}}>Progress</Text>
+                        </VStack>
+                        <VStack sx={{alignItems: 'center'}} space="xs">
+                            <Heading size="lg" sx={{color: '$white'}}>{item.avgSession}</Heading>
+                            <Text size="xs" sx={{color: '$coolGray300'}}>Avg. Session</Text>
+                        </VStack>
+                        <VStack sx={{alignItems: 'center'}} space="xs">
+                            <Heading size="lg" sx={{color: '$white'}}>{item.pagesRead}</Heading>
+                            <Text size="xs" sx={{color: '$coolGray300'}}>Pages Read</Text>
+                        </VStack>
+                    </HStack>
+                    <Button
+                        size="md"
+                        variant="solid"
+                        sx={{
+                            bg: 'rgba(255, 255, 255, 0.2)',
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                            _text: { color: '$white' },
+                            borderWidth: 1,
+                            borderRadius: '$lg'
+                        }}
+                    >
+                        <ButtonText>Resume Reading</ButtonText>
+                    </Button>
+                </VStack>
             </VStack>
-        </Card>
+        </Box>
     );
 });
 
-ProgramCard.displayName = 'ProgramCard';
+CurrentlyReadingCard.displayName = 'CurrentlyReadingCard';
 
-// Main Program Component
-const Program = memo(() => {
-    const [programs, setPrograms] = useAtom(programsAtom);
-
-    // Mock data for development
-    const mockPrograms: Program[] = [
+// Main ReadingScreen Component
+const ReadingScreen = memo(() => {
+    // Mock data for development, reflecting the new structure
+    const mockReadingItems: CurrentlyReadingItem[] = [
         {
             id: "1",
-            name: "Mindful Meditation",
-            image: "https://picsum.photos/200",
-            description: "Learn the art of mindfulness and meditation",
-            duration: "8 weeks",
-            level: "Beginner",
-            price: "$99"
+            title: "Dune Messiah",
+            author: "Frank Herbert",
+            imageUrl: "https://images.unsplash.com/photo-1519681393784-d120267933ba?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1121&q=80", // A generic placeholder image for Dune
+            lastRead: "2 Days Ago",
+            progressText: "62%",
+            avgSession: "25 min",
+            pagesRead: "213"
         },
-        {
-            id: "2",
-            name: "Stress Management",
-            image: "https://picsum.photos/201",
-            description: "Effective techniques for managing daily stress",
-            duration: "6 weeks",
-            level: "Intermediate",
-            price: "$79"
-        },
-        {
-            id: "3",
-            name: "Personal Growth",
-            image: "https://picsum.photos/202",
-            description: "Journey to self-discovery and personal development",
-            duration: "12 weeks",
-            level: "Advanced",
-            price: "$149"
-        }
+        // Add another item for the light card if implementing later, or more dark ones.
+        // For now, one item to demonstrate the dark card style.
     ];
 
     return (
-        <Box className="p-4">
-            <VStack space="md">
-                {(programs.length > 0
-                    ? programs
-                    : mockPrograms
-                ).map((program) => (
-                    <ProgramCard
-                        key={program.id}
-                        program={program}
+        <Box className="flex-1" sx={{ p: '$4', bg: '$coolGray100' }}>
+            <VStack space="md" sx={{alignItems: 'center'}}>
+                {mockReadingItems.map((item) => (
+                    <CurrentlyReadingCard
+                        key={item.id}
+                        item={item}
                     />
                 ))}
             </VStack>
@@ -150,13 +129,15 @@ const Program = memo(() => {
     );
 });
 
-Program.displayName = 'Program';
+ReadingScreen.displayName = 'ReadingScreen';
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#f5f5f5",
-    },
-});
+// Styles are mostly handled by Gluestack utility props and classNames.
+// Minimal StyleSheet usage is preferred.
+// const styles = StyleSheet.create({
+//     container: {
+//         flex: 1,
+//         backgroundColor: "#f5f5f5", // Example, can be set on the root Box
+//     },
+// });
 
-export default Program;
+export default ReadingScreen;
