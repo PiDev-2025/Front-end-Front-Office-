@@ -53,6 +53,48 @@ module.exports = {
 					900: "rgb(var(--color-tertiary-900)/<alpha-value>)",
 					950: "rgb(var(--color-tertiary-950)/<alpha-value>)",
 				},
+				// Custom Brand Colors - Blues/Cyans
+				cyan: {
+					primary: "rgb(var(--color-cyan-primary)/<alpha-value>)",
+					light: "rgb(var(--color-cyan-light)/<alpha-value>)",
+					lighter: "rgb(var(--color-cyan-lighter)/<alpha-value>)",
+					lightest: "rgb(var(--color-cyan-lightest)/<alpha-value>)",
+				},
+				blue: {
+					dark: "rgb(var(--color-blue-dark)/<alpha-value>)",
+					primary: "rgb(var(--color-blue-primary)/<alpha-value>)",
+					bright: "rgb(var(--color-blue-bright)/<alpha-value>)",
+					light: "rgb(var(--color-blue-light)/<alpha-value>)",
+					lightest: "rgb(var(--color-blue-lightest)/<alpha-value>)",
+				},
+				// Custom Brand Colors - Pinks/Purples
+				pink: {
+					primary: "rgb(var(--color-pink-primary)/<alpha-value>)",
+					secondary: "rgb(var(--color-pink-secondary)/<alpha-value>)",
+					tertiary: "rgb(var(--color-pink-tertiary)/<alpha-value>)",
+					light: "rgb(var(--color-pink-light)/<alpha-value>)",
+					lightest: "rgb(var(--color-pink-lightest)/<alpha-value>)",
+				},
+				purple: {
+					primary: "rgb(var(--color-purple-primary)/<alpha-value>)",
+					light: "rgb(var(--color-purple-light)/<alpha-value>)",
+					lightest: "rgb(var(--color-purple-lightest)/<alpha-value>)",
+				},
+				// Custom Brand Colors - Yellows/Oranges
+				yellow: {
+					primary: "rgb(var(--color-yellow-primary)/<alpha-value>)",
+					light: "rgb(var(--color-yellow-light)/<alpha-value>)",
+					lightest: "rgb(var(--color-yellow-lightest)/<alpha-value>)",
+				},
+				orange: {
+					primary: "rgb(var(--color-orange-primary)/<alpha-value>)",
+				},
+				// Custom Brand Colors - Greens
+				green: {
+					primary: "rgb(var(--color-green-primary)/<alpha-value>)",
+					light: "rgb(var(--color-green-light)/<alpha-value>)",
+					lightest: "rgb(var(--color-green-lightest)/<alpha-value>)",
+				},
 				error: {
 					0: "rgb(var(--color-error-0)/<alpha-value>)",
 					50: "rgb(var(--color-error-50)/<alpha-value>)",

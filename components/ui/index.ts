@@ -45,4 +45,25 @@ export {
     AlertDialogHeader,
     AlertDialogBody,
     AlertDialogFooter
-} from './alert-dialog'; 
+} from './alert-dialog';
+
+// Avatar
+export { Avatar, AvatarFallbackText, AvatarImage } from './avatar';
+
+// Icon
+export { Icon } from './icon';
+
+// Pressable
+export { Pressable } from './pressable';
+
+// Image
+export { Image } from './image';
+
+// Card
+export { Card } from './card';
+
+// Heading
+export { Heading } from './heading';
+
+// Grid
+export { Grid, GridItem } from './grid'; 

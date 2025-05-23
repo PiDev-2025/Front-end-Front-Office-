@@ -44,6 +44,38 @@ export const config = {
 		"--color-tertiary-900": "108 61 19",
 		"--color-tertiary-950": "84 49 18",
 
+		/* Custom Brand Colors - Blues/Cyans */
+		"--color-cyan-primary": "7 197 211",
+		"--color-cyan-light": "116 220 234",
+		"--color-cyan-lighter": "106 220 229",
+		"--color-cyan-lightest": "205 243 246",
+		"--color-blue-dark": "0 71 107",
+		"--color-blue-primary": "10 74 214",
+		"--color-blue-bright": "82 112 240",
+		"--color-blue-light": "151 169 246",
+		"--color-blue-lightest": "220 226 252",
+
+		/* Custom Brand Colors - Pinks/Purples */
+		"--color-pink-primary": "255 113 230",
+		"--color-pink-secondary": "251 122 176",
+		"--color-pink-tertiary": "235 159 174",
+		"--color-pink-light": "255 170 240",
+		"--color-pink-lightest": "255 227 250",
+		"--color-purple-primary": "88 75 207",
+		"--color-purple-light": "173 187 238",
+		"--color-purple-lightest": "233 197 236",
+
+		/* Custom Brand Colors - Yellows/Oranges */
+		"--color-yellow-primary": "252 227 92",
+		"--color-yellow-light": "253 238 157",
+		"--color-yellow-lightest": "254 249 222",
+		"--color-orange-primary": "254 195 1",
+
+		/* Custom Brand Colors - Greens */
+		"--color-green-primary": "49 151 77",
+		"--color-green-light": "64 204 121",
+		"--color-green-lightest": "45 255 173",
+
 		/* Error */
 		"--color-error-0": "254 233 233",
 		"--color-error-50": "254 226 226",
@@ -195,6 +227,38 @@ export const config = {
 		"--color-tertiary-800": "255 233 213",
 		"--color-tertiary-900": "255 242 229",
 		"--color-tertiary-950": "255 250 245",
+
+		/* Custom Brand Colors - Blues/Cyans */
+		"--color-cyan-primary": "7 197 211",
+		"--color-cyan-light": "116 220 234",
+		"--color-cyan-lighter": "106 220 229",
+		"--color-cyan-lightest": "205 243 246",
+		"--color-blue-dark": "0 71 107",
+		"--color-blue-primary": "10 74 214",
+		"--color-blue-bright": "82 112 240",
+		"--color-blue-light": "151 169 246",
+		"--color-blue-lightest": "220 226 252",
+
+		/* Custom Brand Colors - Pinks/Purples */
+		"--color-pink-primary": "255 113 230",
+		"--color-pink-secondary": "251 122 176",
+		"--color-pink-tertiary": "235 159 174",
+		"--color-pink-light": "255 170 240",
+		"--color-pink-lightest": "255 227 250",
+		"--color-purple-primary": "88 75 207",
+		"--color-purple-light": "173 187 238",
+		"--color-purple-lightest": "233 197 236",
+
+		/* Custom Brand Colors - Yellows/Oranges */
+		"--color-yellow-primary": "252 227 92",
+		"--color-yellow-light": "253 238 157",
+		"--color-yellow-lightest": "254 249 222",
+		"--color-orange-primary": "254 195 1",
+
+		/* Custom Brand Colors - Greens */
+		"--color-green-primary": "49 151 77",
+		"--color-green-light": "64 204 121",
+		"--color-green-lightest": "45 255 173",
 
 		/* Error */
 		"--color-error-0": "83 19 19",
