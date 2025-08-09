@@ -52,6 +52,11 @@ const HomePage = () => {
     setIsLoading(true)
 
     try {
+      // Validate corporate email
+      if (!authService.validateCorporateEmail(signupData.email)) {
+        throw new Error('Please use a corporate email address. Personal and academic emails are not allowed.')
+      }
+
       // Validate password match
       if (signupData.password !== signupData.confirmPassword) {
         throw new Error('Passwords do not match')
@@ -62,23 +67,6 @@ const HomePage = () => {
         throw new Error('Password must be at least 8 characters long')
       }
 
-      // Basic email format validation
-      if (!signupData.email || !signupData.email.includes('@')) {
-        throw new Error('Please enter a valid email address')
-      }
-
-      // Basic name validation
-      if (!signupData.firstName.trim() || !signupData.lastName.trim()) {
-        throw new Error('First name and last name are required')
-      }
-
-      console.log('Sending registration data:', {
-        firstName: signupData.firstName,
-        lastName: signupData.lastName,
-        email: signupData.email,
-        password: '[HIDDEN]'
-      })
-
       const response = await authService.register({
         firstName: signupData.firstName,
         lastName: signupData.lastName,
@@ -86,43 +74,15 @@ const HomePage = () => {
         password: signupData.password
       })
 
-      console.log('Registration response:', response)
-
-      if (response.status === 'success' && response.data?.user) {
-        setSuccessMessage('Account created successfully! Please check your email for verification.')
-        
-        // Clear form
-        setSignupData({
-          firstName: '',
-          lastName: '',
-          email: '',
-          password: '',
-          confirmPassword: ''
-        })
-        
-        // Switch to signin view after 3 seconds
+      if (response.user && response.token) {
+        loginToStore(response.user, response.token)
+        setSuccessMessage('Account created successfully! Redirecting...')
         setTimeout(() => {
-          setCurrentView('signin')
-          setSuccessMessage('')
-        }, 3000)
-      } else {
-        throw new Error('Registration response was unexpected')
+          navigate('/dashboard')
+        }, 2000)
       }
     } catch (error) {
-      console.error('Registration error:', error)
-      
-      // Handle different types of errors
-      let errorMessage = 'Registration failed. Please try again.'
-      
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message
-      } else if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-        errorMessage = error.response.data.errors.map(err => err.msg).join(', ')
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-      
-      setError(errorMessage)
+      setError(error.message || 'Registration failed. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -137,25 +97,15 @@ const HomePage = () => {
     try {
       const response = await authService.login(signinData)
       
-      if (response.status === 'success' && response.data?.user && response.token) {
-        loginToStore(response.data.user, response.token)
+      if (response.user && response.token) {
+        loginToStore(response.user, response.token)
         setSuccessMessage('Login successful! Redirecting...')
         setTimeout(() => {
           navigate('/dashboard')
         }, 2000)
       }
     } catch (error) {
-      console.error('Login error:', error)
-      
-      let errorMessage = 'Login failed. Please check your credentials.'
-      
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-      
-      setError(errorMessage)
+      setError(error.message || 'Login failed. Please check your credentials.')
     } finally {
       setIsLoading(false)
     }
@@ -180,7 +130,7 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Left Panel - Brand & Value Props */}
-      <div className="w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
+      <div className="flex-1 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 -left-4 w-96 h-96 bg-teal-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
@@ -283,9 +233,9 @@ const HomePage = () => {
       </div>
 
       {/* Right Panel - Auth Forms */}
-      <div className="w-1/2 bg-white flex flex-col">
+      <div className="flex-1 flex flex-col max-w-md">
         {/* Header */}
-        <div className="p-12 pb-6">
+        <div className="p-8 pb-4">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               {currentView === 'signup' ? 'Create your account' : 
@@ -333,13 +283,13 @@ const HomePage = () => {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+              <span className="px-2 bg-gray-50 text-gray-500">Or continue with email</span>
             </div>
           </div>
         </div>
 
         {/* Auth Form */}
-        <div className="flex-1 px-12 pb-12">
+        <div className="flex-1 px-8">
           {/* Error and Success Messages */}
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
@@ -545,7 +495,7 @@ const HomePage = () => {
         </div>
 
         {/* Enterprise Security Notice */}
-        <div className="mx-12 mt-8 mb-12 p-4 bg-teal-50 border border-teal-200 rounded-lg">
+        <div className="mx-8 mt-8 mb-8 p-4 bg-teal-50 border border-teal-200 rounded-lg">
           <div className="flex items-start space-x-3">
             <div className="w-5 h-5 bg-teal-600 rounded mt-0.5"></div>
             <div>

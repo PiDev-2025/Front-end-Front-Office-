@@ -15,10 +15,10 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
-// Rate limiting for auth endpoints
+// Rate limiting for auth endpoints (relaxed for development)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 50, // increased from 5 to 50 for development
   message: {
     error: 'Too many authentication attempts, please try again later.'
   }
@@ -26,7 +26,7 @@ const authLimiter = rateLimit({
 
 const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // limit each IP to 3 password reset requests per hour
+  max: 10, // increased from 3 to 10 for development
   message: {
     error: 'Too many password reset attempts, please try again later.'
   }
